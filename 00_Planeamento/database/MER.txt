@@ -1,0 +1,52 @@
+Institution(
+	id_i,
+	name,
+	description
+)
+Primary key: id_i
+Candidate keys: name
+
+CarshCart(
+	id_i,
+	id_c,
+	name,
+	qr_code_str,
+	qr_code_img
+)
+Primary key: (id_i,id_c)
+Foreign keys: id_i
+Candidate keys: qr_code_str, qr_code_img
+
+Drawer(
+	id_i,
+	id_c,
+	id_d,
+	name,
+	n_lins,
+	n_cols,
+	qr_code_str,
+	qr_code_img
+)
+Primary key: (id_i, id_c, id_d)
+Foreign keys: (id_i, id_c)
+Candidate keys: qr_code_str, qr_code_img
+
+Slot(
+	id_i,
+	id_c,
+	id_d,
+	id_s,
+	name,
+	s_adj_hor,
+	s_adj_ver,
+	name_prod,
+	vol_weight,
+	application,
+	max_quant,
+	valid_date,
+	qr_code_str,
+	qr_code_img
+)
+Primary key: (id_i, id_c, id_d, id_s)
+Foreign keys: (id_i, id_c, id_d)
+Candidate keys: qr_code_str, qr_code_img

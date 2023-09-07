@@ -1,0 +1,56 @@
+Autores:
+- Martim Pinheiro Alves n46286
+- Pedro Jorge n47498
+
+Institution table:
+{
+"name":"H de Santa Marta",
+"description":"Localizado na cidade de Lisboa, no antigo Convento de Santa Marta. Integra o Centro Hospitalar Lisboa Central EPE (CHLC)"
+}
+{
+"name":"H de Santa Maria"
+}
+
+CrashCart table:
+{
+"numCC":"10",
+"id_i":"1"
+}
+{
+"numCC":"5",
+"id_i":"2"
+}
+
+Drawer table:
+{
+"numD":"4",
+"id_i":"1",
+"id_c":"1"
+}
+{
+"numD":"4",
+"id_i":"1",
+"id_c":"2"
+}
+
+Update drawer:
+{
+"n_lins":"2",
+"n_cols":"2"
+}
+
+Slot table:
+{
+"s_adj_hor":"1",
+"s_adj_ver":"1",
+"name_prod":"cloreto de cálcio 10%",
+"vol_weight":"10mL",
+"max_quant":"3"
+}
+{
+"s_adj_hor":"1",
+"s_adj_ver":"1",
+"name_prod":"esmolol",
+"vol_weight":"100mg/10ml",
+"max_quant":"2"
+}
