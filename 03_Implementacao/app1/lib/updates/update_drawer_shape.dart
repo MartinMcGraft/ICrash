@@ -31,8 +31,6 @@ class UpdateDrawerShapeState extends State<UpdateDrawerShape> {
     if (await widget.handler.getDrawerID(widget.drawerName)) {
       if (await widget.handler
           .updateDrawerShape(numLins.toString(), numCols.toString())) {
-        // TODO
-        // ignore: use_build_context_synchronously
         Navigator.push(
           context,
           MaterialPageRoute(

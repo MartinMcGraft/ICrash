@@ -25,51 +25,18 @@ class Bloco {
     this.mergeCounth = 1,
     this.mergeCountv = 1,
   });
-
-  void splitBlocos(List<List<Bloco>> grelha) {
-    final mergeCounth = this.mergeCounth;
-    final mergeCountv = this.mergeCountv;
-    final larguraOriginal = this.largura;
-    final alturaOriginal = this.altura;
-    final larguraNovoBloco = larguraOriginal / mergeCounth;
-    final alturaNovoBloco = alturaOriginal / mergeCountv;
-
-    final novosBlocos = List.generate(
-      mergeCounth * mergeCountv,
-      (index) {
-        return Bloco(
-          nome: this.nome,
-          info: this.info,
-          formula: this.formula,
-          largura: larguraNovoBloco,
-          altura: alturaNovoBloco,
-          maximo: this.maximo,
-        );
-      },
-    );
-
-    final indiceLinha = grelha.indexWhere((linha) => linha.contains(this));
-    final indiceColuna = grelha[indiceLinha].indexOf(this);
-
-    if (indiceLinha != -1 && indiceColuna != -1) {
-      // Split Horizontal
-      grelha[indiceLinha].removeAt(indiceColuna);
-
-      for (var i = 0; i < mergeCounth; i++) {
-        grelha[indiceLinha].insert(indiceColuna + i, novosBlocos[i]);
-      }
-
-      // Split Vertical
-      for (var i = 1; i < mergeCountv; i++) {
-        final novaLinha = grelha[indiceLinha + i];
-
-        for (var j = 0; j < mergeCounth; j++) {
-          novaLinha.insert(indiceColuna + j, novosBlocos[i * mergeCounth + j]);
-        }
-      }
-    }
-  }
 }
+
+/*
+Aqui é definida a classe Grelha, que é uma subclasse de StatefulWidget. Esta classe 
+representa uma grelha de blocos. Ela possui cinco atributos, numColunas 
+(número de colunas), numLinhas (número de linhas), handler (conexão com o servidor), flag 
+(deteção se é ou não um registo ou uma leitura de qr code) e list (lista que caso seja uma 
+leitura de qr code é pedida essa lista ao servidior esta irá conter as informações 
+necessarias para criar a grelha), e um construtor que recebe esses 
+atributos como parâmetros. A classe também sobrescreve o método createState, que retorna
+uma instância da classe GridSlotsState, responsável por gerenciar o estado da grelha.
+*/
 
 class GridSlots extends StatefulWidget {
   final int numCols;
@@ -89,6 +56,22 @@ class GridSlots extends StatefulWidget {
   @override
   GridSlotsState createState() => GridSlotsState();
 }
+
+/*
+A classe GridSlotsState é uma classe publica que possui
+dois atributos, grelha e blocoSelecionado.
+O método didChangeDependencies é um método de ciclo de vida
+do Flutter que é chamado quando o widget recebe novas dependências. 
+Neste caso, o método chama a função gerargrelha para gerar a grelha.
+A função gerargrelha calcula a largura e altura de cada bloco com base 
+na largura e altura da tela, no número de colunas e no número de linhas. 
+Em seguida, a função gera uma grelha bidimensional (List<List<Bloco>>)
+usando a função generate. Cada bloco na grelha é inicializado com um nome, 
+info e formula vazios, a largura e altura calculadas anteriormente, dois counters
+inicializados a 1 que identificão quantas vezes foi feito o merge vertival e horizontal,
+um maximo inicializado a 0 e por fim um booleano que tem como objetivo identificar se um bloco
+esta selecionado ou não.
+*/
 
 class GridSlotsState extends State<GridSlots> {
   late List<List<Bloco>> grelha;
@@ -163,6 +146,15 @@ class GridSlotsState extends State<GridSlots> {
     }
   }
 
+  /*
+  O método splitBlocos é responsável por fazer split de um bloco na grelha,
+  tendo em conta o numero que esta guardado na variavel mergeCounth, ou na
+  variavel mergeCountv. Apartir do bloco que é dado é realizado o split caso 
+  uma ou as duas variaveis mergeCounth e mergeCountv seja maior do que 1 dividindo 
+  o bloco por blocos mais pequenos com o tamanho original, é a atualizada a lista com
+  os novos blocos.
+  */
+
   void splitBlocos(Bloco bloco) {
     final mergeCounth = bloco.mergeCounth;
     final mergeCountv = bloco.mergeCountv;
@@ -207,6 +199,25 @@ class GridSlotsState extends State<GridSlots> {
     }
   }
 
+  /*
+  O método mergeBlocos é responsável por fazer merge de dois blocos adjacentes 
+  na grelha. Ele recebe dois objetos do tipo Bloco como parâmetros. 
+  Primeiro, obtém os índices das linhas e das colunas dos blocos
+  na grelha usando os métodos indexWhere e indexOf. Em seguida, verifica se 
+  os índices são válidos (diferentes de -1) para garantir que os blocos estão
+  presentes na grelha. Se os blocos estiverem na mesma linha 
+  (indiceLinha1 == indiceLinha2), eles são merged ajustando a largura e 
+  concatenando os atributos nome, info e formula. O primeiro bloco é 
+  atualizado com a largura e o nome merged, e o segundo bloco é removido 
+  da linha. Se os blocos estiverem em linhas diferentes, eles são merged 
+  ajustando a altura. Um novo bloco é criado com a altura dos blocos merged
+  e a largura do primeiro bloco. Os blocos originais são removidos e o novo 
+  bloco é inserido na linha superior. Em seguida, as linhas restantes são
+  deslocadas para baixo ajustando a altura dos blocos subsequentes.
+  No final do método, os blocos selecionados são redefinidos para por a flag
+  que indica que estão selecionados a false.
+  */
+
   void mergeBlocos(Bloco bloco1, Bloco bloco2) {
     final indiceLinha1 = grelha.indexWhere((linha) => linha.contains(bloco1));
     final indiceLinha2 = grelha.indexWhere((linha) => linha.contains(bloco2));
@@ -218,7 +229,6 @@ class GridSlotsState extends State<GridSlots> {
         indiceColuna1 != -1 &&
         indiceColuna2 != -1) {
       if (indiceLinha1 == indiceLinha2) {
-        // Merge blocks in the same row (adjust width)
         if (bloco1.altura == bloco2.altura) {
           final nomeMerged = '${bloco1.nome}${bloco2.nome}';
           final infoMerged = '${bloco1.info}${bloco2.info}';
@@ -229,7 +239,7 @@ class GridSlotsState extends State<GridSlots> {
           bloco1.nome = nomeMerged;
           bloco1.info = infoMerged;
           bloco1.formula = formulaMerged;
-          bloco1.mergeCounth++; // Increment merge count
+          bloco1.mergeCounth++;
           grelha[indiceLinha1].remove(bloco2);
         } else {
           showDialog(
@@ -253,7 +263,6 @@ class GridSlotsState extends State<GridSlots> {
           );
         }
       } else if (indiceColuna1 == indiceColuna2) {
-        // Merge blocks in the same column (adjust height)
         if (bloco1.largura == bloco2.largura) {
           final nomeMerged = '${bloco1.nome}${bloco2.nome}';
           final infoMerged = '${bloco1.info}${bloco2.info}';
@@ -274,7 +283,7 @@ class GridSlotsState extends State<GridSlots> {
           final indiceLinhaSuperior =
               indiceLinha1 < indiceLinha2 ? indiceLinha1 : indiceLinha2;
           grelha[indiceLinhaSuperior].insert(indiceColuna1, blocoMerged);
-          blocoMerged.mergeCountv++; // Increment merge count
+          blocoMerged.mergeCountv++;
         } else {
           showDialog(
             context: context,
@@ -324,6 +333,16 @@ class GridSlotsState extends State<GridSlots> {
     blocoSelecionado = null;
   }
 
+  /* 
+  O método selecionarBloco é chamado quando um bloco é pressionado 
+  longamente. Ele recebe um objeto Bloco como parâmetro. Se já houver um 
+  bloco selecionado (blocoSelecionado != null), verifica se é o mesmo bloco. 
+  Se for o mesmo bloco, ele retorna a flag de selecionado para false. Caso contrário, os blocos são 
+  merged chamando o método mergeBlocos e o estado é atualizado usando o 
+  método setState. Se não houver um bloco selecionado, o bloco tocado é marcado
+  como selecionado e atribuído à variável blocoSelecionado. 
+  */
+
   void selecionarBloco(Bloco bloco) {
     if (blocoSelecionado != null) {
       if (blocoSelecionado == bloco) {
@@ -338,6 +357,20 @@ class GridSlotsState extends State<GridSlots> {
       bloco.selecionado = true;
     }
   }
+
+  /*
+  O método construirgrelha retorna um widget que constrói a interface da grelha. 
+  Ele usa os widgets SingleChildScrollView, Column, Row, GestureDetector, 
+  Container e Text para criar a estrutura da grelha. A grelha é construída 
+  usando os dados da lista bidimensional grelha. Para cada linha na grelha,
+  um widget Row é criado, que contém uma lista de widgets Container, 
+  representando os blocos. Cada bloco é envolvido em um GestureDetector 
+  para detectar toques e pressionamentos longos. Quando um bloco é tocado, 
+  uma dialog box que contem os detalhes do slot é exibida chamando o widget 
+  DetalhesProdutoDialog. O estado é atualizado após a diolog box ser fechada. 
+  Os atributos do bloco são usados para configurar o estilo e o conteúdo dos widgets 
+  Text exibidos dentro do bloco.
+  */
 
   Widget construirGrelha() {
     return SingleChildScrollView(
@@ -371,7 +404,6 @@ class GridSlotsState extends State<GridSlots> {
                       });
                     },
                     onDoubleTap: () {
-                      // Add this onDoubleTap handler
                       splitBlocos(bloco);
                       setState(() {});
                     },
@@ -436,8 +468,7 @@ class GridSlotsState extends State<GridSlots> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      HomeMenu(), // Replace with your HomeMenu widget
+                  builder: (context) => HomeMenu(),
                 ),
               );
             },

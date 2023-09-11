@@ -137,8 +137,6 @@ class RequestHandler {
 
   Future<List<String>> getDrawerShape(
       String idI, String idC, String idD) async {
-    //TODO
-    // check alternative response.
     instID = idI;
     ccartID = idC;
     drawerID = idD;

@@ -245,7 +245,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         int numD = int.parse(data);
         int numB = int.parse(code[1]);
 
-        // Navigate to GridDrawers
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -278,47 +277,21 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         );
       }
 
-      /*DateTime dataAtual = DateTime.now();
-      String dataAtualFormatada = DateFormat('yyyy-MM-dd').format(dataAtual);
-      String dataCodigoQR = fullString;
-      if (flagMensal) {
-        if (dataCodigoQR.compareTo(dataAtualFormatada) >= 0) {
-          // A data do código QR é posterior ou igual à data atual
-          print("Produto válido!");
-        } else {
-          // A data do código QR é anterior à data atual
-          print("Produto expirado!");
-        }
-      }*/
-
       if (code.length == 4) {
         List<String> resultados = [];
         List<String> nameMaxQ = await handler.updateSlotQuantity(
             code[0], code[1], code[2], code[3]);
         String nome = nameMaxQ[0];
-        //int max = int.parse(nameMaxQ[1]);
-
-        // Check if the name exists in the map, if not, initialize the counter to 0
         if (!counters.containsKey(nome)) {
           counters[nome] = 0;
         }
 
-        // Decrease the counter for this name
-        //counters[nome] = (counters[nome] ?? 0) - 1;
         counters[nome] = (counters[nome] ?? 0) - 1;
 
-        // Add the result to the list (for display purposes)
         resultados.add('$nome ${counters[nome]!}');
-        /*
-        if (dailyManagement) {
-          await handler.updateSlotQuantity(code[0], code[1], code[2], code[3]);
-        } else {
-          // TODO: Monthly management
-        }*/
       }
 
       setState(() {
-        // Update other state variables if needed
         fullString = lastScannedMessage;
       });
     }

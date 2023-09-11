@@ -70,7 +70,6 @@ class ProductDetailsState extends State<ProductDetails> {
   Widget build(BuildContext context) {
     return Dialog(
       child: SingleChildScrollView(
-        // Wrap the Column with SingleChildScrollView
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
