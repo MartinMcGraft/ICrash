@@ -1,5 +1,5 @@
 #I-Crash
-Projeto de Licenciatura em Engenharia Informaática e Multimédia - ISEL
+Projeto de Licenciatura em Engenharia Informática e Multimédia - ISEL
 Alunos:
 - Martim Pinheiro Alves, n46286
 - Pedro Jorge, n47498
