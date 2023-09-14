@@ -1,0 +1,1 @@
+Não tivemos tempo de efetuar testes com os clientes, de modo que todos os testes presentes (testes durante o desenvolvimento dos sistemas) estão documentados no relatório.
