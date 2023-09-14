@@ -39,7 +39,7 @@ prj_11_i_crash (nome sugestivo)
 4.1 Primir tecla ENTER para Server, Database, Port e Username e no fim colocar a Password préviamnete 	definida,
 4.2 Criar uma nova base de dados, exemplo com o NOME prj11:
 	CREATE DATABASE prj11
-4.3 Sair do terminar:
+4.3 Sair do terminal:
 	\q
 
 
