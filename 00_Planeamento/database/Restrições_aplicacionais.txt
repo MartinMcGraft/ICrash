@@ -1,0 +1,49 @@
+________________________________________________________________________________
+TABLE Institution id_i Integer Auto-incrementable (SERIAL)
+
+- Não existem restricções aplicacionais.
+
+________________________________________________________________________________
+TABLE CrashCart   id_c Integer Auto-incrementable (SERIAL)
+
+- Necessidade de gerar o nome do carro automáticamente, anexar há palavra "Carro"
+o id_c e actualizar o valor da coluna name da tabela CrashCart. FEITO
+
+________________________________________________________________________________
+TABLE Drawer      id_d Integer Auto-incrementable (SERIAL)
+
+- Valor mínimo pré-definido para >=1 para os campos n_lins e n_cols. FEITO
+
+________________________________________________________________________________
+TABLE Slot        id_s Integer Auto-incrementable (SERIAL)
+
+- Valor mínimo pré-definido para >= 1 para os campos s_adj_hor e s_adj_ver. FEITO
+
+________________________________________________________________________________
+Para todas as tabelas que têm restrições
+
+- Necessidade de controlar os valores dos ids, de modo a iniciar sempre a 1.
+!Ex: Neste momento quando são adicionados 4 carros, 2 a cada instituto, os id_c's
+ficam id_i=1 (1, 2) e id_i=2 (3, 4) em vez de id_i=1 (1, 2) e id_i=2 (1, 2). FEITO
+
+- Necessidade de copiar o valor do id das chaves primárias, converter para String
+e actualizar o valor da coluna qr_code_str. FEITO
+
+- A ser realizado no fim:
+	- Necessário com esse id, gerar códigos QR, converter as imagens para
+	bytes e actualizar o valor da coluna qr_code_img.
+
+________________________________________________________________________________
+Informações adicionais:
+
+- Os campos de tipo SERIAL, são sempre positivos, logo não existe necessidade
+de verificar se são >= 1.
+
+- Ao definir um número de linhas e colunas, a vrificação se são >= 1 é feita
+na base de dados em si com o CHECK (n_lins >= 1) e CHECK (n_cols >= 1).
+
+- O valor mínimo para a coluna max_quant é definido na base de dados em si com o
+CHECK (max_quant >= 1)
+
+- Todos os campos que são NULL ou NOT NULL, UNIQUE ou não têm as restricções na
+base de dados em si, atarvés de CONSTRAINTS ou das key words em si.
