@@ -17,7 +17,7 @@ class GridCrashCarts extends StatelessWidget {
   final RequestHandler handler;
 
   const GridCrashCarts(
-      {required this.numCCs,
+      {super.key, required this.numCCs,
       required this.inst,
       required String descr,
       required this.handler});

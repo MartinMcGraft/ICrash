@@ -6,7 +6,7 @@ class RegDrawers extends StatefulWidget {
   final int blockNumber;
   final RequestHandler handler;
 
-  const RegDrawers({required this.blockNumber, required this.handler});
+  const RegDrawers({super.key, required this.blockNumber, required this.handler});
 
   @override
   RegDrawersState createState() => RegDrawersState();

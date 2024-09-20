@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:app1/qr_code_reader/qr_code_reader.dart';
 import 'package:app1/registration/reg_institution_cc.dart';
+import 'package:app1/teste/teste.dart';
 
 class HomeMenu extends StatelessWidget {
   const HomeMenu({super.key});
@@ -12,8 +13,8 @@ class HomeMenu extends StatelessWidget {
         title: const Text('I-Crash'),
       ),
       body: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        child: Container(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
           width: double.infinity,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -60,6 +61,16 @@ class HomeMenu extends StatelessWidget {
                   );
                 },
                 child: const Text('QR Code Reader'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TesteDataMatrix()),
+                  );
+                },
+                child: const Text('Data matrix scan'),
               ),
             ],
           ),

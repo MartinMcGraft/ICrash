@@ -8,7 +8,7 @@ class GridDrawers extends StatelessWidget {
   final int numDs;
   final RequestHandler handler;
 
-  const GridDrawers({
+  const GridDrawers({super.key, 
     required this.blockNumber,
     required this.numDs,
     required this.handler,

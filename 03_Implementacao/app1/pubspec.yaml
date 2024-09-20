@@ -38,6 +38,11 @@ dependencies:
   http: ^1.1.0
   qr_code_scanner: ^1.0.1
   intl: ^0.18.1
+  #para adicionar as datamatrix
+  #google_ml_kit: ^0.7.3 
+  camera: ^0.10.0+1
+  image: ^3.2.2
+  zxing_lib: ^1.1.2        # Biblioteca para ler DataMatrix
 
 dev_dependencies:
   flutter_test:
