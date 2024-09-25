@@ -17,11 +17,10 @@ Requesitos frontend:
 	- Flutter
 	- Android Studio
 Requesitos do Visual Studio Code (VSCode):
-	- Python 3
-	- Flutter
-	- Dart
-	- Windows CMake tools
-	- PostgreSQL
+	- Python 3 (recomenda-se a extensão da Microsoft)
+	- Flutter e Dart (recomenda-se a extensão da Dart Code)
+	- Windows CMake tools (recomenda-se a estensão da Microsoft)
+	- PostgreSQL (recomenda-se a extensão pelo Chris Kolkman)
 
 
 Aconselha-se o seguinte sistema de pastas:
