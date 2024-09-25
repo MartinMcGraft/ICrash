@@ -27,7 +27,7 @@ DEBUG = True
 
 # TODO
 # Need to add the IP of the machine where the server is installed:
-ALLOWED_HOSTS = ['localhost','127.0.0.1','192.168.174.19']
+ALLOWED_HOSTS = ['localhost','127.0.0.1']
 
 
 # Application definition
@@ -86,9 +86,9 @@ DATABASES = {
         #'ENGINE': 'django.db.backends.sqlite3',
         #'NAME': BASE_DIR / 'db.sqlite3',
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'prj11',
+        'NAME': 'icrash',
         'USER': 'postgres',
-        'PASSWORD': '1234',
+        'PASSWORD': 'icrash',
         'HOST': 'localhost',
         'PORT': '5432',
     }
