@@ -69,6 +69,19 @@ Status: complete and validated live on the Android emulator.
 - New/renamed tests: `institution_home_screen_test.dart` (5 tests: empty state, list+navigate to detail, FAB shown for manager + creates a cart, FAB hidden for a normal user, legacy app still reachable); `institution_selection_screen_test.dart` updated for the rename.
 - Live Android validation: seeded institution already had one cart from `seed_emulator.mjs`; the list rendered it correctly, "Novo carro" was visible (seeded user is `institutionAdmin`), and creating a cart updated the list live via the Firestore snapshot stream. See `docs/TEST_STATUS.md`.
 
+## Phase 2 continued — audit reconciliation and event correction
+
+Status: complete and validated live on the Android emulator.
+
+- `assignment_dialog.dart` gained two more modes: `_Mode.reconcile` (manager+: shows the assignment's recorded batches as checkboxes defaulting to all-confirmed-present, plus a physically-confirmed-quantity field defaulting to the current value; submitting calls `InventoryRepository.reconcileAfterAudit`, which replaces the batch set and recomputes `currentQuantity`/`earliestKnownExpiry` strictly from what was confirmed) and `_Mode.correct` (anyone with cart access: lists the assignment's usage events newest-first via `UsageRepository.watchEventsForAssignment`, pre-selects the most recent one with a pre-filled "undo" adjustment, and calls `InventoryRepository.recordCorrection`, which appends a compensating event referencing the original without mutating it).
+- New `usageEventTypeLabel` in `assignment_status_label.dart` for the event picker's PT-PT labels.
+- No repository, Firestore, or Rules changes were needed — `InventoryRepository.reconcileAfterAudit`/`recordCorrection` and `UsageRepository`/`FirestoreUsageRepository` were already complete from the architecture-foundation phase; this was purely a presentation-layer gap.
+- `FakeInventoryRepository` gained `reconcileAfterAudit`/`recordCorrection`; `FakeUsageRepository` upgraded from an unimplemented stub to real in-memory behavior.
+- New tests: 3 more in `slot_editor_screen_test.dart` (correct-an-event, reconcile-after-audit, role-gating showing Corrigir/Registar-consumo but hiding Repor-stock/Reconciliar for a normal user).
+- Live Android validation: reconciled an assignment (unchecked its one batch, set confirmed quantity to 2 — cell updated to "2/1" and the batch was dropped), then corrected the reconciliation event with the default pre-filled adjustment (cell updated back to "3/1"). See `docs/TEST_STATUS.md`.
+
+This closes out `InventoryRepository`'s entire surface in the presentation layer — every method (`createAssignment`, `recordConsumption`, `recordReplenishment`, `reconcileAfterAudit`, `recordCorrection`) is now reachable from the UI.
+
 ## Phase 2 continued — product catalogue and slot assignments
 
 Status: complete and validated live on the Android emulator.
@@ -81,7 +94,7 @@ Status: complete and validated live on the Android emulator.
 - New tests: `products_screen_test.dart` (4), 3 more in `slot_editor_screen_test.dart` (assign/consume/informational-message-for-a-normal-user).
 - Live Android validation: created a product, assigned it to a slot, replenished it with a lot number and expiry date, then recorded consumption — each step's effect (quantities, product name) visible instantly on the grid cell. See `docs/TEST_STATUS.md`.
 
-Not started: reconciliation-after-audit and correction flows (`InventoryRepository.reconcileAfterAudit`/`recordCorrection` exist but nothing in presentation calls them yet), GS1 Data Matrix/QR-driven product lookup (`ProductRepository.findByGtin` exists, unused), cart edit/duplicate/template, `responsibleUsers` management UI.
+Reconciliation-after-audit and correction were the immediate next step after this and are covered in the section above. Still not started: GS1 Data Matrix/QR-driven product lookup (`ProductRepository.findByGtin` exists, unused), cart edit/duplicate/template, `responsibleUsers` management UI.
 
 ## Phase 2 continued — drawer/slot editor
 

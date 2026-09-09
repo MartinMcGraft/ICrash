@@ -2,6 +2,17 @@
 
 Updated: 2026-09-10
 
+## Phase 2, audit reconciliation and event correction — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, continuing from the assigned "Adrenalina" slot (3 units after the earlier replenishment/consumption walkthrough), signed in as the seeded `institutionAdmin`:
+
+- Reconciliation: WORKING. "Reconciliar" (manager+) showed the assignment's one recorded batch ("LOTE123") pre-checked and the confirmed-quantity field pre-filled with the current value (3). Unchecking the batch (simulating "not physically found") and setting the confirmed quantity to 2, then confirming, updated the cell to "2/1" and replaced the stored batch set with none, via `InventoryRepository.reconcileAfterAudit`.
+- Correction: WORKING. "Corrigir" (available to anyone with cart access, not just managers) listed the assignment's usage events with the most recent (the reconciliation just performed, "Reconciliação: -1") pre-selected and the adjustment field pre-filled with `-event.amount` (i.e. a one-tap "undo"). Confirming with the default +1 adjustment updated the cell back to "3/1" via `InventoryRepository.recordCorrection`, referencing the reconciliation event's id without modifying it.
+- Role gating confirmed both live and in `slot_editor_screen_test.dart`: "Repor stock"/"Reconciliar" require manager+ (Rules reserve `earliestKnownExpiry`/`batches` writes to manager+); "Corrigir"/"Registar consumo" are available to anyone with cart access (Rules let a non-manager change only `currentQuantity`).
+- No fatal `pt.icrash.app` exceptions in logcat.
+
+No new Firestore Rules were needed — `assignments`/`batches`/`usageEvents` write rules already covered these operations exactly as designed from the architecture-foundation phase.
+
 ## Phase 2, product catalogue and slot assignments — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, against local emulators seeded via `firestore-tests/seed_emulator.mjs`, signed in as the seeded `institutionAdmin`:
@@ -71,7 +82,7 @@ Three real bugs were found and fixed only because of this live run — none of t
 ## Phase 2 foundation — automated validation
 
 - `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 45 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable), `cart_detail_screen_test.dart` (4, empty state/drawer list/role-gated creation), `slot_editor_screen_test.dart` (7, unit grid render/merge/split/view-only-for-normal-user/assign-a-product/record-consumption/informational-message-for-a-normal-user), `products_screen_test.dart` (4, empty state/list/role-gated creation).
+- `flutter test --no-pub`: passed, 48 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable), `cart_detail_screen_test.dart` (4, empty state/drawer list/role-gated creation), `slot_editor_screen_test.dart` (10, unit grid render/merge/split/view-only-for-normal-user/assign-a-product/record-consumption/correct-an-event/reconcile-after-audit/role-gating-for-a-normal-user/informational-message-for-a-normal-user), `products_screen_test.dart` (4, empty state/list/role-gated creation).
 - `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
 - `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
 - Full Android emulator live walkthrough of the new screens: see the sections above.
