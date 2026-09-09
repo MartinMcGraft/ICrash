@@ -69,6 +69,20 @@ Status: complete and validated live on the Android emulator.
 - New/renamed tests: `institution_home_screen_test.dart` (5 tests: empty state, list+navigate to detail, FAB shown for manager + creates a cart, FAB hidden for a normal user, legacy app still reachable); `institution_selection_screen_test.dart` updated for the rename.
 - Live Android validation: seeded institution already had one cart from `seed_emulator.mjs`; the list rendered it correctly, "Novo carro" was visible (seeded user is `institutionAdmin`), and creating a cart updated the list live via the Firestore snapshot stream. See `docs/TEST_STATUS.md`.
 
+## Phase 2 continued — product catalogue and slot assignments
+
+Status: complete and validated live on the Android emulator.
+
+- New `lib/src/presentation/products/`: `products_screen.dart` (institution-wide catalogue, manager+ gated creation via a `canManage` flag passed in from the caller rather than re-fetched) and `create_product_dialog.dart` (name + optional unit/GTIN). `InstitutionHomeScreen` gained a "Produtos" `AppBar` icon next to "Membros", gated the same as the cart FAB (manager+).
+- New `lib/src/presentation/cart/assignment_dialog.dart` and `assignment_status_label.dart`: long-pressing a slot in `SlotEditorScreen` opens a mode-switching dialog (`_Mode.assign/view/consume/replenish`) built around the existing, already-complete `InventoryRepository`/`InventoryRules`. Assigning a product and replenishing stock are manager+ only (Rules reserve `earliestKnownExpiry`/`batches` writes to manager+); recording consumption is available to anyone who reached the screen, matching the Rules boundary that lets a non-manager change only `currentQuantity` on an assignment they can access.
+- `SlotEditorScreen` now also holds a `Stream<List<CartProductAssignment>>` and a one-shot `Future<List<Product>>`, both fed into each grid cell so an assigned slot shows the product's name and `current/target` quantity instead of just its row/column position.
+- No repository, Firestore, or Rules changes were needed — `InventoryRepository`/`FirestoreInventoryRepository`/`ProductRepository`/`FirestoreProductRepository` and the `products`/`assignments`/`batches` Rules were already complete from the architecture-foundation phase; this slice only added the presentation layer that exercises them.
+- `FakeProductRepository`/`FakeInventoryRepository` upgraded from unimplemented stubs to real in-memory behavior, mirroring the existing fakes' pattern.
+- New tests: `products_screen_test.dart` (4), 3 more in `slot_editor_screen_test.dart` (assign/consume/informational-message-for-a-normal-user).
+- Live Android validation: created a product, assigned it to a slot, replenished it with a lot number and expiry date, then recorded consumption — each step's effect (quantities, product name) visible instantly on the grid cell. See `docs/TEST_STATUS.md`.
+
+Not started: reconciliation-after-audit and correction flows (`InventoryRepository.reconcileAfterAudit`/`recordCorrection` exist but nothing in presentation calls them yet), GS1 Data Matrix/QR-driven product lookup (`ProductRepository.findByGtin` exists, unused), cart edit/duplicate/template, `responsibleUsers` management UI.
+
 ## Phase 2 continued — drawer/slot editor
 
 Status: complete and validated live on the Android emulator.
@@ -81,7 +95,7 @@ Status: complete and validated live on the Android emulator.
 - New tests: `cart_detail_screen_test.dart` (4), `slot_editor_screen_test.dart` (4).
 - Live Android validation: created a 3×2 drawer, merged two cells into one, split it back, merged again and saved, then confirmed the merged layout reloads correctly from Firestore after leaving and reopening the drawer. See `docs/TEST_STATUS.md`.
 
-Not started: everything else in workstreams C/D (product/assignment screens — stock per slot, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
+Product/assignment screens (workstream C) were the immediate next step after this and are covered in the section above.
 
 ## Phase 2 continued — membership management
 

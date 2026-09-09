@@ -1,6 +1,6 @@
 # Architecture
 
-Status: login → institution selection → per-institution cart list/creation → member management → drawer/slot editor live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
+Status: login → institution selection → per-institution cart list/creation → member management → drawer/slot editor → product catalogue/slot assignments live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -14,8 +14,12 @@ presentation/
   cart/cart_detail_screen.dart                cart's drawer list + creation
   cart/cart_status_label.dart, create_cart_dialog.dart, create_drawer_dialog.dart
   cart/slot_editor_screen.dart                merge/split grid editor for one drawer's slots
+  cart/assignment_dialog.dart                 per-slot: assign a product, replenish, consume
+  cart/assignment_status_label.dart
   members/members_screen.dart                 institution-admin-only: list/create/role/status
   members/add_member_dialog.dart, membership_labels.dart
+  products/products_screen.dart               institution-wide product catalogue
+  products/create_product_dialog.dart
         ↑
 domain/
   entities/        plain Dart classes, fromMap/toMap only, no Firebase imports
@@ -51,6 +55,8 @@ The FAB visibility check is a UX nicety, not the security boundary — `firestor
 
 `CartDetailScreen` lists a cart's drawers (`DrawerRepository.watchDrawers`) and, for manager+, a "Nova gaveta" FAB (`create_drawer_dialog.dart`: name + rows/columns). Tapping a drawer opens `SlotEditorScreen`, which edits its slot layout (spec sections 36-37): every cell starts as its own unit slot; selecting cells whose combined area exactly tiles a rectangle and tapping "Juntar" merges them into one bigger slot, and "Dividir" on a selected merged slot restores it to unit cells. Both are local edits until "Guardar" persists the whole set via `DrawerRepository.replaceSlots` in one call. The grid always fills the available screen area — a `LayoutBuilder` divides the actual on-screen width/height by the drawer's `columns`/`rows` to get each unit cell's size, so a single slot occupies the whole visible area, two slots split it in half, and so on, mirroring a real physical drawer rather than a fixed pixel grid. Cells are `Positioned` inside a `Stack` sized by `row/column/rowSpan/columnSpan × that computed cell size`, not a `GridView` — Flutter's built-in grid widgets don't support cell spanning. This tap-to-select-then-merge/split model is simpler and more testable than reproducing the legacy `grid_slots.dart` prototype's long-press-to-select/double-tap-to-split gesture model (untouched, still reachable from the legacy `HomeMenu`, and not reused here).
 
+Long-pressing any slot (tap is reserved for merge-selection) opens `assignment_dialog.dart`'s `showAssignmentDialog`, which reads a live `Stream<List<CartProductAssignment>>` and a one-shot product list `SlotEditorScreen` already holds. An unassigned slot shows either an "Atribuir produto" form (manager+: pick a product from `ProductsScreen`'s catalogue, set initial/target quantities, calls `InventoryRepository.createAssignment`) or a plain "ainda não tem produto atribuído" message for anyone else. An assigned slot shows the product name and `current/target` quantity plus "Registar consumo" (anyone with cart access — only changes `currentQuantity`, matching what non-managers may write per Rules) and, manager+ only, "Repor stock" (amount + lot number + expiry date via `showDatePicker`, calls `recordReplenishment`, which also touches `earliestKnownExpiry`/`batches` — manager+-only fields). `ProductsScreen`, reachable via a "Produtos" `AppBar` icon on `InstitutionHomeScreen` (manager+ gated the same way as the cart FAB), is the institution-wide catalogue those assignments draw from. As everywhere else in this app, the Rules are the real boundary; the dialog's mode-gating only avoids showing a control that would fail.
+
 ## Environment selection
 
 `lib/src/common/app_environment.dart` decides Auth/Firestore emulator vs cloud:
@@ -70,7 +76,7 @@ The FAB visibility check is a UX nicety, not the security boundary — `firestor
 
 ## What is intentionally not built yet
 
-- Everything in workstreams A-D beyond login/institution-selection/cart list+creation/member management/drawer+slot editing: no product/assignment screens (stock per slot), no cart edit/duplicate/template.
+- Everything in workstreams A-D beyond login/institution-selection/cart list+creation/member management/drawer+slot editing/product catalogue+assignments: no reconciliation-after-audit or correction flows in presentation (`InventoryRepository.reconcileAfterAudit`/`recordCorrection` exist, unused), no GS1-driven product lookup (`ProductRepository.findByGtin` exists, unused), no cart edit/duplicate/template, no `responsibleUsers` management UI.
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ScannerService`/`ReportService`/`NotificationService` are contracts only.
 - Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.

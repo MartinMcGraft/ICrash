@@ -1,6 +1,20 @@
 # Test status
 
-Updated: 2026-09-09
+Updated: 2026-09-10
+
+## Phase 2, product catalogue and slot assignments — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, against local emulators seeded via `firestore-tests/seed_emulator.mjs`, signed in as the seeded `institutionAdmin`:
+
+- Products screen: WORKING. Reachable via a new "Produtos" `AppBar` icon on the institution home screen (manager+ only). Empty state, then created "Adrenalina" via the "Novo produto" dialog; appeared in the list immediately.
+- Slot assignment: WORKING. Long-pressing an unassigned slot in the slot editor opens "Atribuir produto" (manager+); picking "Adrenalina" with quantities 0/1 created the assignment, and the slot's cell immediately showed "Adrenalina" and "0/1" (current/target) via the live `watchAssignments` stream.
+- Replenishment: WORKING. Long-pressing the assigned slot opened its detail dialog ("Atual: 0 Alvo: 1", status chip "OK"); "Repor stock" (manager+) with quantity 5, lot "LOTE123" and an expiry date (via `showDatePicker`) updated the cell to "5/1" and recorded a `Batch` + `usageEvents` doc through `InventoryRepository.recordReplenishment`'s transaction.
+- Consumption: WORKING. "Registar consumo" with quantity 2 updated the cell to "3/1", confirming `recordConsumption`'s transaction decremented `currentQuantity` without touching the batch just recorded.
+- No fatal `pt.icrash.app` exceptions in logcat across the whole walkthrough.
+
+No new Firestore Rules were needed — `products`/`assignments`/`batches` were already institution-scoped and role-scoped from the architecture-foundation phase (manager+ for `create`/replenishment-shaped updates, any cart-accessible member for consumption-shaped updates).
+
+**Live-testing note**: a `TextFormField`'s actual tap target in this Material theme extends beyond its visible text line to include its label/helper-text band, so two vertically-stacked fields' tap targets can be much closer together than they look in a screenshot — a tap aimed at the second field's visible text row can still land inside the first field's (taller) tap target. Confirmed via `uiautomator dump`'s exact `EditText` bounds rather than guessing from screenshot pixel rows.
 
 ## Phase 2, drawer/slot editor — Android emulator live validation
 
@@ -57,7 +71,7 @@ Three real bugs were found and fixed only because of this live run — none of t
 ## Phase 2 foundation — automated validation
 
 - `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 38 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable), `cart_detail_screen_test.dart` (4, empty state/drawer list/role-gated creation), `slot_editor_screen_test.dart` (4, unit grid render/merge/split/view-only-for-normal-user).
+- `flutter test --no-pub`: passed, 45 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable), `cart_detail_screen_test.dart` (4, empty state/drawer list/role-gated creation), `slot_editor_screen_test.dart` (7, unit grid render/merge/split/view-only-for-normal-user/assign-a-product/record-consumption/informational-message-for-a-normal-user), `products_screen_test.dart` (4, empty state/list/role-gated creation).
 - `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
 - `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
 - Full Android emulator live walkthrough of the new screens: see the sections above.

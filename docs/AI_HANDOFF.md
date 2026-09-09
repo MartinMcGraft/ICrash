@@ -6,16 +6,24 @@ Updated: 2026-09-09
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this continuation: `db03d70` (`docs: record membership management status, live test results and handoff`)
+- Last published commit before this continuation: `6b3b788` (`docs: record drawer/slot editor status, live test results and handoff`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
 ## Completed work
 
-Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added four V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, (3) institution-admin membership management (create/role-change/enable-disable), and (4) a per-cart drawer list with a merge/split slot editor — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
+Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added five V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, (3) institution-admin membership management (create/role-change/enable-disable), (4) a per-cart drawer list with a merge/split slot editor, and (5) a product catalogue with per-slot assign/replenish/consume — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
 
-### Drawer/slot editor sub-phase (most recent)
+### Product catalogue and slot assignments sub-phase (most recent)
+
+- New `lib/src/presentation/products/`: `products_screen.dart`, `create_product_dialog.dart`. `InstitutionHomeScreen` gained a "Produtos" `AppBar` icon (manager+ gated).
+- New `lib/src/presentation/cart/assignment_dialog.dart`, `assignment_status_label.dart`: long-pressing a slot in `SlotEditorScreen` opens a dialog to assign a product (manager+), replenish stock with a lot/expiry (manager+), or record consumption (anyone with cart access) — built entirely on the already-complete `InventoryRepository`/`InventoryRules`, no repository or Rules changes needed.
+- `SlotEditorScreen` cells now show the assigned product's name and `current/target` quantity, fed by a `Stream<List<CartProductAssignment>>` plus a one-shot product list.
+- `FakeProductRepository`/`FakeInventoryRepository` upgraded from unimplemented stubs to real in-memory behavior.
+- Live-validated on Android: created a product, assigned it to a slot, replenished it (lot number + expiry date picker), then recorded consumption — quantities updated correctly at each step, no fatal exceptions. One live-testing lesson (not a code bug): a `TextFormField`'s tap target extends beyond its visible text line into its label/helper-text band, so two stacked fields' tap targets sit closer together than screenshots suggest — confirmed via exact `uiautomator` `EditText` bounds. See `docs/TEST_STATUS.md`.
+
+### Drawer/slot editor sub-phase
 
 - `CartDetailScreen` rewritten from a static placeholder to a real drawer list (`DrawerRepository.watchDrawers`) with a manager-gated "Nova gaveta" FAB (`create_drawer_dialog.dart`: name + rows/columns 1-12).
 - New `lib/src/presentation/cart/slot_editor_screen.dart`: renders a drawer's slots as a `Stack` of `Positioned` cells (not a `GridView` — Flutter's grid widgets don't support cell spanning). The grid always fills the available screen area — a `LayoutBuilder` divides the actual width/height by `columns`/`rows`, so one slot fills the whole visible area, two slots split it in half, etc., matching a real physical drawer rather than a fixed pixel grid (this was corrected mid-session after the first version used a fixed cell size — see below). A drawer with no saved slots starts as one unit cell per grid position. Tap-to-select cells whose combined area exactly tiles a rectangle, then "Juntar" merges them; "Dividir" on a selected merged slot restores unit cells. "Guardar" persists everything via `DrawerRepository.replaceSlots` in one call. Manager+ only, matching the Rules boundary on `drawers`/`slots` writes.
@@ -42,7 +50,17 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 
 ## Exact files changed this session
 
-Drawer/slot editor (this sub-phase, most recent):
+Product catalogue and slot assignments (this sub-phase, most recent):
+- `03_Implementacao/app1/lib/src/presentation/products/products_screen.dart`, `create_product_dialog.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/cart/assignment_dialog.dart`, `assignment_status_label.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/cart/slot_editor_screen.dart` — added `_assignments` stream, `_products` future, long-press wiring, and per-cell product/quantity display.
+- `03_Implementacao/app1/lib/src/presentation/dashboard/institution_home_screen.dart` — added the "Produtos" `AppBar` icon.
+- `03_Implementacao/app1/test/fakes/fake_repositories.dart` — `FakeProductRepository`/`FakeInventoryRepository` gained real in-memory behavior.
+- `03_Implementacao/app1/test/presentation/products_screen_test.dart` — new (4 tests). `slot_editor_screen_test.dart` gained 3 tests (assign/consume/informational-message).
+- No repository, Firestore implementation, or Rules changes were needed.
+- `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/TEST_STATUS.md` — updated.
+
+Drawer/slot editor (prior sub-phase):
 - `03_Implementacao/app1/lib/src/presentation/cart/cart_detail_screen.dart` — rewritten from a static placeholder (`StatelessWidget`) to a `StatefulWidget` with a real drawer list and manager-gated "Nova gaveta" FAB.
 - `03_Implementacao/app1/lib/src/presentation/cart/create_drawer_dialog.dart` — new; name + rows/columns (1-12) dialog.
 - `03_Implementacao/app1/lib/src/presentation/cart/slot_editor_screen.dart` — new; the merge/split grid editor described above.
@@ -137,24 +155,27 @@ None.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 38/38. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Four full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, then the drawer/slot editor — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
+`flutter analyze` clean. `flutter test`: 45/45. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Five full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, drawer/slot editor, then product catalogue/slot assignments — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
 
 ## Android emulator tests already performed
 
-This session, on `ICrash_API_36`, across four builds:
+This session, on `ICrash_API_36`, across five builds:
 
 1. Login slice: fresh install → login screen renders → validation errors on empty submit → successful sign-in with the seeded test account → institution list shows "Hospital de Teste" → tapping it opens the institution home → legacy app reachable → back navigation returns correctly.
 2. Cart list/creation slice (separate emulator restart — emulator data does not persist, re-seed with `npm --prefix firestore-tests run seed` after every `emulators:start`): institution home shows the seeded "Carro de Emergência 1"; "Novo carro" FAB visible for the seeded `institutionAdmin`; created "Carro2" via the dialog, list updated live with no manual refresh; opened its detail screen; opened the legacy app via the new `AppBar` icon.
 3. Membership management slice (same emulator instance as #2, re-seeded): "Membros" icon visible for the `institutionAdmin`; members list showed the admin's own row with no action menu; "Novo membro" created a new Auth account + `memberships`/`memberIndex` docs, appearing instantly in the list; "Mudar cargo" changed the new member's role live; "Desativar" toggled their status live. Admin's own session was never disrupted by creating the other account.
 4. Drawer/slot editor slice (same running app session, no restart needed): opened "Carro de Emergência 1" → detail screen showed the empty-drawers state → created "GavetaPrincipal" (3×2) → opened it → slot editor rendered 6 unit cells → selected two and merged them into one wide slot → split it back to units → merged again and saved ("Gaveta guardada." snackbar) → left and reopened the drawer, confirming the merged layout reloaded correctly from Firestore.
+5. Product catalogue/slot assignments slice (same session): "Produtos" icon → created "Adrenalina" → back to the drawer → long-pressed the merged slot → "Atribuir produto" with quantities 0/1 → cell showed "Adrenalina 0/1" live → long-pressed again → "Repor stock" with quantity 5, lot "LOTE123", expiry 16/09/2026 → cell showed "5/1" → "Registar consumo" with quantity 2 → cell showed "3/1".
 
 No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
 
-**Lesson from this sub-phase's live testing**: `adb shell uiautomator dump <path>` must be run with `MSYS_NO_PATHCONV=1` in this Git-Bash environment, exactly like `adb pull` already needed — otherwise the `/sdcard/...` argument gets silently mangled into a Windows-style path, the dump fails on-device, and a subsequent `adb pull` of the same path silently re-fetches a stale file from an earlier successful dump instead of erroring. This produced a very convincing false "bug" (a button appearing to render inconsistently) that cost significant time to debug before the stale-dump cause was found via `adb logcat`. Always set `MSYS_NO_PATHCONV=1` on both the `uiautomator dump` and the `adb pull` call, and treat a suspicious/unchanging dump result as a reason to check logcat for a dump failure before trusting it.
+**Lesson from the drawer/slot-editor sub-phase's live testing**: `adb shell uiautomator dump <path>` must be run with `MSYS_NO_PATHCONV=1` in this Git-Bash environment, exactly like `adb pull` already needed — otherwise the `/sdcard/...` argument gets silently mangled into a Windows-style path, the dump fails on-device, and a subsequent `adb pull` of the same path silently re-fetches a stale file from an earlier successful dump instead of erroring. This produced a very convincing false "bug" (a button appearing to render inconsistently) that cost significant time to debug before the stale-dump cause was found via `adb logcat`. Always set `MSYS_NO_PATHCONV=1` on both the `uiautomator dump` and the `adb pull` call, and treat a suspicious/unchanging dump result as a reason to check logcat for a dump failure before trusting it.
+
+**Lesson from the product/assignment sub-phase's live testing**: a `TextFormField`'s actual tap target extends beyond its visible text line to include its label/helper-text band, so two vertically-stacked fields can have tap targets much closer together than a screenshot suggests — a tap aimed at what looks like the second field's row can still land inside the first field's (taller) target. When a form field seems to be "eating" taps meant for the field below it, get the exact `EditText` bounds via `uiautomator dump` rather than estimating from the screenshot.
 
 ## Known bugs
 
-None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management or drawer/slot-editor sub-phases (the stylus-handwriting overlay quirk in the latter is an AVD/OS behavior, not an app bug — see `docs/TEST_STATUS.md`).
+None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management, drawer/slot-editor, or product/assignment sub-phases (the stylus-handwriting overlay quirk and the TextFormField tap-target overlap noted above are AVD/OS/Material-theme behavior, not app bugs — see `docs/TEST_STATUS.md`).
 
 ## Known platform limitations
 
@@ -192,11 +213,12 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-Login, institution selection, cart list/creation, membership management, and the drawer/slot editor are done. Continue workstream C/D (spec item 5). Sensible next slice, in order:
+Login, institution selection, cart list/creation, membership management, the drawer/slot editor, and product catalogue/slot assignments (assign/replenish/consume) are all done. Sensible next slice, in order:
 
-1. **Product/assignment screens** (workstream C) — stock per cart/slot (`CartProductAssignment`, `Batch`). The drawer/slot editor now exists, so there's somewhere to assign a product to; `ProductRepository`/`InventoryRepository` already exist (check `lib/src/domain/repositories/` for exact method signatures before designing the screen). This is also the first screen that will exercise `InventoryRules`' conservative-expiry logic end-to-end through the UI, not just via `test/domain/inventory_rules_test.dart`.
-2. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
-3. `responsibleUsers` management (spec section 17) — assigning a normal user to a specific cart so they can see it without being a manager; no UI exists yet, `CartResponsibleUser` entity and the Rules already do.
+1. **Reconciliation-after-audit and correction flows** — `InventoryRepository.reconcileAfterAudit`/`recordCorrection` exist and are fully implemented, but nothing in presentation calls them. Reconciliation replaces the confirmed batch set and recomputes `currentQuantity`/`earliestKnownExpiry` from scratch (spec section 27); correction appends a compensating `usageEvents` doc referencing the event it corrects (spec section 44, never edits the original). Natural entry point: extend `assignment_dialog.dart` with two more modes, following the same pattern as `_Mode.consume`/`_Mode.replenish`.
+2. `responsibleUsers` management (spec section 17) — assigning a normal user to a specific cart so they can see it without being a manager; no UI exists yet, `CartResponsibleUser` entity and the Rules already do.
+3. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
+4. GS1 Data Matrix/QR-driven product lookup — `ProductRepository.findByGtin` exists and is unused; wiring it to the legacy `ScannerService`/camera code (untouched so far) would let replenishment pre-fill from a scanned batch instead of manual entry.
 
 Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap (FAB vs. bottom bars, etc.) since widget tests don't catch that — see the cart-list sub-phase's bug above.
 
