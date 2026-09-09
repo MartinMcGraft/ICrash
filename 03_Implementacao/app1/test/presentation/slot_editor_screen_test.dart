@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/entities/usage_event.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/presentation/cart/slot_editor_screen.dart';
 
@@ -150,6 +152,114 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(inventory.assignments.single.currentQuantity, 3);
+  });
+
+  testWidgets('corrects a usage event on an assigned slot', (tester) async {
+    const assignment = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 10,
+    );
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final inventory = FakeInventoryRepository(assignments: [assignment]);
+    final usage = FakeUsageRepository(events: const [
+      UsageEvent(
+        id: 'event-1',
+        institutionId: 'inst-a',
+        actorUid: 'me',
+        cartId: 'cart-1',
+        assignmentId: 'assignment-1',
+        productId: 'p1',
+        type: UsageEventType.consumption,
+        amount: -2,
+      ),
+    ]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'me')),
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+      usage: usage,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Adrenalina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Corrigir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments.single.currentQuantity, 5);
+    expect(inventory.lastCorrectedEventId, 'event-1');
+  });
+
+  testWidgets('reconciles stock and batches after an audit', (tester) async {
+    const assignment = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 5,
+      targetQuantity: 10,
+    );
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final inventory = FakeInventoryRepository(assignments: [assignment]);
+    inventory.batchesByAssignment['assignment-1'] = [
+      Batch(id: 'batch-1', assignmentId: 'assignment-1', lotNumber: 'L1', expiryDate: DateTime(2027, 1, 1)),
+    ];
+    await tester.pumpWidget(_wrap(buildTestServices(
+      auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'me')),
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Adrenalina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Reconciliar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lote L1'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).first, '4');
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments.single.currentQuantity, 4);
+    expect(inventory.batchesByAssignment['assignment-1'], hasLength(1));
+  });
+
+  testWidgets('hides manager-only actions but keeps consumption/correction for a normal user', (tester) async {
+    const assignment = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 10,
+    );
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(
+        myMembership: const Membership(uid: 'me', institutionId: 'inst-a', role: Role.user, status: MembershipStatus.active),
+      ),
+      products: FakeProductRepository(products: [product]),
+      inventory: FakeInventoryRepository(assignments: [assignment]),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Adrenalina'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Repor stock'), findsNothing);
+    expect(find.text('Reconciliar'), findsNothing);
+    expect(find.text('Corrigir'), findsOneWidget);
+    expect(find.text('Registar consumo'), findsOneWidget);
   });
 
   testWidgets('a normal user long-pressing an empty slot only sees an informational message', (tester) async {

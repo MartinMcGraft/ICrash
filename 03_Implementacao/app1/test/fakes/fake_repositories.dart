@@ -10,6 +10,7 @@ import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
+import 'package:icrash_app/src/domain/entities/usage_event.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
@@ -258,7 +259,9 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
   final List<CartProductAssignment> assignments;
   final Map<String, List<Batch>> batchesByAssignment = {};
   CartProductAssignment? lastCreated;
+  String? lastCorrectedEventId;
   int _nextId = 1;
+  int _nextBatchId = 1;
   final _controller = StreamController<List<CartProductAssignment>>.broadcast();
 
   void _emit() => _controller.add(List.unmodifiable(assignments));
@@ -346,12 +349,86 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
       earliestKnownExpiry: current.earliestKnownExpiry,
       status: current.status,
     );
-    (batchesByAssignment[assignmentId] ??= []).add(batch);
+    final storedBatch = Batch(
+      id: 'batch-${_nextBatchId++}',
+      assignmentId: batch.assignmentId,
+      lotNumber: batch.lotNumber,
+      expiryDate: batch.expiryDate,
+      quantity: batch.quantity,
+      gtin: batch.gtin,
+      source: batch.source,
+    );
+    (batchesByAssignment[assignmentId] ??= []).add(storedBatch);
+    _emit();
+  }
+
+  @override
+  Future<void> reconcileAfterAudit({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required int confirmedQuantity,
+    required List<Batch> confirmedBatches,
+    required String actorUid,
+  }) async {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    final current = assignments[index];
+    assignments[index] = CartProductAssignment(
+      id: current.id,
+      cartId: current.cartId,
+      slotId: current.slotId,
+      productId: current.productId,
+      currentQuantity: confirmedQuantity,
+      targetQuantity: current.targetQuantity,
+      minimumQuantity: current.minimumQuantity,
+      earliestKnownExpiry: current.earliestKnownExpiry,
+      status: current.status,
+    );
+    batchesByAssignment[assignmentId] = List.of(confirmedBatches);
+    _emit();
+  }
+
+  @override
+  Future<void> recordCorrection({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required int amount,
+    required String correctsEventId,
+    required String actorUid,
+  }) async {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    final current = assignments[index];
+    assignments[index] = CartProductAssignment(
+      id: current.id,
+      cartId: current.cartId,
+      slotId: current.slotId,
+      productId: current.productId,
+      currentQuantity: current.currentQuantity + amount,
+      targetQuantity: current.targetQuantity,
+      minimumQuantity: current.minimumQuantity,
+      earliestKnownExpiry: current.earliestKnownExpiry,
+      status: current.status,
+    );
+    lastCorrectedEventId = correctsEventId;
     _emit();
   }
 }
 
-class FakeUsageRepository extends UnimplementedFake implements UsageRepository {}
+class FakeUsageRepository extends UnimplementedFake implements UsageRepository {
+  FakeUsageRepository({List<UsageEvent>? events}) : events = events ?? [];
+
+  final List<UsageEvent> events;
+
+  @override
+  Stream<List<UsageEvent>> watchRecentEvents(String institutionId, {int limit = 50}) => Stream.value(List.unmodifiable(events));
+
+  @override
+  Stream<List<UsageEvent>> watchEventsForAssignment(String institutionId, String assignmentId) =>
+      Stream.value(List.unmodifiable(events.where((e) => e.assignmentId == assignmentId).toList()));
+}
 
 class FakeAuditRepository extends UnimplementedFake implements AuditRepository {}
 

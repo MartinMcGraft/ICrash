@@ -6,9 +6,10 @@ import '../../domain/entities/batch.dart';
 import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/slot.dart';
+import '../../domain/entities/usage_event.dart';
 import 'assignment_status_label.dart';
 
-enum _Mode { view, assign, consume, replenish }
+enum _Mode { view, assign, consume, replenish, reconcile, correct }
 
 /// One slot's product assignment: shows what is currently assigned (if
 /// anything) and lets the user record daily consumption. Assigning a new
@@ -72,12 +73,22 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
   final _lotController = TextEditingController();
   DateTime? _expiryDate;
 
+  List<Batch>? _batches;
+  Set<String> _confirmedBatchIds = {};
+  final _confirmedQuantityController = TextEditingController();
+
+  List<UsageEvent>? _events;
+  UsageEvent? _selectedEventToCorrect;
+  final _correctionAmountController = TextEditingController();
+
   @override
   void dispose() {
     _targetController.dispose();
     _initialController.dispose();
     _amountController.dispose();
     _lotController.dispose();
+    _confirmedQuantityController.dispose();
+    _correctionAmountController.dispose();
     super.dispose();
   }
 
@@ -172,6 +183,85 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Não foi possível repor o stock. Tente novamente.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _enterReconcileMode() async {
+    final assignment = widget.assignment!;
+    final services = AppServicesScope.of(context);
+    final batches = await services.inventory.watchBatches(widget.institutionId, widget.cartId, assignment.id).first;
+    if (!mounted) return;
+    setState(() {
+      _batches = batches;
+      _confirmedBatchIds = batches.map((b) => b.id).toSet();
+      _confirmedQuantityController.text = '${assignment.currentQuantity}';
+      _mode = _Mode.reconcile;
+    });
+  }
+
+  Future<void> _submitReconciliation() async {
+    if (!_formKey.currentState!.validate()) return;
+    final assignment = widget.assignment!;
+    final confirmedQuantity = int.parse(_confirmedQuantityController.text);
+    final confirmedBatches = _batches!.where((b) => _confirmedBatchIds.contains(b.id)).toList();
+    setState(() => _saving = true);
+    final services = AppServicesScope.of(context);
+    try {
+      await services.inventory.reconcileAfterAudit(
+        institutionId: widget.institutionId,
+        cartId: widget.cartId,
+        assignmentId: assignment.id,
+        confirmedQuantity: confirmedQuantity,
+        confirmedBatches: confirmedBatches,
+        actorUid: services.auth.currentUser!.uid,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } on RepositoryFailure catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível reconciliar. Tente novamente.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _enterCorrectMode() async {
+    final assignment = widget.assignment!;
+    final services = AppServicesScope.of(context);
+    final events = await services.usage.watchEventsForAssignment(widget.institutionId, assignment.id).first;
+    if (!mounted) return;
+    setState(() {
+      _events = events;
+      _selectedEventToCorrect = events.isEmpty ? null : events.first;
+      _correctionAmountController.text = events.isEmpty ? '' : '${-events.first.amount}';
+      _mode = _Mode.correct;
+    });
+  }
+
+  Future<void> _submitCorrection() async {
+    if (!_formKey.currentState!.validate() || _selectedEventToCorrect == null) return;
+    final assignment = widget.assignment!;
+    final amount = int.parse(_correctionAmountController.text);
+    setState(() => _saving = true);
+    final services = AppServicesScope.of(context);
+    try {
+      await services.inventory.recordCorrection(
+        institutionId: widget.institutionId,
+        cartId: widget.cartId,
+        assignmentId: assignment.id,
+        amount: amount,
+        correctsEventId: _selectedEventToCorrect!.id,
+        actorUid: services.auth.currentUser!.uid,
+      );
+      if (mounted) Navigator.of(context).pop();
+    } on RepositoryFailure catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível corrigir. Tente novamente.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -300,6 +390,102 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           ),
         );
 
+      case _Mode.reconcile:
+        final batches = _batches ?? const <Batch>[];
+        return AlertDialog(
+          title: const Text('Reconciliar (auditoria)'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: _confirmedQuantityController,
+                    decoration: const InputDecoration(labelText: 'Quantidade confirmada fisicamente'),
+                    keyboardType: TextInputType.number,
+                    validator: _validateNonNegativeInt,
+                  ),
+                  const SizedBox(height: 12),
+                  if (batches.isEmpty)
+                    const Text('Sem lotes registados; a reconciliação fica sem lotes confirmados.')
+                  else ...[
+                    const Text('Lotes confirmados como fisicamente presentes:'),
+                    for (final batch in batches)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _confirmedBatchIds.contains(batch.id),
+                        title: Text('Lote ${batch.lotNumber}'),
+                        subtitle: Text('Validade: ${_formatDate(batch.expiryDate)}'),
+                        onChanged: (checked) => setState(() {
+                          if (checked ?? false) {
+                            _confirmedBatchIds.add(batch.id);
+                          } else {
+                            _confirmedBatchIds.remove(batch.id);
+                          }
+                        }),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => setState(() => _mode = _Mode.view), child: const Text('Voltar')),
+            FilledButton(onPressed: _saving ? null : _submitReconciliation, child: const Text('Confirmar')),
+          ],
+        );
+
+      case _Mode.correct:
+        final events = _events ?? const <UsageEvent>[];
+        return AlertDialog(
+          title: const Text('Corrigir evento'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (events.isEmpty)
+                    const Text('Ainda não existem eventos para corrigir.')
+                  else
+                    DropdownButtonFormField<UsageEvent>(
+                      initialValue: _selectedEventToCorrect,
+                      decoration: const InputDecoration(labelText: 'Evento a corrigir'),
+                      items: [
+                        for (final event in events)
+                          DropdownMenuItem(
+                            value: event,
+                            child: Text('${usageEventTypeLabel(event.type)}: ${event.amount > 0 ? '+' : ''}${event.amount}'),
+                          ),
+                      ],
+                      onChanged: (value) => setState(() {
+                        _selectedEventToCorrect = value;
+                        _correctionAmountController.text = value == null ? '' : '${-value.amount}';
+                      }),
+                      validator: (value) => value == null ? 'Escolha um evento' : null,
+                    ),
+                  TextFormField(
+                    controller: _correctionAmountController,
+                    decoration: const InputDecoration(labelText: 'Ajuste (positivo ou negativo)'),
+                    keyboardType: const TextInputType.numberWithOptions(signed: true),
+                    validator: _validateNonZeroInt,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => setState(() => _mode = _Mode.view), child: const Text('Voltar')),
+            FilledButton(
+              onPressed: (_saving || events.isEmpty) ? null : _submitCorrection,
+              child: const Text('Confirmar'),
+            ),
+          ],
+        );
+
       case _Mode.view:
         final product = _productFor(assignment!.productId);
         return AlertDialog(
@@ -315,11 +501,14 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Fechar')),
-            if (widget.canManage)
+            TextButton(onPressed: _enterCorrectMode, child: const Text('Corrigir')),
+            if (widget.canManage) ...[
               TextButton(
                 onPressed: () => setState(() => _mode = _Mode.replenish),
                 child: const Text('Repor stock'),
               ),
+              TextButton(onPressed: _enterReconcileMode, child: const Text('Reconciliar')),
+            ],
             FilledButton(
               onPressed: () => setState(() => _mode = _Mode.consume),
               child: const Text('Registar consumo'),
@@ -339,6 +528,12 @@ String? _validatePositiveInt(String? value) {
 String? _validateNonNegativeInt(String? value) {
   final parsed = int.tryParse(value ?? '');
   if (parsed == null || parsed < 0) return 'Indique um número válido';
+  return null;
+}
+
+String? _validateNonZeroInt(String? value) {
+  final parsed = int.tryParse(value ?? '');
+  if (parsed == null || parsed == 0) return 'Indique um ajuste diferente de zero';
   return null;
 }
 
