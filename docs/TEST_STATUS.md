@@ -25,3 +25,11 @@ Device: `ICrash_API_36`, Android 16 / API 36.
 ## Known gaps
 
 Physical-camera QR/GS1 validation, backend flows, Firebase, permissions, offline/reconnection, security Rules and V2 domain scenarios remain untested. Scanner abstractions and mock GS1 inputs belong to later phases. iOS/macOS cannot be claimed from Windows. The complete screen classification is deferred until the minimum Firebase replacement operates, as required by the specification.
+
+## Phase 1 local Firebase foundation
+
+- Firebase CLI 15.29.0 and FlutterFire CLI 1.4.1 version checks passed.
+- `firebase emulators:exec --only auth,firestore --project demo-icrash-v2` passed.
+- Auth and Firestore started without cloud authentication and shut down after the test command.
+- Initial Firestore port 8080 was unavailable because an existing Apache service owns it; configuration moved to the free port 8081 and then passed.
+- No Flutter-to-emulator integration or Rules behavior test exists yet; these remain Phase 1/2 work.

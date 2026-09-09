@@ -20,7 +20,7 @@ Phase 0 is complete and published. Analysis, tests, Android/Web/Windows builds a
 
 ## Firebase and V2 state
 
-Firebase configuration, projects, environments, collections, domain models, repositories, Rules and migrations have not been implemented. No cloud resource, billing, Storage or Functions were enabled. Before creating the real Firestore database, ask the user to approve the irreversible location. Owner identities are also still required.
+Phase 1 local foundation exists: `.firebaserc` selects the non-cloud `demo-icrash-v2`; `firebase.json` configures Auth `127.0.0.1:9099`, Firestore `127.0.0.1:8081` and UI `127.0.0.1:4000`; the local suite startup test passed. `firestore.rules` denies all access until Phase 2 security work, and the indexes file is empty. No cloud project, application configuration, collections, domain models, repositories or migrations exist. No billing, Storage or Functions were enabled. Before creating the real Firestore database, ask the user to approve the irreversible location. Owner identities are also still required.
 
 V2 architecture decisions already accepted by the specification: layered repositories; institution-scoped access; Cloud Firestore for the prototype; offline support; aggregate `currentQuantity` independent from known batch totals; no FEFO/FIFO inference; conservative expiry until physical reconciliation; no identifiable patient information.
 
@@ -41,6 +41,10 @@ Phase 0 on the true repository: analyzer clean; widget test passed; Android debu
 - Android SDK: `C:\Android\Sdk`
 - Emulator: `ICrash_API_36` / usually `emulator-5554`
 - Required Java workaround: `JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Flutter/socket-temp`
+- Firebase CLI: `C:\Users\Pedro Jorge\AppData\Roaming\npm\firebase.cmd` (15.29.0)
+- FlutterFire CLI: `C:\Users\Pedro Jorge\AppData\Local\Pub\Cache\bin\flutterfire.bat` (1.4.1)
+
+Firebase CLI currently has no authorized account. An official Firebase login page has been handed to the user. Continue authentication only after the user completes the Google sign-in. Do not request or store passwords. Port 8080 remains owned by an unrelated Apache service, so Firestore emulator uses 8081.
 
 ## Do not redo
 

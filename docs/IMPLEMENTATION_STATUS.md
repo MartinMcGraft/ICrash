@@ -16,6 +16,16 @@ Status: complete and published.
 - The virtual camera could not validate a real code and produced CameraX availability warnings; physical-camera validation remains pending.
 - Stable modernization commit: `ef09179a7bbbb400c4d7cea743860693164d11da`, published to `origin/DEV-Pedro`.
 
-Phase 1 is next. Phase 2 and workstreams A–J have not started. No Firebase resources exist.
+## Phase 1 — Firebase foundation
+
+Status: in progress.
+
+- Firebase CLI 15.29.0 and FlutterFire CLI 1.4.1 installed; FlutterFire added to the user PATH.
+- Safe local project `demo-icrash-v2` configured with Auth on 9099, Firestore on 8081 and Emulator UI on 4000.
+- Auth and Firestore emulators started and stopped successfully. Firestore begins with deny-all Rules until Phase 2 implements and tests authorization.
+- No Google account is authenticated and no cloud Firebase resource exists yet. The browser login is waiting for user completion.
+- Real Firestore location remains an explicit user decision before database creation.
+
+Phase 2 and workstreams A–J have not started.
 
 See `MODERNIZATION_2026.md` for the baseline modernization and `ICRASH_V2_SPECIFICATION.md` for the authoritative V2 scope.

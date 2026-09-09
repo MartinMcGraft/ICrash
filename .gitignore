@@ -1,0 +1,13 @@
+# Firebase local state and logs
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-data/
+
+# Local environment files and credentials
+.env
+.env.*
+*.pem
+*.key
+*service-account*.json
