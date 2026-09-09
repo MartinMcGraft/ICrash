@@ -1,11 +1,74 @@
 # Firebase model
-Status: requirements only; no Firebase implementation, collections or rules created.
-Latest specification explicitly selects Authentication and Cloud Firestore, replacing the earlier relational preference. Separate local Auth/Firestore emulators from cloud demo; test configuration must never target demo data. No billing, Storage or deployed Functions for initial prototype.
-Hierarchy: institution → cart → drawer → slot, with separate products, cart-product assignments, batches and immutable events. One product occupies at most one slot per cart.
-currentQuantity is the authoritative operational aggregate. Daily consumption changes it and creates immutable events; batches and earliestKnownExpiry remain unchanged. Replenishment can lower earliestKnownExpiry. Only physical reconciliation may establish absence of an earlier lot. Do not assume aggregate equals batch sum between audits.
-Rules must enforce institution isolation, membership, cart assignment, roles, protected audit history and prevention of privilege escalation. Offline/concurrent writes and aggregate bounds require explicit design and emulator tests in Phase 2.
-Real Firestore location awaits user confirmation. No security guarantees claimed before implementation/testing.
 
-Cloud demo/development project: visible name `I-Crash`, ID `i-crash-pt-2026`, Spark plan. Its default Firestore database is Standard/Native in the immutable European multi-region `eur3`; it remains in Firebase's initial closed-rules state. The repository distinguishes this project from the local-only `demo-icrash-v2` emulator ID; do not make automated tests target the cloud project.
+Status: Phase 2 collection model and Firestore Rules implemented and tested against the local emulator. No cloud data exists; nothing has been deployed to `i-crash-pt-2026`.
 
-Local emulator project ID: `demo-icrash-v2`. Auth listens on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081` (port 8080 is occupied by an existing local Apache service), and Emulator UI on `127.0.0.1:4000`. A locked deny-all Rules baseline is used until Phase 2 adds institution-scoped rules and automated tests.
+Authentication and Cloud Firestore are the only Firebase products in use. Local Auth/Firestore emulators are configured separately from the `i-crash-pt-2026` cloud project — see "Environments" below. No billing, Storage or deployed Functions exist.
+
+## Collection layout
+
+```
+platformAdmins/{uid}                                        marker doc; platform-wide super admin
+institutions/{institutionId}
+  memberships/{uid}                                          role + status, one per member
+  products/{productId}                                       institution-scoped catalogue
+  carts/{cartId}
+    responsibleUsers/{uid}                                   explicit cart access grant
+    drawers/{drawerId}
+      slots/{slotId}                                         row/column/rowSpan/columnSpan
+    assignments/{assignmentId}                                CartProductAssignment: slotId, productId,
+                                                               currentQuantity, targetQuantity,
+                                                               minimumQuantity?, earliestKnownExpiry?, status
+      batches/{batchId}                                       lotNumber, quantity?, expiryDate, gtin?,
+                                                               source, createdBy
+  usageEvents/{eventId}                                       immutable: consumption/replenishment/
+                                                               correction/auditReconciliation
+  auditEvents/{eventId}                                       immutable: generic admin/structural trail
+```
+
+Institution is the tenancy root: every other collection is nested under `institutions/{institutionId}`, and every Firestore Rule keys off that id. A user's role lives in exactly one place per institution — `memberships/{uid}` — never duplicated elsewhere, so there is one place to check for both application code and Rules.
+
+`carts/{cartId}/responsibleUsers/{uid}` is a doc-per-uid collection rather than an array field on the cart, precisely so a future move to multiple simultaneous responsible users (spec section 17, open decision #3) needs no schema change — only relaxing who may add additional documents.
+
+Dart entities mirroring this layout live in `03_Implementacao/app1/lib/src/domain/entities/`; Firestore reads/writes happen only in `03_Implementacao/app1/lib/src/data/firebase/`.
+
+## The aggregate/batch split (spec sections 22-28, 58-59)
+
+`currentQuantity` on a `CartProductAssignment` is the authoritative, immediately-updated operational stock number. `earliestKnownExpiry` is the conservative nearest known expiry across every batch ever recorded that has not been physically confirmed absent.
+
+Rules, enforced in `lib/src/domain/inventory_rules.dart` and covered by `test/domain/inventory_rules_test.dart`:
+
+- **Daily consumption** (`InventoryRepository.recordConsumption`) only ever decrements `currentQuantity` and appends an immutable `usageEvents` doc. It never reads, selects, or decrements a `Batch`, and never touches `earliestKnownExpiry`. No FEFO/FIFO inference exists anywhere in this path.
+- **Replenishment** (`recordReplenishment`) increments `currentQuantity`, stores a new `Batch`, and updates `earliestKnownExpiry` only if the new batch expires *sooner* than the current value — it can only move earlier, never later, and never removes an existing batch's influence.
+- **Reconciliation** (`reconcileAfterAudit`) is the only operation that may replace the batch set, and it recomputes both `currentQuantity` and `earliestKnownExpiry` strictly from the physically confirmed batches passed in.
+- **Correction** (`recordCorrection`) appends a compensating `usageEvents` doc referencing the event it corrects; the original event is never edited or deleted.
+
+Do not assume `currentQuantity == sum(batch quantities)` holds at all times — it is intentionally allowed to disagree between an emergency and the next physical audit (spec section 28).
+
+## Firestore Rules (`firestore.rules`)
+
+Deny-by-default; every collection is opened explicitly:
+
+- `isMember(institutionId)` — signed in, has a `memberships/{uid}` doc with `status == 'active'`.
+- `isManagerOrAbove(institutionId)` — role `manager`/`institutionAdmin`, or a `platformAdmins/{uid}` doc exists.
+- `canAccessCart(institutionId, cartId)` — manager+ (sees every cart) or an explicit `responsibleUsers/{uid}` doc (spec section 17).
+- A member can never write their own `memberships` doc (no self-escalation, no self-reactivation).
+- On an `assignments` doc, an assigned non-manager user may change only `currentQuantity`/`updatedAt`/`updatedBy` — every structural field (`targetQuantity`, `slotId`, `productId`, `status`) stays manager+ only.
+- `usageEvents`/`auditEvents` are create-only for members; `update`/`delete` are always `false`, including for institution admins.
+- Only a `platformAdmins` doc holder may `create` an `institutions` doc.
+
+Automated tests: `firestore-tests/rules.test.mjs` (Node's built-in test runner + `@firebase/rules-unit-testing`), covering unauthenticated access, cross-institution isolation, unassigned-cart access, write-field scoping, self-escalation, and audit-history immutability (spec section 60). Run with:
+
+```
+firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"
+```
+
+`platformAdmins` currently has no writer (no Cloud Function exists yet — Phase 1 explicitly has none); the first platform super admin must be provisioned manually via the Firebase console/Admin SDK against the emulator or, later, the real project.
+
+Composite indexes (`firestore.indexes.json`): a `COLLECTION_GROUP` index on `memberships` (`uid`, `status`) backs `InstitutionRepository.watchMyInstitutions`, and a `COLLECTION` index on `usageEvents` (`assignmentId`, `serverTimestamp desc`) backs `UsageRepository.watchEventsForAssignment`. The emulator does not enforce these; they matter once Rules/queries run against the real `i-crash-pt-2026` project.
+
+## Environments
+
+- **Local emulator** (`demo-icrash-v2`, from `.firebaserc`): Auth on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081`, UI on `127.0.0.1:4000`. `AppEnvironment` (see `docs/ARCHITECTURE.md`) points the Flutter app here by default in debug builds.
+- **Cloud demo/development** (`i-crash-pt-2026`, from `.firebaserc`'s `development` alias): Standard/Native Firestore in `eur3`, Spark plan, e-mail/password Authentication enabled, no users or data. Only reached from a debug build via `--dart-define=ICRASH_BACKEND=cloud`, or automatically from a release build.
+
+Real Firestore location (`eur3`) was already confirmed with the user in Phase 1; it is immutable and is not revisited here.

@@ -1,10 +1,154 @@
 rules_version = '2';
 
+// I-Crash V2 institution/role-scoped Firestore rules.
+// Model documented in docs/FIREBASE_MODEL.md. Automated tests in
+// firestore-tests/rules.test.mjs must pass before deploying any change here.
+//
+// Design notes:
+// - Deny-by-default: every collection is closed unless explicitly opened.
+// - Institution isolation: every path is rooted at institutions/{institutionId};
+//   access always checks a membership document scoped to that institution.
+// - No privilege escalation: a user can never write their own membership doc.
+// - Cart access: institution admins/managers see every cart; a normal user
+//   only sees carts they were explicitly assigned to via responsibleUsers
+//   (spec section 17).
+// - Immutable audit trail: usageEvents/auditEvents are create-only, never
+//   updated or deleted by clients (spec sections 18, 45, 60).
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Locked until Phase 2 introduces and tests institution-scoped rules.
-    match /{document=**} {
-      allow read, write: if false;
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformSuperAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid));
+    }
+
+    function membershipDoc(institutionId) {
+      return get(/databases/$(database)/documents/institutions/$(institutionId)/memberships/$(request.auth.uid));
+    }
+
+    function isMember(institutionId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/institutions/$(institutionId)/memberships/$(request.auth.uid)) &&
+        membershipDoc(institutionId).data.status == 'active';
+    }
+
+    function role(institutionId) {
+      return membershipDoc(institutionId).data.role;
+    }
+
+    function hasRole(institutionId, roles) {
+      return isMember(institutionId) && role(institutionId) in roles;
+    }
+
+    function isInstitutionAdmin(institutionId) {
+      return hasRole(institutionId, ['institutionAdmin']) || isPlatformSuperAdmin();
+    }
+
+    function isManagerOrAbove(institutionId) {
+      return hasRole(institutionId, ['institutionAdmin', 'manager']) || isPlatformSuperAdmin();
+    }
+
+    function isAssignedToCart(institutionId, cartId) {
+      return isMember(institutionId) &&
+        exists(/databases/$(database)/documents/institutions/$(institutionId)/carts/$(cartId)/responsibleUsers/$(request.auth.uid));
+    }
+
+    function canAccessCart(institutionId, cartId) {
+      return isManagerOrAbove(institutionId) || isAssignedToCart(institutionId, cartId);
+    }
+
+    function onlyChangedFields(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // Marker collection for platform-wide super admins. No Cloud Function
+    // exists yet to manage it (spec section 7: Phase 1 has no Functions), so
+    // it is provisioned manually via the Firebase console/Admin SDK and is
+    // never writable by client rules.
+    match /platformAdmins/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /institutions/{institutionId} {
+      allow read: if isMember(institutionId);
+      // Only a platform super admin creates institutions (spec section 16).
+      allow create: if isPlatformSuperAdmin();
+      allow update: if isInstitutionAdmin(institutionId) &&
+        onlyChangedFields(['name', 'expiryWarningDays', 'updatedAt', 'updatedBy']);
+      allow delete: if false;
+
+      match /memberships/{uid} {
+        allow read: if isMember(institutionId);
+        allow create: if isInstitutionAdmin(institutionId) && request.resource.data.uid == uid;
+        // No one may change or remove their own membership: prevents
+        // self-escalation and self-reactivation after being disabled
+        // (spec sections 18, 60).
+        allow update: if isInstitutionAdmin(institutionId) && request.auth.uid != uid;
+        allow delete: if isInstitutionAdmin(institutionId) && request.auth.uid != uid;
+      }
+
+      match /products/{productId} {
+        allow read: if isMember(institutionId);
+        allow write: if isManagerOrAbove(institutionId);
+      }
+
+      match /carts/{cartId} {
+        allow read: if canAccessCart(institutionId, cartId);
+        allow create, update: if isManagerOrAbove(institutionId);
+        allow delete: if false;
+
+        match /responsibleUsers/{uid} {
+          allow read: if canAccessCart(institutionId, cartId);
+          allow write: if isManagerOrAbove(institutionId);
+        }
+
+        match /drawers/{drawerId} {
+          allow read: if canAccessCart(institutionId, cartId);
+          allow write: if isManagerOrAbove(institutionId);
+
+          match /slots/{slotId} {
+            allow read: if canAccessCart(institutionId, cartId);
+            allow write: if isManagerOrAbove(institutionId);
+          }
+        }
+
+        match /assignments/{assignmentId} {
+          allow read: if canAccessCart(institutionId, cartId);
+          allow create, delete: if isManagerOrAbove(institutionId);
+          // A normal assigned user may only ever move currentQuantity during
+          // daily consumption; every structural field stays manager+ only
+          // (spec sections 22-24, 43).
+          allow update: if isManagerOrAbove(institutionId) ||
+            (canAccessCart(institutionId, cartId) &&
+              onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy']));
+
+          match /batches/{batchId} {
+            allow read: if canAccessCart(institutionId, cartId);
+            allow write: if isManagerOrAbove(institutionId);
+          }
+        }
+      }
+
+      // Immutable operational stock history (spec sections 24, 43-45, 60).
+      match /usageEvents/{eventId} {
+        allow read: if isMember(institutionId);
+        allow create: if isMember(institutionId) &&
+          request.resource.data.actorUid == request.auth.uid &&
+          canAccessCart(institutionId, request.resource.data.cartId);
+        allow update, delete: if false;
+      }
+
+      // Immutable administrative/audit trail (spec sections 18, 45, 60).
+      match /auditEvents/{eventId} {
+        allow read: if isManagerOrAbove(institutionId);
+        allow create: if isMember(institutionId) && request.resource.data.actorUid == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
   }
 }
