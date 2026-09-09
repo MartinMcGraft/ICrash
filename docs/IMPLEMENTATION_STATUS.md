@@ -27,6 +27,7 @@ Status: in progress.
 - Real Firestore location remains an explicit user decision before database creation.
 - Firebase CLI login completed. The initial Google Cloud Terms blocker was resolved before project creation.
 - Google Cloud Terms were accepted and the Firebase development project was created: visible name `I-Crash`, technical ID `i-crash-pt-2026`. It remains on the Spark plan; no billing account, Firestore database, Authentication provider, App Check setting, Storage bucket or Cloud Function was created.
+- The default Cloud Firestore database was created with the authorized immutable location `eur3`, Standard edition and Native mode. The Firebase CLI confirms `freeTier: true`; point-in-time recovery and delete protection remain disabled. Firebase's initial closed rules prevent external access until Phase 2 rules are deployed and tested.
 
 Phase 2 and workstreams A–J have not started.
 

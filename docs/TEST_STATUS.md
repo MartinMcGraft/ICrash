@@ -33,3 +33,4 @@ Physical-camera QR/GS1 validation, backend flows, Firebase, permissions, offline
 - Auth and Firestore started without cloud authentication and shut down after the test command.
 - Initial Firestore port 8080 was unavailable because an existing Apache service owns it; configuration moved to the free port 8081 and then passed.
 - No Flutter-to-emulator integration or Rules behavior test exists yet; these remain Phase 1/2 work.
+- Cloud Firestore database provisioning: passed. Default database confirmed as Standard / Native / `eur3` / free tier. No application data was written.

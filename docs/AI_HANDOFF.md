@@ -50,6 +50,8 @@ Firebase CLI is authenticated. `firebase projects:create i-crash-pt-2026 --displ
 
 Google Cloud Terms were subsequently accepted and the retry succeeded. Cloud development project: visible name `I-Crash`, ID `i-crash-pt-2026`, Spark plan. `.firebaserc` keeps `demo-icrash-v2` as the safe local default and names the cloud project `development`. No Firestore database, Authentication provider, Firebase app registration, App Check setting, Storage bucket, Cloud Function, billing account or data was created. Before using FlutterFire, decide production application IDs instead of registering the legacy `com.example.app1` identifier.
 
+The default Firestore database is now provisioned: location `eur3`, Standard edition, Native mode, free tier. It has Firebase's initial closed rules. Point-in-time recovery and delete protection are disabled. No Authentication provider, Firebase app registration, App Check setting, Storage bucket, Cloud Function, billing account or application data exists. Before using FlutterFire, decide production application IDs instead of registering the legacy `com.example.app1` identifier.
+
 ## Do not redo
 
 Do not initialize another repository, develop on or push to `main`, restore Django, discard the backup, recreate Firebase without location approval, repeat the SDK modernization, commit secrets/build caches, or claim iOS/macOS validation from Windows.
