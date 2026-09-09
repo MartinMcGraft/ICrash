@@ -2,11 +2,14 @@
 // the local emulator (see README.md in this folder) and never touches the
 // cloud project `i-crash-pt-2026`.
 import { before, after, beforeEach, describe, test } from 'node:test';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, collectionGroup, query, where, getDocs,
+} from 'firebase/firestore';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ID = 'demo-icrash-v2';
@@ -64,6 +67,11 @@ async function seedBaseline() {
     await setDoc(doc(db, `institutions/${INST_B}/memberships/${OTHER_INST_UID}`), {
       uid: OTHER_INST_UID, role: 'user', status: 'active',
     });
+
+    // Denormalized pointers InstitutionRepository.watchMyInstitutions reads
+    // via collectionGroup; kept in sync with the memberships above.
+    await setDoc(doc(db, `institutions/${INST_A}/memberIndex/${ADMIN_UID}`), { uid: ADMIN_UID, status: 'active' });
+    await setDoc(doc(db, `institutions/${INST_A}/memberIndex/${USER_UID}`), { uid: USER_UID, status: 'active' });
 
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`), {
       name: 'Cart 1', status: 'operational', layoutVersion: 1,
@@ -229,5 +237,42 @@ describe('immutable audit/usage history (spec sections 18, 45, 60)', () => {
     const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, `institutions/${INST_A}/auditEvents/evt-1`), { type: 'tampered' }));
     await assertFails(deleteDoc(doc(db, `institutions/${INST_A}/auditEvents/evt-1`)));
+  });
+});
+
+describe('cross-institution membership index (spec section 16)', () => {
+  test('a member can find their own institutions via the memberIndex collectionGroup query', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    const q = query(collectionGroup(db, 'memberIndex'), where('uid', '==', USER_UID), where('status', '==', 'active'));
+    const snapshot = await assertSucceeds(getDocs(q));
+    assert.equal(snapshot.size, 1);
+  });
+
+  test('a user cannot query another member\'s memberIndex entry by filtering on their uid', async () => {
+    await seedBaseline();
+    // Rules require resource.data.uid == request.auth.uid, so even the
+    // exact query shape the app uses is denied outright when a caller asks
+    // for someone else's uid — isolation does not rely on the client
+    // filtering honestly.
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    const q = query(collectionGroup(db, 'memberIndex'), where('uid', '==', ADMIN_UID), where('status', '==', 'active'));
+    await assertFails(getDocs(q));
+  });
+
+  test('an institution admin can add a memberIndex entry for a new member', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(setDoc(doc(db, `institutions/${INST_A}/memberIndex/${USER2_UID}`), {
+      uid: USER2_UID, status: 'active',
+    }));
+  });
+
+  test('a normal user cannot add a memberIndex entry for themselves or anyone else', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertFails(setDoc(doc(db, `institutions/${INST_A}/memberIndex/${USER_UID}`), {
+      uid: USER_UID, status: 'active',
+    }));
   });
 });

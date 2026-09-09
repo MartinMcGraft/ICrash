@@ -9,7 +9,9 @@ Authentication and Cloud Firestore are the only Firebase products in use. Local 
 ```
 platformAdmins/{uid}                                        marker doc; platform-wide super admin
 institutions/{institutionId}
-  memberships/{uid}                                          role + status, one per member
+  memberships/{uid}                                          role + status, one per member (canonical)
+  memberIndex/{uid}                                          {uid, status} pointer, denormalized from
+                                                               memberships — see "Firestore Rules" below
   products/{productId}                                       institution-scoped catalogue
   carts/{cartId}
     responsibleUsers/{uid}                                   explicit cart access grant
@@ -56,7 +58,18 @@ Deny-by-default; every collection is opened explicitly:
 - `usageEvents`/`auditEvents` are create-only for members; `update`/`delete` are always `false`, including for institution admins.
 - Only a `platformAdmins` doc holder may `create` an `institutions` doc.
 
-Automated tests: `firestore-tests/rules.test.mjs` (Node's built-in test runner + `@firebase/rules-unit-testing`), covering unauthenticated access, cross-institution isolation, unassigned-cart access, write-field scoping, self-escalation, and audit-history immutability (spec section 60). Run with:
+### Why `memberIndex` exists (a Firestore Rules/emulator quirk)
+
+`InstitutionRepository.watchMyInstitutions` needs to answer "which institutions do I belong to" with a single `collectionGroup('memberIndex').where('uid', '==', myUid).where('status', '==', 'active')` query, so the app never has to know institution ids up front. Firestore only authorizes a `collectionGroup()` query against a rule declared with a `{path=**}` wildcard — a nested `institutions/{id} { match /memberships/{uid} {...} }` rule, no matter how it's written, is never considered by a collection-group query, only by direct/subcollection access.
+
+That alone would suggest just adding a `{path=**}/memberships/{uid}` rule. Two things confirmed empirically (against firebase-tools 15.29.0's Firestore emulator) make that the wrong move:
+
+1. A collection-group (`{path=**}`) rule and a nested exact-path rule on the **same literal collection name** cause the emulator's `list`-validation to fail even for requests that would only ever hit one of them ("Null value error"/"Variable ... is not bound in path template" — it appears to try to statically prove *every* rule that could structurally match the collection name, including nested ones whose path variables aren't resolvable in that generic context).
+2. Within a rule governing a `list`/`collectionGroup` request, referencing the wildcard segment captured immediately after `{path=**}` (here, `{uid}`) in the condition — even a trivial `uid == uid` — fails the same way. Reading the equivalent value from the document body instead (`resource.data.uid`) works correctly.
+
+So `memberIndex` is a separate, purpose-built collection: a lightweight `{uid, status}` pointer written whenever a `memberships` doc is created/disabled, existing only so this one collection-group query has a rule it can safely satisfy (self-uid read via `resource.data.uid`; admin-only `create`/`update`/`delete`, which — being single-document operations, not `list` — can safely use `path[1]` for the institutionId). `memberships` itself keeps its original nested-only rule, untouched. **Nothing currently keeps `memberIndex` in sync automatically** — there is no membership-creation flow in the app yet; `firestore-tests/seed_emulator.mjs` writes both documents by hand. Whoever builds the membership-management screen (workstream A) must write both documents (ideally as one atomic `WriteBatch`) whenever a membership is created, disabled, or re-enabled.
+
+Automated tests: `firestore-tests/rules.test.mjs` (Node's built-in test runner + `@firebase/rules-unit-testing`), covering unauthenticated access, cross-institution isolation, unassigned-cart access, write-field scoping, self-escalation, audit-history immutability (spec section 60), and the `memberIndex` collection-group query specifically. Run with:
 
 ```
 firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"
@@ -64,11 +77,11 @@ firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix 
 
 `platformAdmins` currently has no writer (no Cloud Function exists yet — Phase 1 explicitly has none); the first platform super admin must be provisioned manually via the Firebase console/Admin SDK against the emulator or, later, the real project.
 
-Composite indexes (`firestore.indexes.json`): a `COLLECTION_GROUP` index on `memberships` (`uid`, `status`) backs `InstitutionRepository.watchMyInstitutions`, and a `COLLECTION` index on `usageEvents` (`assignmentId`, `serverTimestamp desc`) backs `UsageRepository.watchEventsForAssignment`. The emulator does not enforce these; they matter once Rules/queries run against the real `i-crash-pt-2026` project.
+Composite indexes (`firestore.indexes.json`): a `COLLECTION_GROUP` index on `memberIndex` (`uid`, `status`) backs `InstitutionRepository.watchMyInstitutions`, and a `COLLECTION` index on `usageEvents` (`assignmentId`, `serverTimestamp desc`) backs `UsageRepository.watchEventsForAssignment`. The emulator does not enforce these; they matter once Rules/queries run against the real `i-crash-pt-2026` project.
 
 ## Environments
 
-- **Local emulator** (`demo-icrash-v2`, from `.firebaserc`): Auth on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081`, UI on `127.0.0.1:4000`. `AppEnvironment` (see `docs/ARCHITECTURE.md`) points the Flutter app here by default in debug builds.
+- **Local emulator** (`demo-icrash-v2`, from `.firebaserc`): Auth on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081`, UI on `127.0.0.1:4000`. `AppEnvironment`/`bootstrapFirebase` (see `docs/ARCHITECTURE.md` for why this needs its own named `FirebaseApp` and matching demo project id) point the Flutter app here by default in debug builds.
 - **Cloud demo/development** (`i-crash-pt-2026`, from `.firebaserc`'s `development` alias): Standard/Native Firestore in `eur3`, Spark plan, e-mail/password Authentication enabled, no users or data. Only reached from a debug build via `--dart-define=ICRASH_BACKEND=cloud`, or automatically from a release build.
 
 Real Firestore location (`eur3`) was already confirmed with the user in Phase 1; it is immutable and is not revisited here.

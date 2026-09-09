@@ -1,7 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "memberships",
+      "collectionGroup": "memberIndex",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "uid", "order": "ASCENDING" },

@@ -74,6 +74,31 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Lightweight denormalized pointer, one per (institution, member), kept
+    // in sync with the canonical `memberships` doc below whenever it is
+    // created/disabled. Exists ONLY so InstitutionRepository can run
+    // `collectionGroup('memberIndex').where('uid', '==', myUid)` to answer
+    // "which institutions do I belong to" (spec section 16), which a nested
+    // `institutions/{id}/memberships/{uid}` rule cannot serve: Firestore
+    // only authorizes a `collectionGroup()` query against a rule declared
+    // with a `{path=**}` wildcard, not a nested exact-path rule.
+    //
+    // IMPORTANT emulator quirk, confirmed empirically (firebase-tools
+    // 15.29.0): for a `list`/collection-group query, referencing the
+    // trailing wildcard captured right after `{path=**}` (here, `{uid}`)
+    // inside the `allow read` condition makes the whole query fail with a
+    // "Null value error", even a trivial `uid == uid`. Reading the same
+    // value from the document body instead (`resource.data.uid`) works
+    // correctly, so every membership doc stores its own `uid` field
+    // precisely so this comparison never needs the path wildcard for reads.
+    // `create`/`update`/`delete` are single-document operations, not `list`,
+    // so `path[1]` (the institutionId segment) resolves normally for them.
+    match /{path=**}/memberIndex/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      allow create: if isInstitutionAdmin(path[1]) && request.resource.data.uid == uid;
+      allow update, delete: if isInstitutionAdmin(path[1]);
+    }
+
     match /institutions/{institutionId} {
       allow read: if isMember(institutionId);
       // Only a platform super admin creates institutions (spec section 16).

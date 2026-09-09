@@ -5,7 +5,8 @@
   "description": "Automated tests for firestore.rules against the local Firebase emulator. Never targets the cloud project.",
   "type": "module",
   "scripts": {
-    "test": "node --test rules.test.mjs"
+    "test": "node --test rules.test.mjs",
+    "seed": "node seed_emulator.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
