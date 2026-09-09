@@ -25,7 +25,15 @@ RepositoryFailure mapFirebaseException(Object error) {
     }
   }
   if (error is FirebaseAuthException) {
-    return RepositoryFailure(RepositoryFailureReason.unauthenticated, cause: error);
+    switch (error.code) {
+      case 'email-already-in-use':
+        return RepositoryFailure(RepositoryFailureReason.conflict, cause: error);
+      case 'invalid-email':
+      case 'weak-password':
+        return RepositoryFailure(RepositoryFailureReason.invalidInput, cause: error);
+      default:
+        return RepositoryFailure(RepositoryFailureReason.unauthenticated, cause: error);
+    }
   }
   return RepositoryFailure(RepositoryFailureReason.unknown, cause: error);
 }

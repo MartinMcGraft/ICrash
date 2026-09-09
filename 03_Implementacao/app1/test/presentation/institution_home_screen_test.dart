@@ -73,6 +73,26 @@ void main() {
     expect(find.text('Novo carro'), findsNothing);
   });
 
+  testWidgets('shows "Membros" for an institution admin', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.institutionAdmin)),
+      carts: FakeCartRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Membros'), findsOneWidget);
+  });
+
+  testWidgets('hides "Membros" for a manager', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: FakeCartRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Membros'), findsNothing);
+  });
+
   testWidgets('can still open the legacy app', (tester) async {
     await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository())));
     await tester.pumpAndSettle();

@@ -48,6 +48,27 @@ class FirebaseServices {
   final FirebaseFirestore firestore;
 }
 
+/// A throwaway [FirebaseAuth] instance, on its own uniquely-named
+/// [FirebaseApp], for creating another user's Auth account (e.g. an
+/// institution admin adding a new member) without disturbing the current
+/// user's session: `createUserWithEmailAndPassword` signs in as the newly
+/// created user on whichever [FirebaseAuth] instance it is called on, and
+/// there is no Cloud Function yet (spec Phase 1 has none) to do this
+/// server-side instead. Callers must `await result.app.delete()` once done
+/// with it. Uses the same emulator-vs-cloud choice as [bootstrapFirebase].
+Future<FirebaseAuth> createIsolatedAccountCreationAuth() async {
+  final isEmulator = AppEnvironment.isEmulator;
+  final app = await Firebase.initializeApp(
+    name: 'icrash-account-creation-${DateTime.now().microsecondsSinceEpoch}',
+    options: isEmulator ? _demoFirebaseOptions : DefaultFirebaseOptions.currentPlatform,
+  );
+  final isolatedAuth = FirebaseAuth.instanceFor(app: app);
+  if (isEmulator) {
+    await isolatedAuth.useAuthEmulator(AppEnvironment.emulatorHost, AppEnvironment.authEmulatorPort);
+  }
+  return isolatedAuth;
+}
+
 /// Initializes Firebase and, in development, points Auth/Firestore at the
 /// local emulator suite instead of the cloud project `i-crash-pt-2026`
 /// (see [AppEnvironment]). Call once before `runApp`.

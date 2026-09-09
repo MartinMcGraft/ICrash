@@ -4,6 +4,7 @@ import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
+import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
@@ -54,16 +55,64 @@ class FakeAuthRepository extends UnimplementedFake implements AuthRepository {
 }
 
 class FakeInstitutionRepository extends UnimplementedFake implements InstitutionRepository {
-  FakeInstitutionRepository({this.institutions = const [], this.myMembership});
+  FakeInstitutionRepository({this.institutions = const [], this.myMembership, List<Membership>? members})
+      : members = members ?? [];
 
   List<Institution> institutions;
   Membership? myMembership;
+  final List<Membership> members;
+  Object? createMemberError;
+  int _nextUid = 1;
+  final _membersController = StreamController<List<Membership>>.broadcast();
+
+  void _emitMembers() => _membersController.add(List.unmodifiable(members));
 
   @override
   Stream<List<Institution>> watchMyInstitutions() => Stream.value(institutions);
 
   @override
   Future<Membership?> getMyMembership(String institutionId) async => myMembership;
+
+  @override
+  Stream<List<Membership>> watchMembers(String institutionId) {
+    scheduleMicrotask(_emitMembers);
+    return _membersController.stream;
+  }
+
+  @override
+  Future<void> createMember(
+    String institutionId, {
+    required String email,
+    required String password,
+    required Role role,
+  }) async {
+    if (createMemberError != null) throw createMemberError!;
+    members.add(Membership(
+      uid: 'member-${_nextUid++}',
+      institutionId: institutionId,
+      role: role,
+      status: MembershipStatus.active,
+    ));
+    _emitMembers();
+  }
+
+  @override
+  Future<void> updateMemberRole(String institutionId, String uid, Role role) async {
+    final index = members.indexWhere((m) => m.uid == uid);
+    if (index == -1) return;
+    final current = members[index];
+    members[index] = Membership(uid: current.uid, institutionId: institutionId, role: role, status: current.status);
+    _emitMembers();
+  }
+
+  @override
+  Future<void> setMembershipStatus(String institutionId, String uid, MembershipStatus status) async {
+    final index = members.indexWhere((m) => m.uid == uid);
+    if (index == -1) return;
+    final current = members[index];
+    members[index] = Membership(uid: current.uid, institutionId: institutionId, role: current.role, status: status);
+    _emitMembers();
+  }
 }
 
 class FakeCartRepository extends UnimplementedFake implements CartRepository {

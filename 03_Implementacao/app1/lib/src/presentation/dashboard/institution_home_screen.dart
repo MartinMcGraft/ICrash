@@ -5,10 +5,12 @@ import '../../common/app_services.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/institution.dart';
+import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
 import '../cart/cart_detail_screen.dart';
 import '../cart/cart_status_label.dart';
 import '../cart/create_cart_dialog.dart';
+import '../members/members_screen.dart';
 
 /// Per-institution home: the real cart list (spec section 49's dashboard is
 /// still future work — no alerts/expiry summary yet), reachable after
@@ -25,15 +27,20 @@ class InstitutionHomeScreen extends StatefulWidget {
 }
 
 class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
-  late final Future<bool> _canManageCarts = _loadCanManageCarts();
+  late final Future<Membership?> _myMembership = AppServicesScope.of(context)
+      .institutions
+      .getMyMembership(widget.institution.id);
 
-  Future<bool> _loadCanManageCarts() async {
-    final services = AppServicesScope.of(context);
-    final membership = await services.institutions.getMyMembership(widget.institution.id);
+  bool _canManageCarts(Membership? membership) {
     if (membership == null || !membership.isActive) return false;
     return membership.role == Role.institutionAdmin ||
         membership.role == Role.manager ||
         membership.role == Role.platformSuperAdmin;
+  }
+
+  bool _isInstitutionAdmin(Membership? membership) {
+    if (membership == null || !membership.isActive) return false;
+    return membership.role == Role.institutionAdmin || membership.role == Role.platformSuperAdmin;
   }
 
   Future<void> _createCart(BuildContext context) async {
@@ -57,6 +64,19 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       appBar: AppBar(
         title: Text(widget.institution.name),
         actions: [
+          FutureBuilder<Membership?>(
+            future: _myMembership,
+            builder: (context, snapshot) {
+              if (!_isInstitutionAdmin(snapshot.data)) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'Membros',
+                icon: const Icon(Icons.group_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => MembersScreen(institution: widget.institution)),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Aplicação anterior (referência)',
             icon: const Icon(Icons.history),
@@ -124,10 +144,10 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FutureBuilder<bool>(
-        future: _canManageCarts,
+      floatingActionButton: FutureBuilder<Membership?>(
+        future: _myMembership,
         builder: (context, snapshot) {
-          if (snapshot.data != true) return const SizedBox.shrink();
+          if (!_canManageCarts(snapshot.data)) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             onPressed: () => _createCart(context),
             icon: const Icon(Icons.add),

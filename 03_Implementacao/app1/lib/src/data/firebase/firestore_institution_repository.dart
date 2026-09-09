@@ -5,6 +5,7 @@ import '../../domain/entities/institution.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/repositories/institution_repository.dart';
+import 'firebase_bootstrap.dart';
 import 'firestore_codec.dart';
 import 'firestore_exception_mapper.dart';
 import 'firestore_paths.dart';
@@ -88,6 +89,81 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
       await ref.set(data);
       final created = await ref.get();
       return Institution.fromMap(ref.id, normalizeTimestamps(created.data()!, _timestampFields));
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
+  Stream<List<Membership>> watchMembers(String institutionId) {
+    return _firestore
+        .collection(FirestorePaths.memberships(institutionId))
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Membership.fromMap(doc.id, institutionId, normalizeTimestamps(doc.data(), _timestampFields)))
+            .toList())
+        .handleError((Object error) => throw mapFirebaseException(error));
+  }
+
+  @override
+  Future<void> createMember(
+    String institutionId, {
+    required String email,
+    required String password,
+    required Role role,
+  }) async {
+    try {
+      final isolatedAuth = await createIsolatedAccountCreationAuth();
+      final String newUid;
+      try {
+        final credential = await isolatedAuth.createUserWithEmailAndPassword(email: email, password: password);
+        newUid = credential.user!.uid;
+      } finally {
+        await isolatedAuth.app.delete();
+      }
+
+      final batch = _firestore.batch();
+      batch.set(_firestore.collection(FirestorePaths.memberships(institutionId)).doc(newUid), {
+        'uid': newUid,
+        'role': role.id,
+        'status': MembershipStatus.active.id,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      batch.set(_firestore.collection(FirestorePaths.memberIndex(institutionId)).doc(newUid), {
+        'uid': newUid,
+        'status': MembershipStatus.active.id,
+      });
+      await batch.commit();
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
+  Future<void> updateMemberRole(String institutionId, String uid, Role role) async {
+    try {
+      await _firestore.collection(FirestorePaths.memberships(institutionId)).doc(uid).update({
+        'role': role.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
+  Future<void> setMembershipStatus(String institutionId, String uid, MembershipStatus status) async {
+    try {
+      final batch = _firestore.batch();
+      batch.update(_firestore.collection(FirestorePaths.memberships(institutionId)).doc(uid), {
+        'status': status.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      batch.update(_firestore.collection(FirestorePaths.memberIndex(institutionId)).doc(uid), {
+        'status': status.id,
+      });
+      await batch.commit();
     } catch (error) {
       throw mapFirebaseException(error);
     }

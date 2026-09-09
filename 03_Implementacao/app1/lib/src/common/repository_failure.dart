@@ -17,5 +17,6 @@ enum RepositoryFailureReason {
   notFound,
   offline,
   conflict,
+  invalidInput,
   unknown,
 }
