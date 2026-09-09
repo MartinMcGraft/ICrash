@@ -2,6 +2,15 @@
 
 Updated: 2026-09-09
 
+## Phase 2 foundation — automated validation
+
+- `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
+- `flutter test --no-pub`: passed, 12 tests — the pre-existing widget test plus 11 new tests in `test/domain/inventory_rules_test.dart`, including the two literal critical inventory scenarios from spec sections 58 and 59 (daily consumption never touches batches/expiry; only audit reconciliation may advance `earliestKnownExpiry`; replenishment can only pull it earlier, never later).
+- `flutter build apk --debug --no-pub`: passed, confirming the new Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android. Pre-existing Kotlin Gradle Plugin deprecation warnings from `firebase_auth`/`firebase_core`/`mobile_scanner` are unrelated to this phase.
+- `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 18/18 Firestore Rules tests covering spec section 60's security scenarios (unauthenticated denied, cross-institution isolation, unassigned-cart access denied, assigned-user write scope limited to `currentQuantity`, no self-role-escalation, only a platform super admin creates institutions, `usageEvents`/`auditEvents` are create-only even for institution admins).
+- No Flutter-to-emulator integration test exists yet (nothing in the presentation layer calls the new repositories); that lands with the first V2 screen in the next phase.
+- Web/Windows builds were not re-run this phase (no code path affecting those platforms changed beyond the same `bootstrapFirebase()` call already exercised via `flutter analyze`); re-verify before the next release-oriented milestone.
+
 ## Phase 0 automated validation
 
 - `flutter pub get`: passed; two indirect packages remain constrained by Flutter.
@@ -24,7 +33,7 @@ Device: `ICrash_API_36`, Android 16 / API 36.
 
 ## Known gaps
 
-Physical-camera QR/GS1 validation, backend flows, Firebase, permissions, offline/reconnection, security Rules and V2 domain scenarios remain untested. Scanner abstractions and mock GS1 inputs belong to later phases. iOS/macOS cannot be claimed from Windows. The complete screen classification is deferred until the minimum Firebase replacement operates, as required by the specification.
+Physical-camera QR/GS1 validation, backend flows, permissions UI, offline/reconnection UX and full V2 screen coverage remain untested — nothing in the presentation layer consumes the new repositories yet. Security Rules now have automated coverage (see Phase 2 above), but only for the scenarios in spec section 60; broader domain scenarios (multi-lot replenishment through the real repository against the emulator, offline queued writes replaying against Rules) are still open. Scanner abstractions and mock GS1 inputs belong to later phases. iOS/macOS cannot be claimed from Windows. The complete screen classification is deferred until V2 screens replace the legacy ones, as required by the specification.
 
 ## Phase 1 local Firebase foundation
 
