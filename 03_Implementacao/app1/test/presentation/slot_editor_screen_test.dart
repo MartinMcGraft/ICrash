@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
+import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
+import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/presentation/cart/slot_editor_screen.dart';
 
 import '../fakes/fake_repositories.dart';
@@ -88,5 +91,79 @@ void main() {
 
     expect(find.text('Juntar'), findsNothing);
     expect(find.byTooltip('Guardar'), findsNothing);
+  });
+
+  testWidgets('a manager long-pressing an empty slot assigns a product', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final inventory = FakeInventoryRepository();
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('1,1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Atribuir produto'), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButtonFormField<Product>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Adrenalina').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Atribuir'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.lastCreated?.productId, 'p1');
+    expect(inventory.lastCreated?.slotId, 'r0c0');
+    expect(find.text('Adrenalina'), findsOneWidget);
+  });
+
+  testWidgets('records consumption on an assigned slot', (tester) async {
+    const assignment = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 5,
+      targetQuantity: 10,
+    );
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final inventory = FakeInventoryRepository(assignments: [assignment]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'me')),
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('5/10'), findsOneWidget);
+
+    await tester.longPress(find.text('Adrenalina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Registar consumo'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), '2');
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments.single.currentQuantity, 3);
+  });
+
+  testWidgets('a normal user long-pressing an empty slot only sees an informational message', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(
+        myMembership: const Membership(uid: 'me', institutionId: 'inst-a', role: Role.user, status: MembershipStatus.active),
+      ),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('1,1'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('ainda não tem produto atribuído'), findsOneWidget);
+    expect(find.text('Atribuir produto'), findsNothing);
   });
 }

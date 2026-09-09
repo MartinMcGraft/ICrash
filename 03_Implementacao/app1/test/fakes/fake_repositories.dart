@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
+import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
+import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
@@ -201,9 +204,152 @@ class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository
   }
 }
 
-class FakeProductRepository extends UnimplementedFake implements ProductRepository {}
+class FakeProductRepository extends UnimplementedFake implements ProductRepository {
+  FakeProductRepository({List<Product>? products}) : products = products ?? [];
 
-class FakeInventoryRepository extends UnimplementedFake implements InventoryRepository {}
+  final List<Product> products;
+  Product? lastCreated;
+  int _nextId = 1;
+  final _controller = StreamController<List<Product>>.broadcast();
+
+  void _emit() => _controller.add(List.unmodifiable(products));
+
+  @override
+  Stream<List<Product>> watchProducts(String institutionId) {
+    scheduleMicrotask(_emit);
+    return _controller.stream;
+  }
+
+  @override
+  Future<Product?> findByGtin(String institutionId, String gtin) async {
+    for (final product in products) {
+      if (product.gtin == gtin) return product;
+    }
+    return null;
+  }
+
+  @override
+  Future<Product> createProduct(String institutionId, Product product) async {
+    final created = Product(
+      id: 'product-${_nextId++}',
+      institutionId: institutionId,
+      name: product.name,
+      description: product.description,
+      unitDescription: product.unitDescription,
+      gtin: product.gtin,
+    );
+    lastCreated = created;
+    products.add(created);
+    _emit();
+    return created;
+  }
+
+  @override
+  Future<void> updateProduct(String institutionId, Product product) async {
+    final index = products.indexWhere((p) => p.id == product.id);
+    if (index != -1) products[index] = product;
+    _emit();
+  }
+}
+
+class FakeInventoryRepository extends UnimplementedFake implements InventoryRepository {
+  FakeInventoryRepository({List<CartProductAssignment>? assignments}) : assignments = assignments ?? [];
+
+  final List<CartProductAssignment> assignments;
+  final Map<String, List<Batch>> batchesByAssignment = {};
+  CartProductAssignment? lastCreated;
+  int _nextId = 1;
+  final _controller = StreamController<List<CartProductAssignment>>.broadcast();
+
+  void _emit() => _controller.add(List.unmodifiable(assignments));
+
+  @override
+  Stream<List<CartProductAssignment>> watchAssignments(String institutionId, String cartId) {
+    scheduleMicrotask(_emit);
+    return _controller.stream;
+  }
+
+  @override
+  Future<CartProductAssignment?> getAssignment(String institutionId, String cartId, String assignmentId) async {
+    for (final assignment in assignments) {
+      if (assignment.id == assignmentId) return assignment;
+    }
+    return null;
+  }
+
+  @override
+  Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment) async {
+    final created = CartProductAssignment(
+      id: 'assignment-${_nextId++}',
+      cartId: cartId,
+      slotId: assignment.slotId,
+      productId: assignment.productId,
+      currentQuantity: assignment.currentQuantity,
+      targetQuantity: assignment.targetQuantity,
+    );
+    lastCreated = created;
+    assignments.add(created);
+    _emit();
+    return created;
+  }
+
+  @override
+  Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
+    return Stream.value(List.unmodifiable(batchesByAssignment[assignmentId] ?? const []));
+  }
+
+  @override
+  Future<void> recordConsumption({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required int amount,
+    required String actorUid,
+  }) async {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    final current = assignments[index];
+    assignments[index] = CartProductAssignment(
+      id: current.id,
+      cartId: current.cartId,
+      slotId: current.slotId,
+      productId: current.productId,
+      currentQuantity: current.currentQuantity - amount,
+      targetQuantity: current.targetQuantity,
+      minimumQuantity: current.minimumQuantity,
+      earliestKnownExpiry: current.earliestKnownExpiry,
+      status: current.status,
+    );
+    _emit();
+  }
+
+  @override
+  Future<void> recordReplenishment({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required int amount,
+    required Batch batch,
+    required String actorUid,
+  }) async {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    final current = assignments[index];
+    assignments[index] = CartProductAssignment(
+      id: current.id,
+      cartId: current.cartId,
+      slotId: current.slotId,
+      productId: current.productId,
+      currentQuantity: current.currentQuantity + amount,
+      targetQuantity: current.targetQuantity,
+      minimumQuantity: current.minimumQuantity,
+      earliestKnownExpiry: current.earliestKnownExpiry,
+      status: current.status,
+    );
+    (batchesByAssignment[assignmentId] ??= []).add(batch);
+    _emit();
+  }
+}
 
 class FakeUsageRepository extends UnimplementedFake implements UsageRepository {}
 

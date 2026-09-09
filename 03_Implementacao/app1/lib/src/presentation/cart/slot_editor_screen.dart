@@ -6,9 +6,12 @@ import '../../common/app_services.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_drawer.dart';
+import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/membership.dart';
+import '../../domain/entities/product.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/entities/slot.dart';
+import 'assignment_dialog.dart';
 
 /// Edits the rectangular slot layout of one [CartDrawer] (spec sections
 /// 36-37): every cell starts as its own 1x1 slot; adjacent slots whose
@@ -32,6 +35,10 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       .first;
   late final Future<Membership?> _myMembership =
       AppServicesScope.of(context).institutions.getMyMembership(widget.cart.institutionId);
+  late final Stream<List<CartProductAssignment>> _assignments =
+      AppServicesScope.of(context).inventory.watchAssignments(widget.cart.institutionId, widget.cart.id);
+  late final Future<List<Product>> _products =
+      AppServicesScope.of(context).products.watchProducts(widget.cart.institutionId).first;
 
   List<Slot>? _slots;
   Set<String> _selectedIds = {};
@@ -176,6 +183,18 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     );
   }
 
+  Future<void> _openAssignment(Slot slot, CartProductAssignment? assignment, List<Product> products, bool canManage) {
+    return showAssignmentDialog(
+      context,
+      institutionId: widget.cart.institutionId,
+      cartId: widget.cart.id,
+      slot: slot,
+      assignment: assignment,
+      products: products,
+      canManage: canManage,
+    );
+  }
+
   Widget _buildEditor(List<Slot> slots) {
     final selected = slots.where((s) => _selectedIds.contains(s.id)).toList();
     final canSplit = selected.length == 1 && (selected.single.rowSpan > 1 || selected.single.columnSpan > 1);
@@ -183,96 +202,161 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       future: _myMembership,
       builder: (context, membershipSnapshot) {
         final canManage = _canManage(membershipSnapshot.data);
-        return Column(
-          children: [
-            if (canManage)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Wrap(
-                  spacing: 8,
+        return StreamBuilder<List<CartProductAssignment>>(
+          stream: _assignments,
+          builder: (context, assignmentsSnapshot) {
+            final assignmentsBySlot = {
+              for (final assignment in assignmentsSnapshot.data ?? const <CartProductAssignment>[])
+                assignment.slotId: assignment,
+            };
+            return FutureBuilder<List<Product>>(
+              future: _products,
+              builder: (context, productsSnapshot) {
+                final products = productsSnapshot.data ?? const <Product>[];
+                return Column(
                   children: [
-                    FilledButton.icon(
-                      onPressed: _selectedIds.length >= 2 ? _merge : null,
-                      icon: const Icon(Icons.call_merge),
-                      label: const Text('Juntar'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: canSplit ? _split : null,
-                      icon: const Icon(Icons.call_split),
-                      label: const Text('Dividir'),
+                    if (canManage)
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: _selectedIds.length >= 2 ? _merge : null,
+                              icon: const Icon(Icons.call_merge),
+                              label: const Text('Juntar'),
+                            ),
+                            FilledButton.icon(
+                              onPressed: canSplit ? _split : null,
+                              icon: const Icon(Icons.call_split),
+                              label: const Text('Dividir'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // The drawer's whole footprint always fills the
+                            // available space, split proportionally by
+                            // rows/columns — a single slot takes the entire
+                            // area, two slots split it in half, and so on,
+                            // matching a real physical drawer's layout rather
+                            // than a fixed-size scrollable grid.
+                            final cellWidth = constraints.maxWidth / widget.drawer.columns;
+                            final cellHeight = constraints.maxHeight / widget.drawer.rows;
+                            return Stack(
+                              children: [
+                                for (final slot in slots)
+                                  Positioned(
+                                    left: slot.column * cellWidth,
+                                    top: slot.row * cellHeight,
+                                    width: slot.columnSpan * cellWidth,
+                                    height: slot.rowSpan * cellHeight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: _SlotCell(
+                                        slot: slot,
+                                        assignment: assignmentsBySlot[slot.id],
+                                        product: assignmentsBySlot[slot.id] == null
+                                            ? null
+                                            : _productFor(products, assignmentsBySlot[slot.id]!.productId),
+                                        selected: _selectedIds.contains(slot.id),
+                                        onTap: canManage ? () => _toggleSelect(slot.id) : null,
+                                        onLongPress: () =>
+                                            _openAssignment(slot, assignmentsBySlot[slot.id], products, canManage),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // The drawer's whole footprint always fills the available
-                    // space, split proportionally by rows/columns — a single
-                    // slot takes the entire area, two slots split it in half,
-                    // and so on, matching a real physical drawer's layout
-                    // rather than a fixed-size scrollable grid.
-                    final cellWidth = constraints.maxWidth / widget.drawer.columns;
-                    final cellHeight = constraints.maxHeight / widget.drawer.rows;
-                    return Stack(
-                      children: [
-                        for (final slot in slots)
-                          Positioned(
-                            left: slot.column * cellWidth,
-                            top: slot.row * cellHeight,
-                            width: slot.columnSpan * cellWidth,
-                            height: slot.rowSpan * cellHeight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(2),
-                              child: _SlotCell(
-                                slot: slot,
-                                selected: _selectedIds.contains(slot.id),
-                                onTap: canManage ? () => _toggleSelect(slot.id) : null,
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 }
 
+Product? _productFor(List<Product> products, String productId) {
+  for (final product in products) {
+    if (product.id == productId) return product;
+  }
+  return null;
+}
+
 class _SlotCell extends StatelessWidget {
-  const _SlotCell({required this.slot, required this.selected, required this.onTap});
+  const _SlotCell({
+    required this.slot,
+    required this.assignment,
+    required this.product,
+    required this.selected,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   final Slot slot;
+  final CartProductAssignment? assignment;
+  final Product? product;
   final bool selected;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final assignment = this.assignment;
     return Tooltip(
       message: 'Linha ${slot.row + 1}, coluna ${slot.column + 1}',
       child: Material(
-        color: selected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+        color: selected
+            ? theme.colorScheme.primaryContainer
+            : assignment == null
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.secondaryContainer,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
           side: BorderSide(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
         ),
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(4),
           child: Center(
-            child: Text(
-              slot.label ?? '${slot.row + 1},${slot.column + 1}',
-              style: theme.textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
+            child: assignment == null
+                ? Text(
+                    slot.label ?? '${slot.row + 1},${slot.column + 1}',
+                    style: theme.textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          product?.name ?? 'Produto removido',
+                          style: theme.textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${assignment.currentQuantity}/${assignment.targetQuantity}',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
+                  ),
           ),
         ),
       ),

@@ -11,6 +11,7 @@ import '../cart/cart_detail_screen.dart';
 import '../cart/cart_status_label.dart';
 import '../cart/create_cart_dialog.dart';
 import '../members/members_screen.dart';
+import '../products/products_screen.dart';
 
 /// Per-institution home: the real cart list (spec section 49's dashboard is
 /// still future work — no alerts/expiry summary yet), reachable after
@@ -64,6 +65,21 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       appBar: AppBar(
         title: Text(widget.institution.name),
         actions: [
+          FutureBuilder<Membership?>(
+            future: _myMembership,
+            builder: (context, snapshot) {
+              if (!_canManageCarts(snapshot.data)) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'Produtos',
+                icon: const Icon(Icons.medication_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProductsScreen(institutionId: widget.institution.id, canManage: true),
+                  ),
+                ),
+              );
+            },
+          ),
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
