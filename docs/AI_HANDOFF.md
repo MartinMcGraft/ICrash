@@ -30,7 +30,7 @@ See `03_Implementacao/app1/pubspec.yaml`, `pubspec.lock`, and `MODERNIZATION_202
 
 ## Tests and known limitations
 
-Phase 0 on the true repository: analyzer clean; widget test passed; Android debug, Web and Windows release builds passed. `flutter run` launched on `ICrash_API_36`. Homepage, registration, QR reader, back navigation and Data Matrix analyser were exercised. The virtual camera opened after transient CameraX availability warnings; no real QR/Data Matrix could be validated. After Firebase integration, analyzer, tests, Android debug APK and web build pass. Windows is currently blocked by the Visual Studio 2022 17.5 C++ toolchain; Firebase's current Windows SDK needs a newer C++ toolchain. Complete backend flows, physical camera, iOS and macOS remain unvalidated. V2 tests and Firebase Rules tests do not exist yet.
+Phase 0 on the true repository: analyzer clean; widget test passed; Android debug, Web and Windows release builds passed. `flutter run` launched on `ICrash_API_36`. Homepage, registration, QR reader, back navigation and Data Matrix analyser were exercised. The virtual camera opened after transient CameraX availability warnings; no real QR/Data Matrix could be validated. After Firebase integration, analyzer, tests, Android debug APK, web build and Windows debug build pass. Visual Studio Community 2022 is now 17.14.40 with the required C++ toolchain. Complete backend flows, physical camera, iOS and macOS remain unvalidated. V2 tests and Firebase Rules tests do not exist yet.
 
 `mobile_scanner` still relies on the legacy Kotlin Gradle plugin compatibility mode. Android SDK's new command reports that `--licenses` is obsolete while Flutter Doctor reports license status unknown; Android compilation nevertheless succeeds.
 

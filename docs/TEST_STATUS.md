@@ -40,4 +40,5 @@ Physical-camera QR/GS1 validation, backend flows, Firebase, permissions, offline
 - `flutter test`: passed after Firebase integration, 1 widget test.
 - `flutter build web --wasm --no-web-resources-cdn`: passed after Firebase integration.
 - Android Firebase configuration was completed with the Google Services Gradle plugin and `flutter build apk --debug` passed.
-- Windows Firebase build: blocked by Visual Studio 2022 17.5 linker incompatibility with the current Firebase C++ SDK; update the C++ toolchain before retrying.
+- Visual Studio Community 2022 updated from 17.5 to 17.14.40 with the required C++ tools.
+- `flutter build windows --debug`: passed after the Visual Studio update; the Windows executable was generated successfully.

@@ -29,7 +29,7 @@ Status: in progress.
 - FlutterFire registered Android, iOS, macOS, web and Windows app configurations. The production identifiers are `pt.icrash.app` (Android/iOS) and `pt.icrash.app.macos` (macOS); the legacy `com.example.app1` identifiers were removed.
 - Firebase Core, Authentication and Cloud Firestore are installed. Firebase is initialized before the Flutter application starts.
 - Firebase Authentication is active with e-mail and password only. No user was created and e-mail-link login remains disabled.
-- Android and web compile with the Firebase integration. Windows compilation is blocked only by the installed Visual Studio 2022 C++ toolchain (17.5); the current Firebase Windows SDK requires a newer toolchain.
+- Android, web and Windows compile with the Firebase integration. Visual Studio Community 2022 was updated from 17.5 to 17.14.40, resolving the Firebase Windows SDK linker incompatibility.
 
 Phase 2 and workstreams A–J have not started.
 
