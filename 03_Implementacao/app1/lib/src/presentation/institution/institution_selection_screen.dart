@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
 import '../../domain/entities/institution.dart';
-import '../dashboard/dashboard_placeholder_screen.dart';
+import '../dashboard/institution_home_screen.dart';
 
 /// Spec section 49: after login, select an institution before anything else
 /// is shown. Only institutions the signed-in user has an active membership
@@ -63,7 +63,7 @@ class InstitutionSelectionScreen extends StatelessWidget {
                   title: Text(institution.name),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => DashboardPlaceholderScreen(institution: institution)),
+                    MaterialPageRoute(builder: (_) => InstitutionHomeScreen(institution: institution)),
                   ),
                 ),
               );

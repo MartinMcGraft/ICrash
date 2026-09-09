@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
+import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
@@ -50,15 +54,45 @@ class FakeAuthRepository extends UnimplementedFake implements AuthRepository {
 }
 
 class FakeInstitutionRepository extends UnimplementedFake implements InstitutionRepository {
-  FakeInstitutionRepository({this.institutions = const []});
+  FakeInstitutionRepository({this.institutions = const [], this.myMembership});
 
   List<Institution> institutions;
+  Membership? myMembership;
 
   @override
   Stream<List<Institution>> watchMyInstitutions() => Stream.value(institutions);
+
+  @override
+  Future<Membership?> getMyMembership(String institutionId) async => myMembership;
 }
 
-class FakeCartRepository extends UnimplementedFake implements CartRepository {}
+class FakeCartRepository extends UnimplementedFake implements CartRepository {
+  FakeCartRepository({List<Cart>? carts}) : carts = carts ?? [];
+
+  final List<Cart> carts;
+  Cart? lastCreated;
+  Object? createError;
+  int _nextId = 1;
+  final _controller = StreamController<List<Cart>>.broadcast();
+
+  void _emit() => _controller.add(List.unmodifiable(carts));
+
+  @override
+  Stream<List<Cart>> watchAccessibleCarts(String institutionId) {
+    scheduleMicrotask(_emit);
+    return _controller.stream;
+  }
+
+  @override
+  Future<Cart> createCart(String institutionId, Cart cart) async {
+    if (createError != null) throw createError!;
+    final created = Cart(id: 'cart-${_nextId++}', institutionId: institutionId, name: cart.name, status: cart.status);
+    lastCreated = created;
+    carts.add(created);
+    _emit();
+    return created;
+  }
+}
 
 class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository {}
 

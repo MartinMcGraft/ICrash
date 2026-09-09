@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
-import 'package:icrash_app/src/presentation/dashboard/dashboard_placeholder_screen.dart';
+import 'package:icrash_app/src/presentation/dashboard/institution_home_screen.dart';
 import 'package:icrash_app/src/presentation/institution/institution_selection_screen.dart';
 
 import '../fakes/fake_repositories.dart';
@@ -26,7 +26,7 @@ void main() {
     expect(find.textContaining('Ainda não tem acesso'), findsOneWidget);
   });
 
-  testWidgets('lists institutions and opens the dashboard placeholder on tap', (tester) async {
+  testWidgets('lists institutions and opens the institution home screen on tap', (tester) async {
     const institution = Institution(id: 'inst-a', name: 'Hospital A');
     await tester.pumpWidget(
       _wrap(buildTestServices(institutions: FakeInstitutionRepository(institutions: const [institution]))),
@@ -38,7 +38,7 @@ void main() {
     await tester.tap(find.text('Hospital A'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(DashboardPlaceholderScreen), findsOneWidget);
+    expect(find.byType(InstitutionHomeScreen), findsOneWidget);
   });
 
   testWidgets('signs out when the logout action is tapped', (tester) async {
