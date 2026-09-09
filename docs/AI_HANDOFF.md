@@ -6,7 +6,7 @@ Updated: 2026-09-09
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Current delivery: Phase 0 validation passed; commit and push are the remaining operations. Use `git rev-parse HEAD` after delivery for the resulting hash.
+- Stable Phase 0 implementation commit: `ef09179a7bbbb400c4d7cea743860693164d11da`, published as `origin/DEV-Pedro`.
 - Flutter application: `03_Implementacao/app1`
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
@@ -16,7 +16,7 @@ The earlier local modernization was applied to the true repository while preserv
 
 ## Current phase
 
-Phase 0 validation is complete. Analysis, tests, Android/Web/Windows builds and live Android debug execution passed. The next operation is to complete the reviewed commit and push only `DEV-Pedro`, then begin Phase 1 without creating an irreversible Firestore location until the user approves it.
+Phase 0 is complete and published. Analysis, tests, Android/Web/Windows builds and live Android debug execution passed. The next operation is Phase 1: inspect Firebase tooling/authentication, prepare local Auth/Firestore emulators and cloud project configuration, but do not create the irreversible Firestore database location until the user approves it.
 
 ## Firebase and V2 state
 
