@@ -2,14 +2,29 @@
 
 Updated: 2026-09-09
 
+## Phase 2, V2 login/institution slice — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, against the local Auth/Firestore emulators seeded via `firestore-tests/seed_emulator.mjs`:
+
+- Login screen: WORKING. Empty-field validation shows both PT-PT error messages; valid credentials sign in via the Auth emulator; invalid credentials show "Credenciais inválidas...".
+- Institution selection: WORKING. `collectionGroup('memberIndex')` query returns the seeded "Hospital de Teste"; tapping it opens the dashboard placeholder. Empty-state message was verified separately via widget test (no second seeded account was created to exercise it live).
+- Dashboard placeholder: WORKING. Shows the real institution name; "Abrir aplicação anterior (referência)" opens the legacy `HomeMenu`, which still renders Registration/QR Code Reader/Data matrix scan unchanged; back navigation returns to the placeholder correctly. Sign-out button verified via widget test (`institution_selection_screen_test.dart`).
+- No fatal `pt.icrash.app` exceptions in logcat across the whole session; unrelated OS/emulator noise (Bluetooth power stats, audio HAL, Play Services Phenotype API) was present as usual on this AVD image and is not app-caused.
+
+Three real bugs were found and fixed only because of this live run — none of them would have been caught by `flutter analyze`/`flutter test`/a successful build alone, which is exactly the risk the spec's mandatory-live-validation rule exists to catch:
+
+1. **`MainActivity` package mismatch** (pre-existing since Phase 1, not introduced this session): `android/app/src/main/kotlin/com/example/app1/MainActivity.kt` still declared `package com.example.app1` after the Phase 1 rename of `applicationId`/`namespace` to `pt.icrash.app`, so the app crashed on every launch with `ClassNotFoundException`. Fixed by moving the file to `android/app/src/main/kotlin/pt/icrash/app/MainActivity.kt` and correcting the package declaration.
+2. **Cleartext traffic blocked**: Android's default network security policy blocks the plain-HTTP traffic the Auth/Firestore emulators use, failing every emulator request with `Cleartext HTTP traffic to 10.0.2.2 not permitted`. Fixed with a debug-build-only `network_security_config.xml` (see `docs/ARCHITECTURE.md`/`docs/FIREBASE_MODEL.md` for the full explanation) — never applies to release builds.
+3. **Firebase project id mismatch under the emulator** and the collection-group Rules quirk that surfaced alongside it — see `docs/FIREBASE_MODEL.md` ("Why `memberIndex` exists") and `docs/ARCHITECTURE.md` ("Environment selection") for the full story; fixed with the `memberIndex` collection plus a dedicated named `FirebaseApp` for emulator mode.
+
 ## Phase 2 foundation — automated validation
 
-- `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 12 tests — the pre-existing widget test plus 11 new tests in `test/domain/inventory_rules_test.dart`, including the two literal critical inventory scenarios from spec sections 58 and 59 (daily consumption never touches batches/expiry; only audit reconciliation may advance `earliestKnownExpiry`; replenishment can only pull it earlier, never later).
-- `flutter build apk --debug --no-pub`: passed, confirming the new Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android. Pre-existing Kotlin Gradle Plugin deprecation warnings from `firebase_auth`/`firebase_core`/`mobile_scanner` are unrelated to this phase.
-- `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 18/18 Firestore Rules tests covering spec section 60's security scenarios (unauthenticated denied, cross-institution isolation, unassigned-cart access denied, assigned-user write scope limited to `currentQuantity`, no self-role-escalation, only a platform super admin creates institutions, `usageEvents`/`auditEvents` are create-only even for institution admins).
-- No Flutter-to-emulator integration test exists yet (nothing in the presentation layer calls the new repositories); that lands with the first V2 screen in the next phase.
-- Web/Windows builds were not re-run this phase (no code path affecting those platforms changed beyond the same `bootstrapFirebase()` call already exercised via `flutter analyze`); re-verify before the next release-oriented milestone.
+- `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
+- `flutter test --no-pub`: passed, 19 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and three new presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart`, `institution_selection_screen_test.dart`, `dashboard_placeholder_screen_test.dart`.
+- `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
+- `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
+- Full Android emulator live walkthrough of the new screens: see the section above.
+- Web/Windows builds were not re-run this phase (no code path affecting those platforms changed beyond `bootstrapFirebase()`/`AppServices`, already exercised via `flutter analyze`/`flutter test`); re-verify before the next release-oriented milestone.
 
 ## Phase 0 automated validation
 
