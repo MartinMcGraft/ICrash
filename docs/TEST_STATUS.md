@@ -2,6 +2,17 @@
 
 Updated: 2026-09-09
 
+## Phase 2, drawer/slot editor — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, against local emulators seeded via `firestore-tests/seed_emulator.mjs`, signed in as the seeded `institutionAdmin`:
+
+- Cart detail screen: WORKING. Replaced the old placeholder; shows the cart's drawers (empty state when none exist) and, for a manager+, a "Nova gaveta" FAB.
+- Drawer creation: WORKING. Dialog collects a name and rows/columns (1-12 each, mirroring the legacy `UpdateDrawerShape` screen's range); created "GavetaPrincipal" (3 rows × 2 columns after a dropdown-interaction quirk — see bug note below) and it appeared in the list immediately via the Firestore stream.
+- Slot editor: WORKING. Opening a drawer with no saved slots renders one unit cell per grid position (`row+1,column+1` labels). Selecting two cells that form a rectangle and tapping "Juntar" merges them into one bigger slot spanning the full width; "Dividir" on a merged slot correctly restores the original unit cells. "Guardar" persists the full slot set via `DrawerRepository.replaceSlots`, confirmed with a "Gaveta guardada." snackbar; leaving and reopening the drawer reloads the merged layout from Firestore correctly.
+- No fatal `pt.icrash.app` exceptions in logcat.
+
+One real usability quirk found live, not a code bug: **Android's stylus-handwriting tutorial overlay ("Try out your stylus") intercepted a tap meant for a dialog's Cancel button** on this AVD image (it has a stylus input registered), consuming the tap as a handwriting gesture instead of dismissing the dialog. Not an app issue — worked around for this session with `adb shell settings put secure stylus_handwriting_enabled 0`; unrelated to anything shipped.
+
 ## Phase 2, membership management — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, against local emulators seeded via `firestore-tests/seed_emulator.mjs`, signed in as the seeded `institutionAdmin`:
@@ -46,7 +57,7 @@ Three real bugs were found and fixed only because of this live run — none of t
 ## Phase 2 foundation — automated validation
 
 - `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 30 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable).
+- `flutter test --no-pub`: passed, 38 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable), `cart_detail_screen_test.dart` (4, empty state/drawer list/role-gated creation), `slot_editor_screen_test.dart` (4, unit grid render/merge/split/view-only-for-normal-user).
 - `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
 - `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
 - Full Android emulator live walkthrough of the new screens: see the sections above.

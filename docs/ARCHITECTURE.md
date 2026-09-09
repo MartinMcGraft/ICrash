@@ -1,6 +1,6 @@
 # Architecture
 
-Status: login → institution selection → per-institution cart list/creation → member management live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
+Status: login → institution selection → per-institution cart list/creation → member management → drawer/slot editor live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -11,8 +11,9 @@ presentation/
   auth/login_screen.dart
   institution/institution_selection_screen.dart
   dashboard/institution_home_screen.dart      per-institution home: cart list + creation
-  cart/cart_detail_screen.dart                placeholder until drawers/slots exist
-  cart/cart_status_label.dart, create_cart_dialog.dart
+  cart/cart_detail_screen.dart                cart's drawer list + creation
+  cart/cart_status_label.dart, create_cart_dialog.dart, create_drawer_dialog.dart
+  cart/slot_editor_screen.dart                merge/split grid editor for one drawer's slots
   members/members_screen.dart                 institution-admin-only: list/create/role/status
   members/add_member_dialog.dart, membership_labels.dart
         ↑
@@ -42,11 +43,13 @@ The domain layer imports nothing from `cloud_firestore`/`firebase_auth`/`firebas
 
 No dependency-injection framework was introduced. `AppServices` (`lib/src/common/app_services.dart`) is a plain class holding one instance of every repository; `lib/main.dart` constructs it once from `bootstrapFirebase()`'s result and hands it down via `AppServicesScope`, an `InheritedWidget`. A screen reads what it needs with `AppServicesScope.of(context).auth` etc. `AppServices.withRepositories(...)` is a second constructor that takes every repository directly (used by widget tests to inject fakes without touching Firebase — see `test/fakes/fake_repositories.dart`).
 
-`lib/main.dart`'s `_AuthGate` widget listens to `AuthRepository.authStateChanges()` and shows `LoginScreen` when signed out, `InstitutionSelectionScreen` when signed in. Selecting an institution pushes `InstitutionHomeScreen`, which lists that institution's carts (`CartRepository.watchAccessibleCarts`) and — for a manager/institutionAdmin/platformSuperAdmin, checked once via `InstitutionRepository.getMyMembership` — shows a "Novo carro" FAB. Tapping a cart opens `CartDetailScreen`, a placeholder until drawers/slots/stock exist (workstreams B/C/E/F). Per the "preserve existing functionality" rule, `InstitutionHomeScreen` also has a button that opens the legacy `HomeMenu` unmodified. Nothing in the new screens calls the legacy `RequestHandler`.
+`lib/main.dart`'s `_AuthGate` widget listens to `AuthRepository.authStateChanges()` and shows `LoginScreen` when signed out, `InstitutionSelectionScreen` when signed in. Selecting an institution pushes `InstitutionHomeScreen`, which lists that institution's carts (`CartRepository.watchAccessibleCarts`) and — for a manager/institutionAdmin/platformSuperAdmin, checked once via `InstitutionRepository.getMyMembership` — shows a "Novo carro" FAB. Tapping a cart opens `CartDetailScreen`, which lists that cart's drawers and (manager+) a "Nova gaveta" FAB; stock/assignments (workstreams C/E/F) still don't exist. Per the "preserve existing functionality" rule, `InstitutionHomeScreen` also has a button that opens the legacy `HomeMenu` unmodified. Nothing in the new screens calls the legacy `RequestHandler`.
 
 The FAB visibility check is a UX nicety, not the security boundary — `firestore.rules` independently enforces that only manager+ can `create`/`update` a cart (spec section 18: never rely on hiding a button). If `createCart` is ever called by someone Rules reject, it fails with a `RepositoryFailure` shown in a `SnackBar`.
 
 `InstitutionHomeScreen` also has a "Membros" `AppBar` icon, shown only for an institution admin/platform super admin (a stricter check than the cart FAB's manager-or-above), opening `MembersScreen`. It lists every membership (`InstitutionRepository.watchMembers`), lets the admin change a member's role or toggle active/disabled, and creates brand-new members via a "Novo membro" dialog. There is still no Cloud Function to invite an existing user by e-mail alone (Phase 1 has none), so `createMember` always provisions a fresh Firebase Auth account for the given e-mail/temporary-password, then writes `memberships`/`memberIndex` in one `WriteBatch` — see "Isolated account creation" below for how the new account is created without signing the admin out of their own session. As with carts, `firestore.rules` is the real boundary (`isInstitutionAdmin`, not just `isManagerOrAbove`, gates `memberships`/`memberIndex` writes); the UI gating only avoids showing controls that would fail.
+
+`CartDetailScreen` lists a cart's drawers (`DrawerRepository.watchDrawers`) and, for manager+, a "Nova gaveta" FAB (`create_drawer_dialog.dart`: name + rows/columns). Tapping a drawer opens `SlotEditorScreen`, which edits its slot layout (spec sections 36-37): every cell starts as its own unit slot; selecting cells whose combined area exactly tiles a rectangle and tapping "Juntar" merges them into one bigger slot, and "Dividir" on a selected merged slot restores it to unit cells. Both are local edits until "Guardar" persists the whole set via `DrawerRepository.replaceSlots` in one call. The grid always fills the available screen area — a `LayoutBuilder` divides the actual on-screen width/height by the drawer's `columns`/`rows` to get each unit cell's size, so a single slot occupies the whole visible area, two slots split it in half, and so on, mirroring a real physical drawer rather than a fixed pixel grid. Cells are `Positioned` inside a `Stack` sized by `row/column/rowSpan/columnSpan × that computed cell size`, not a `GridView` — Flutter's built-in grid widgets don't support cell spanning. This tap-to-select-then-merge/split model is simpler and more testable than reproducing the legacy `grid_slots.dart` prototype's long-press-to-select/double-tap-to-split gesture model (untouched, still reachable from the legacy `HomeMenu`, and not reused here).
 
 ## Environment selection
 
@@ -67,7 +70,7 @@ The FAB visibility check is a UX nicety, not the security boundary — `firestor
 
 ## What is intentionally not built yet
 
-- Everything in workstreams A-D beyond login/institution-selection/cart list+creation/member management: no drawer/slot/product/assignment screens, no cart edit/duplicate/template.
+- Everything in workstreams A-D beyond login/institution-selection/cart list+creation/member management/drawer+slot editing: no product/assignment screens (stock per slot), no cart edit/duplicate/template.
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ScannerService`/`ReportService`/`NotificationService` are contracts only.
 - Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.

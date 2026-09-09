@@ -6,16 +6,23 @@ Updated: 2026-09-09
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this continuation: `884dc78` (`docs: record Firestore rules/indexes deployment to the cloud project`)
+- Last published commit before this continuation: `db03d70` (`docs: record membership management status, live test results and handoff`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
 ## Completed work
 
-Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added three V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, and (3) institution-admin membership management (create/role-change/enable-disable) — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
+Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added four V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, (3) institution-admin membership management (create/role-change/enable-disable), and (4) a per-cart drawer list with a merge/split slot editor — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
 
-### Membership management sub-phase (most recent)
+### Drawer/slot editor sub-phase (most recent)
+
+- `CartDetailScreen` rewritten from a static placeholder to a real drawer list (`DrawerRepository.watchDrawers`) with a manager-gated "Nova gaveta" FAB (`create_drawer_dialog.dart`: name + rows/columns 1-12).
+- New `lib/src/presentation/cart/slot_editor_screen.dart`: renders a drawer's slots as a `Stack` of `Positioned` cells (not a `GridView` — Flutter's grid widgets don't support cell spanning). The grid always fills the available screen area — a `LayoutBuilder` divides the actual width/height by `columns`/`rows`, so one slot fills the whole visible area, two slots split it in half, etc., matching a real physical drawer rather than a fixed pixel grid (this was corrected mid-session after the first version used a fixed cell size — see below). A drawer with no saved slots starts as one unit cell per grid position. Tap-to-select cells whose combined area exactly tiles a rectangle, then "Juntar" merges them; "Dividir" on a selected merged slot restores unit cells. "Guardar" persists everything via `DrawerRepository.replaceSlots` in one call. Manager+ only, matching the Rules boundary on `drawers`/`slots` writes.
+- `FakeDrawerRepository` upgraded from an unimplemented stub to real in-memory behavior, mirroring `FakeCartRepository`'s pattern.
+- Live-validated on Android: created a 3×2 drawer, merged two cells, split them back, merged again and saved — the merged layout reloaded correctly from Firestore after leaving and reopening the drawer. No fatal exceptions. One environment quirk found (not a code bug): the AVD's stylus-handwriting tutorial overlay intercepted a dialog tap; worked around with `adb shell settings put secure stylus_handwriting_enabled 0` — see `docs/TEST_STATUS.md`.
+
+### Membership management sub-phase
 
 - `InstitutionRepository` gained `watchMembers`, `createMember`, `updateMemberRole`, `setMembershipStatus`. No Rules changes needed — `memberships`/`memberIndex` admin-only writes already existed.
 - `createMember` provisions a brand-new Firebase Auth account (no Cloud Function to invite by e-mail alone exists yet) via a throwaway, uniquely-named secondary `FirebaseApp` (`createIsolatedAccountCreationAuth` in `firebase_bootstrap.dart`) so creating a member never signs the admin out of their own session, then writes `memberships`+`memberIndex` in one `WriteBatch`.
@@ -35,7 +42,16 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 
 ## Exact files changed this session
 
-Membership management (this sub-phase, most recent):
+Drawer/slot editor (this sub-phase, most recent):
+- `03_Implementacao/app1/lib/src/presentation/cart/cart_detail_screen.dart` — rewritten from a static placeholder (`StatelessWidget`) to a `StatefulWidget` with a real drawer list and manager-gated "Nova gaveta" FAB.
+- `03_Implementacao/app1/lib/src/presentation/cart/create_drawer_dialog.dart` — new; name + rows/columns (1-12) dialog.
+- `03_Implementacao/app1/lib/src/presentation/cart/slot_editor_screen.dart` — new; the merge/split grid editor described above.
+- `03_Implementacao/app1/test/fakes/fake_repositories.dart` — `FakeDrawerRepository` gained real in-memory `watchDrawers`/`createDrawer`/`updateDrawer`/`watchSlots`/`replaceSlots`.
+- `03_Implementacao/app1/test/presentation/cart_detail_screen_test.dart`, `slot_editor_screen_test.dart` — new (4 tests each).
+- No repository interface, Firestore implementation, or Rules changes were needed — `DrawerRepository`/`FirestoreDrawerRepository` and the `drawers`/`slots` Rules were already complete from the architecture-foundation phase.
+- `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/TEST_STATUS.md` — updated.
+
+Membership management (prior sub-phase):
 - `03_Implementacao/app1/lib/src/domain/repositories/institution_repository.dart` — added `watchMembers`, `createMember`, `updateMemberRole`, `setMembershipStatus`.
 - `03_Implementacao/app1/lib/src/data/firebase/firestore_institution_repository.dart` — implements the four new methods; `createMember` uses `createIsolatedAccountCreationAuth()` then a `WriteBatch`; `setMembershipStatus` also uses a `WriteBatch`; `updateMemberRole` is a single-doc update.
 - `03_Implementacao/app1/lib/src/data/firebase/firebase_bootstrap.dart` — added `createIsolatedAccountCreationAuth()`: a throwaway, uniquely-named secondary `FirebaseApp` so creating another user's Auth account never signs out the current user.
@@ -121,15 +137,16 @@ None.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 30/30. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Three full live Android walkthroughs: login/institution-selection, cart list/creation, then membership management — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
+`flutter analyze` clean. `flutter test`: 38/38. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Four full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, then the drawer/slot editor — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
 
 ## Android emulator tests already performed
 
-This session, on `ICrash_API_36`, across three builds:
+This session, on `ICrash_API_36`, across four builds:
 
 1. Login slice: fresh install → login screen renders → validation errors on empty submit → successful sign-in with the seeded test account → institution list shows "Hospital de Teste" → tapping it opens the institution home → legacy app reachable → back navigation returns correctly.
 2. Cart list/creation slice (separate emulator restart — emulator data does not persist, re-seed with `npm --prefix firestore-tests run seed` after every `emulators:start`): institution home shows the seeded "Carro de Emergência 1"; "Novo carro" FAB visible for the seeded `institutionAdmin`; created "Carro2" via the dialog, list updated live with no manual refresh; opened its detail screen; opened the legacy app via the new `AppBar` icon.
 3. Membership management slice (same emulator instance as #2, re-seeded): "Membros" icon visible for the `institutionAdmin`; members list showed the admin's own row with no action menu; "Novo membro" created a new Auth account + `memberships`/`memberIndex` docs, appearing instantly in the list; "Mudar cargo" changed the new member's role live; "Desativar" toggled their status live. Admin's own session was never disrupted by creating the other account.
+4. Drawer/slot editor slice (same running app session, no restart needed): opened "Carro de Emergência 1" → detail screen showed the empty-drawers state → created "GavetaPrincipal" (3×2) → opened it → slot editor rendered 6 unit cells → selected two and merged them into one wide slot → split it back to units → merged again and saved ("Gaveta guardada." snackbar) → left and reopened the drawer, confirming the merged layout reloaded correctly from Firestore.
 
 No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
 
@@ -137,7 +154,7 @@ No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken
 
 ## Known bugs
 
-None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management sub-phase.
+None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management or drawer/slot-editor sub-phases (the stylus-handwriting overlay quirk in the latter is an AVD/OS behavior, not an app bug — see `docs/TEST_STATUS.md`).
 
 ## Known platform limitations
 
@@ -175,11 +192,11 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-Login, institution selection, cart list/creation, and membership management are done. Continue workstream B/C (spec item 5). Sensible next slice, in order:
+Login, institution selection, cart list/creation, membership management, and the drawer/slot editor are done. Continue workstream C/D (spec item 5). Sensible next slice, in order:
 
-1. **Drawer/slot editor** (workstream B) — the domain model (`CartDrawer`, `Slot` with row/column/rowSpan/columnSpan) and `DrawerRepository` already exist; nothing in presentation consumes them yet. Natural entry point: tapping into `CartDetailScreen` (currently a placeholder — replace it).
+1. **Product/assignment screens** (workstream C) — stock per cart/slot (`CartProductAssignment`, `Batch`). The drawer/slot editor now exists, so there's somewhere to assign a product to; `ProductRepository`/`InventoryRepository` already exist (check `lib/src/domain/repositories/` for exact method signatures before designing the screen). This is also the first screen that will exercise `InventoryRules`' conservative-expiry logic end-to-end through the UI, not just via `test/domain/inventory_rules_test.dart`.
 2. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
-3. Product/assignment screens (workstream C) — stock per cart/slot; needs the drawer/slot editor first so there's somewhere to assign a product to.
+3. `responsibleUsers` management (spec section 17) — assigning a normal user to a specific cart so they can see it without being a manager; no UI exists yet, `CartResponsibleUser` entity and the Rules already do.
 
 Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap (FAB vs. bottom bars, etc.) since widget tests don't catch that — see the cart-list sub-phase's bug above.
 
@@ -188,6 +205,7 @@ Whichever is picked, follow the same pattern established here: repository alread
 - `FirestoreInventoryRepository.reconcileAfterAudit` still uses a plain `WriteBatch` for the batch-collection replacement rather than one atomic transaction spanning batches+assignment (unchanged from the architecture-foundation handoff).
 - `createIsolatedAccountCreationAuth()` (member creation) is a client-side workaround for having no Cloud Function to create a user's Auth account server-side. It works but is not how a real invite-by-email flow should ultimately work — revisit if/when Cloud Functions are introduced.
 - `memberships`/`memberIndex` are now written together everywhere (`createMember`, `setMembershipStatus` via `WriteBatch`). Any new code path that writes `memberships` directly must keep doing the same — never write one without the other.
+- `SlotEditorScreen` gives every slot a position-based id (`r{row}c{column}` of its top-left cell) rather than a stable identity that survives merges/splits. Fine today since nothing references `slotId` yet, but **whoever builds the product/assignment screens (workstream C, next task) must know that merging/splitting/saving a drawer changes which slot ids exist** — any `CartProductAssignment.slotId` pointing at a slot id that a later edit removed would dangle. Either assign products only to a drawer's current (post-edit) slot ids, or revisit the id scheme before wiring assignments to specific slots.
 
 ## Things that must NOT be redone
 

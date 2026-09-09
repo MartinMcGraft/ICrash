@@ -69,7 +69,19 @@ Status: complete and validated live on the Android emulator.
 - New/renamed tests: `institution_home_screen_test.dart` (5 tests: empty state, list+navigate to detail, FAB shown for manager + creates a cart, FAB hidden for a normal user, legacy app still reachable); `institution_selection_screen_test.dart` updated for the rename.
 - Live Android validation: seeded institution already had one cart from `seed_emulator.mjs`; the list rendered it correctly, "Novo carro" was visible (seeded user is `institutionAdmin`), and creating a cart updated the list live via the Firestore snapshot stream. See `docs/TEST_STATUS.md`.
 
-Not started: everything else in workstreams A-D (drawer/slot/product/assignment screens, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
+## Phase 2 continued — drawer/slot editor
+
+Status: complete and validated live on the Android emulator.
+
+- `lib/src/presentation/cart/cart_detail_screen.dart` rewritten from a static placeholder to a real per-cart drawer list (`DrawerRepository.watchDrawers`), with a "Nova gaveta" FAB gated on manager+ (same role check as the cart list's FAB).
+- New `create_drawer_dialog.dart`: name + rows/columns (1-12 each, matching the legacy `UpdateDrawerShape` screen's range).
+- New `lib/src/presentation/cart/slot_editor_screen.dart`: renders a drawer's slot layout as an absolutely-positioned grid (`Stack`/`Positioned`, cell size in pixels × row/column/rowSpan/columnSpan) rather than a `GridView`, since Flutter's grid widgets don't support cell spanning natively. A drawer with no saved slots yet starts as one unit (1×1) slot per grid cell. Selecting cells whose combined footprint is itself a rectangle (checked via area-sum-equals-bounding-box-area) and tapping "Juntar" merges them into one bigger slot; "Dividir" on a selected multi-cell slot restores it to unit cells. Both are local edits; "Guardar" persists the whole set via `DrawerRepository.replaceSlots` in one call. Editing controls (Juntar/Dividir/Guardar) are hidden for anyone below manager, matching the Rules boundary on `drawers`/`slots` writes.
+- `RepositoryFailureReason.invalidInput` and the improved `FirebaseAuthException` mapping (added for membership management) are unrelated to this slice but shipped in the same window.
+- `FakeDrawerRepository` upgraded from an unimplemented stub to real in-memory behavior (`watchDrawers`/`createDrawer`/`updateDrawer`/`watchSlots`/`replaceSlots`), mirroring `FakeCartRepository`'s pattern.
+- New tests: `cart_detail_screen_test.dart` (4), `slot_editor_screen_test.dart` (4).
+- Live Android validation: created a 3×2 drawer, merged two cells into one, split it back, merged again and saved, then confirmed the merged layout reloads correctly from Firestore after leaving and reopening the drawer. See `docs/TEST_STATUS.md`.
+
+Not started: everything else in workstreams C/D (product/assignment screens — stock per slot, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
 
 ## Phase 2 continued — membership management
 
