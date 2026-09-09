@@ -2,6 +2,20 @@
 
 Updated: 2026-09-09
 
+## Phase 2, cart list and creation — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, against local emulators freshly seeded via `firestore-tests/seed_emulator.mjs` (emulator data does not persist across restarts; a stale cached Auth session from a prior emulator run showed "Ainda não tem acesso a nenhuma instituição" until signing out and back in — expected, not a bug: the cached uid no longer existed in the fresh emulator instance):
+
+- Institution home screen: WORKING. Cart list shows the seeded "Carro de Emergência 1" / "Operacional" from `CartRepository.watchAccessibleCarts`; "Novo carro" FAB visible (seeded user is `institutionAdmin`).
+- Cart creation: WORKING. Dialog validates empty input (covered by widget test), creating "Carro2" closed the dialog and the list updated live via the Firestore snapshot stream — no manual refresh, no navigation round-trip.
+- Cart detail: WORKING. Shows name, status chip, and the drawers/stock placeholder message.
+- Legacy app access: WORKING, moved to an AppBar icon (history icon, tooltip "Aplicação anterior (referência)") — see the bug note below for why.
+- No fatal `pt.icrash.app` exceptions in logcat.
+
+One real bug found by this live run, before any code shipped with it:
+
+- **FAB/legacy-button overlap**: the initial layout put "Abrir aplicação anterior (referência)" in a bottom bar, which the default-positioned `FloatingActionButton.extended` ("Novo carro") visually overlapped on a real device — not visible in the widget tests, which don't check for accessible tap targets/paint overlap. Fixed by moving legacy-app access to an `AppBar` icon button instead of a bottom bar, which also happens to read cleaner. Re-verified live after the fix (screenshot comparison, not just re-running widget tests).
+
 ## Phase 2, V2 login/institution slice — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, against the local Auth/Firestore emulators seeded via `firestore-tests/seed_emulator.mjs`:
@@ -20,11 +34,11 @@ Three real bugs were found and fixed only because of this live run — none of t
 ## Phase 2 foundation — automated validation
 
 - `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 19 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and three new presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart`, `institution_selection_screen_test.dart`, `dashboard_placeholder_screen_test.dart`.
+- `flutter test --no-pub`: passed, 23 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (5, cart list/empty-state/creation/role-gated FAB/legacy access).
 - `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
 - `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
-- Full Android emulator live walkthrough of the new screens: see the section above.
-- Web/Windows builds were not re-run this phase (no code path affecting those platforms changed beyond `bootstrapFirebase()`/`AppServices`, already exercised via `flutter analyze`/`flutter test`); re-verify before the next release-oriented milestone.
+- Full Android emulator live walkthrough of the new screens: see the sections above.
+- Web/Windows builds were not re-run this phase (no code path affecting those platforms changed beyond `bootstrapFirebase()`/`AppServices`/the new screens, already exercised via `flutter analyze`/`flutter test`); re-verify before the next release-oriented milestone.
 
 ## Phase 0 automated validation
 

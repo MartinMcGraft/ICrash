@@ -6,14 +6,24 @@ Updated: 2026-09-09
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this session: `63fc941` (`chore: validate Windows Firebase build`)
+- Last published commit before this continuation: `001f88d` (`docs: record V2 login slice status, live test results and handoff`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
 ## Completed work
 
-Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added the first V2 presentation slice** — login, institution selection, dashboard placeholder — validated live end-to-end on the Android emulator, plus fixed three real bugs (one pre-existing since Phase 1, two new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest.
+Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added two V2 presentation slices** — (1) login, institution selection, dashboard placeholder, and (2) turning that placeholder into a real per-institution cart list with creation — both validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest.
+
+### Cart list/creation sub-phase (most recent)
+
+- `dashboard/dashboard_placeholder_screen.dart` → renamed/rewritten as `dashboard/institution_home_screen.dart` (`InstitutionHomeScreen`): real cart list (`CartRepository.watchAccessibleCarts`), a "Novo carro" FAB gated on role (`InstitutionRepository.getMyMembership`), legacy-app access moved to an `AppBar` icon.
+- New `lib/src/presentation/cart/`: `cart_detail_screen.dart`, `cart_status_label.dart`, `create_cart_dialog.dart`.
+- No domain/repository/Rules changes needed — `CartRepository`/`Cart`/the `carts` Rules were already complete.
+- `FakeCartRepository` upgraded from an unimplemented stub to real in-memory behavior; `FakeInstitutionRepository.getMyMembership` added.
+- `institution_home_screen_test.dart` (5 tests) replaces the old `dashboard_placeholder_screen_test.dart`.
+- **Bug found live**: the FAB overlapped a bottom-bar "legacy app" button — invisible to widget tests (they don't check paint overlap). Fixed by moving that access into the `AppBar` instead.
+- Live-validated: cart list renders seed data, "Novo carro" creates a cart and the list updates instantly via the Firestore stream (no manual refresh), cart detail opens, legacy app still reachable, no fatal exceptions.
 
 ## Exact files changed this session
 
@@ -84,15 +94,20 @@ None.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 19/19. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Full live Android walkthrough: passed (login, institution selection, dashboard placeholder, legacy app access, sign-out) — see `docs/TEST_STATUS.md` for detail and the three bugs it caught.
+`flutter analyze` clean. `flutter test`: 23/23. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Two full live Android walkthroughs: login/institution-selection, then cart list/creation — see `docs/TEST_STATUS.md` for detail and the four bugs they caught.
 
 ## Android emulator tests already performed
 
-This session, on `ICrash_API_36`: fresh install → login screen renders → validation errors on empty submit → successful sign-in with the seeded test account → institution list shows "Hospital de Teste" → tapping it opens the dashboard placeholder with the real institution name → "Abrir aplicação anterior" opens the legacy `HomeMenu` (Registration/QR Code Reader/Data matrix scan all still visible) → back navigation returns correctly. No fatal `pt.icrash.app` exceptions in logcat. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
+This session, on `ICrash_API_36`, across two builds:
+
+1. Login slice: fresh install → login screen renders → validation errors on empty submit → successful sign-in with the seeded test account → institution list shows "Hospital de Teste" → tapping it opens the institution home → legacy app reachable → back navigation returns correctly.
+2. Cart list/creation slice (separate emulator restart — emulator data does not persist, re-seed with `npm --prefix firestore-tests run seed` after every `emulators:start`): institution home shows the seeded "Carro de Emergência 1"; "Novo carro" FAB visible for the seeded `institutionAdmin`; created "Carro2" via the dialog, list updated live with no manual refresh; opened its detail screen; opened the legacy app via the new `AppBar` icon.
+
+No fatal `pt.icrash.app` exceptions in logcat in either run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
 
 ## Known bugs
 
-None known to remain. The three found this session (MainActivity package, cleartext blocking, project-id mismatch) are fixed and verified live.
+None known to remain. The four found this session (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live.
 
 ## Known platform limitations
 
@@ -130,13 +145,13 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-Continue workstream A/B/C (spec item 5): build the next V2 screen(s) beyond the dashboard placeholder. Sensible next slice, in order:
+Login, institution selection, and cart list/creation are done. Continue workstream A/B/C (spec item 5). Sensible next slice, in order:
 
-1. **Membership management** (create/disable a member, assign a role) — this is the first thing that needs to write both `memberships` and `memberIndex` atomically (a `WriteBatch`), so it's also the natural place to add an `InstitutionRepository`/new small repository method for it (none exists yet — `InstitutionRepository` currently only has `createInstitution`).
-2. **Cart list + cart creation** for an institution (uses the already-implemented `CartRepository`).
-3. **Drawer/slot editor** (workstream B) — the domain model (`CartDrawer`, `Slot` with row/column/rowSpan/columnSpan) and `DrawerRepository` already exist; nothing in presentation consumes them yet.
+1. **Membership management** (create/disable a member, assign a role) — the first thing that needs to write both `memberships` and `memberIndex` atomically (a `WriteBatch`), so it's the natural place to add an `InstitutionRepository`/new small repository method for it (none exists yet — `InstitutionRepository` currently only has `createInstitution`). No in-app way to create a membership exists yet; still only `firestore-tests/seed_emulator.mjs`.
+2. **Drawer/slot editor** (workstream B) — the domain model (`CartDrawer`, `Slot` with row/column/rowSpan/columnSpan) and `DrawerRepository` already exist; nothing in presentation consumes them yet. Natural entry point: tapping into `CartDetailScreen` (currently a placeholder — replace it).
+3. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
 
-Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`.
+Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap (FAB vs. bottom bars, etc.) since widget tests don't catch that — see the cart-list sub-phase's bug above.
 
 ## Temporary workarounds
 

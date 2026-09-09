@@ -58,6 +58,17 @@ Status: first presentation-layer slice complete and validated live on the Androi
 - New widget tests using hand-written fakes (`test/fakes/fake_repositories.dart`, no mocking framework added): `login_screen_test.dart`, `institution_selection_screen_test.dart`, `dashboard_placeholder_screen_test.dart`. The pre-existing `widget_test.dart` now pumps `HomeMenu` directly instead of via `MyApp`, since `MyApp` requires a real Firebase app.
 - Full live validation on Android emulator `ICrash_API_36`: login → institution selection → dashboard placeholder → legacy `HomeMenu` (and back), sign-out. See `docs/TEST_STATUS.md` for the detailed walkthrough and the three bugs this run caught.
 
-Not started: everything else in workstreams A-D (cart/drawer/slot/product/assignment screens, membership-management UI — there is currently no in-app way to create a membership), offline-state UI, ScannerService/ReportService/NotificationService implementations, dashboard (real), reports, localization scaffolding, and everything downstream of them.
+## Phase 2 continued — cart list and creation
+
+Status: complete and validated live on the Android emulator.
+
+- `lib/src/presentation/dashboard/dashboard_placeholder_screen.dart` replaced by `dashboard/institution_home_screen.dart`: real cart list per institution (`CartRepository.watchAccessibleCarts`), a "Novo carro" FAB shown only for manager/institutionAdmin/platformSuperAdmin (checked via `InstitutionRepository.getMyMembership`), and the legacy-app button kept.
+- New `lib/src/presentation/cart/`: `cart_detail_screen.dart` (placeholder — name/status only, until drawers/slots exist), `cart_status_label.dart` (PT-PT `CartStatus` labels), `create_cart_dialog.dart` (name-only creation dialog).
+- No repository/domain/Rules changes were needed — `CartRepository`, `Cart`, and the `carts` Firestore Rules were already complete from the architecture-foundation phase.
+- Fakes extended: `FakeCartRepository` now has real in-memory behavior (`watchAccessibleCarts`, `createCart`) instead of being an unimplemented stub; `FakeInstitutionRepository.getMyMembership` added. Both still hand-written, no mocking package.
+- New/renamed tests: `institution_home_screen_test.dart` (5 tests: empty state, list+navigate to detail, FAB shown for manager + creates a cart, FAB hidden for a normal user, legacy app still reachable); `institution_selection_screen_test.dart` updated for the rename.
+- Live Android validation: seeded institution already had one cart from `seed_emulator.mjs`; the list rendered it correctly, "Novo carro" was visible (seeded user is `institutionAdmin`), and creating a cart updated the list live via the Firestore snapshot stream. See `docs/TEST_STATUS.md`.
+
+Not started: everything else in workstreams A-D (drawer/slot/product/assignment screens, membership-management UI — there is currently no in-app way to create a membership, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
 
 See `MODERNIZATION_2026.md` for the baseline modernization and `ICRASH_V2_SPECIFICATION.md` for the authoritative V2 scope.

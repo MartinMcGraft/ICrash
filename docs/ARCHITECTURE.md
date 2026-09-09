@@ -1,6 +1,6 @@
 # Architecture
 
-Status: first V2 presentation slice live and validated on the Android emulator (login → institution selection → dashboard placeholder → legacy app still reachable). Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
+Status: login → institution selection → per-institution cart list/creation live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -10,7 +10,9 @@ Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old
 presentation/
   auth/login_screen.dart
   institution/institution_selection_screen.dart
-  dashboard/dashboard_placeholder_screen.dart
+  dashboard/institution_home_screen.dart      per-institution home: cart list + creation
+  cart/cart_detail_screen.dart                placeholder until drawers/slots exist
+  cart/cart_status_label.dart, create_cart_dialog.dart
         ↑
 domain/
   entities/        plain Dart classes, fromMap/toMap only, no Firebase imports
@@ -38,7 +40,9 @@ The domain layer imports nothing from `cloud_firestore`/`firebase_auth`/`firebas
 
 No dependency-injection framework was introduced. `AppServices` (`lib/src/common/app_services.dart`) is a plain class holding one instance of every repository; `lib/main.dart` constructs it once from `bootstrapFirebase()`'s result and hands it down via `AppServicesScope`, an `InheritedWidget`. A screen reads what it needs with `AppServicesScope.of(context).auth` etc. `AppServices.withRepositories(...)` is a second constructor that takes every repository directly (used by widget tests to inject fakes without touching Firebase — see `test/fakes/fake_repositories.dart`).
 
-`lib/main.dart`'s `_AuthGate` widget listens to `AuthRepository.authStateChanges()` and shows `LoginScreen` when signed out, `InstitutionSelectionScreen` when signed in. Selecting an institution pushes `DashboardPlaceholderScreen`, which stands in for the real dashboard (workstreams B/C/E/F) and — per the "preserve existing functionality" rule — has a button that opens the legacy `HomeMenu` unmodified. Nothing in the new screens calls the legacy `RequestHandler`.
+`lib/main.dart`'s `_AuthGate` widget listens to `AuthRepository.authStateChanges()` and shows `LoginScreen` when signed out, `InstitutionSelectionScreen` when signed in. Selecting an institution pushes `InstitutionHomeScreen`, which lists that institution's carts (`CartRepository.watchAccessibleCarts`) and — for a manager/institutionAdmin/platformSuperAdmin, checked once via `InstitutionRepository.getMyMembership` — shows a "Novo carro" FAB. Tapping a cart opens `CartDetailScreen`, a placeholder until drawers/slots/stock exist (workstreams B/C/E/F). Per the "preserve existing functionality" rule, `InstitutionHomeScreen` also has a button that opens the legacy `HomeMenu` unmodified. Nothing in the new screens calls the legacy `RequestHandler`.
+
+The FAB visibility check is a UX nicety, not the security boundary — `firestore.rules` independently enforces that only manager+ can `create`/`update` a cart (spec section 18: never rely on hiding a button). If `createCart` is ever called by someone Rules reject, it fails with a `RepositoryFailure` shown in a `SnackBar`.
 
 ## Environment selection
 
@@ -55,7 +59,7 @@ No dependency-injection framework was introduced. `AppServices` (`lib/src/common
 
 ## What is intentionally not built yet
 
-- Everything in workstreams A-D beyond login/institution-selection: no cart/drawer/slot/product/assignment screens, no membership-management UI (there is currently no way to create a membership from within the app — only the emulator seed script does).
+- Everything in workstreams A-D beyond login/institution-selection/cart list+creation: no drawer/slot/product/assignment screens, no membership-management UI (there is currently no way to create a membership from within the app — only the emulator seed script does), no cart edit/duplicate/template.
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ScannerService`/`ReportService`/`NotificationService` are contracts only.
 - Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.
