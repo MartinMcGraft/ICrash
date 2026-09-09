@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 // ignore_for_file: slash_for_doc_comments
 import 'dart:convert';
 
@@ -14,7 +16,7 @@ class RequestHandler {
    * host and verify the port of the server.
    */
   // Server information:
-  final String host = '192.168.174.19';
+  final String host = '192.168.129.19';
   final String port = '8000';
   late String urlStart;
 
@@ -136,7 +138,10 @@ class RequestHandler {
   }
 
   Future<List<String>> getDrawerShape(
-      String idI, String idC, String idD) async {
+    String idI,
+    String idC,
+    String idD,
+  ) async {
     instID = idI;
     ccartID = idC;
     drawerID = idD;
@@ -167,8 +172,14 @@ class RequestHandler {
     return false;
   }
 
-  Future<bool> createSlot(String sAdjHor, String sAdjVer, String nameProd,
-      String volWeight, String applic, String maxQuant) async {
+  Future<bool> createSlot(
+    String sAdjHor,
+    String sAdjVer,
+    String nameProd,
+    String volWeight,
+    String applic,
+    String maxQuant,
+  ) async {
     String url =
         '$urlStart/institution/$instID/crashcart/$ccartID/drawer/$drawerID/slot/create/';
     final data = {
@@ -176,7 +187,7 @@ class RequestHandler {
       's_adj_ver': sAdjVer,
       'name_prod': nameProd,
       'vol_weight': volWeight,
-      'max_quant': maxQuant
+      'max_quant': maxQuant,
     };
 
     if (applic.isNotEmpty) {
@@ -191,7 +202,10 @@ class RequestHandler {
   }
 
   Future<List<Map<String, dynamic>>> getSlots(
-      String idI, String idC, String idD) async {
+    String idI,
+    String idC,
+    String idD,
+  ) async {
     instID = idI;
     ccartID = idC;
     drawerID = idD;
@@ -203,18 +217,18 @@ class RequestHandler {
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = json.decode(response.body);
 
-      final List<Map<String, dynamic>> slotsList =
-          jsonData.cast<Map<String, dynamic>>();
+      final List<Map<String, dynamic>> slotsList = jsonData
+          .cast<Map<String, dynamic>>();
 
       for (var slot in slotsList) {
-        print("Slot Information:");
-        print("Name: ${slot['name']}");
-        print("s_adj_hor: ${slot['s_adj_hor']}");
-        print("s_adj_ver: ${slot['s_adj_ver']}");
-        print("Name Product: ${slot['name_prod']}");
-        print("Application: ${slot['application']}");
-        print("Volume Weight: ${slot['vol_weight']}");
-        print("Max Quantity: ${slot['max_quant']}");
+        debugPrint("Slot Information:");
+        debugPrint("Name: ${slot['name']}");
+        debugPrint("s_adj_hor: ${slot['s_adj_hor']}");
+        debugPrint("s_adj_ver: ${slot['s_adj_ver']}");
+        debugPrint("Name Product: ${slot['name_prod']}");
+        debugPrint("Application: ${slot['application']}");
+        debugPrint("Volume Weight: ${slot['vol_weight']}");
+        debugPrint("Max Quantity: ${slot['max_quant']}");
       }
 
       return slotsList;
@@ -224,7 +238,11 @@ class RequestHandler {
   }
 
   Future<List<String>> updateSlotQuantity(
-      String idI, String idC, String idD, String idS) async {
+    String idI,
+    String idC,
+    String idD,
+    String idS,
+  ) async {
     instID = idI;
     ccartID = idC;
     drawerID = idD;

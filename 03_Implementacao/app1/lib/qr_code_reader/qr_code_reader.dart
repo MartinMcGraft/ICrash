@@ -1,12 +1,12 @@
 import 'package:app1/grids/grid_drawers.dart';
 import 'package:flutter/material.dart';
 
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/foundation.dart';
 import 'package:app1/home_menu.dart';
 import 'package:app1/request_handler/request_handler.dart';
 
 import '../grids/grid_slots.dart';
-import 'package:intl/intl.dart';
 
 class QRCodeReader extends StatelessWidget {
   const QRCodeReader({super.key});
@@ -15,9 +15,7 @@ class QRCodeReader extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'QR Code Scanner',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const QRCodeScannerScreen(),
     );
   }
@@ -27,11 +25,10 @@ class QRCodeScannerScreen extends StatefulWidget {
   const QRCodeScannerScreen({super.key});
 
   @override
-  _QRCodeScannerScreenState createState() => _QRCodeScannerScreenState();
+  State<QRCodeScannerScreen> createState() => _QRCodeScannerScreenState();
 }
 
 class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   final RequestHandler handler = RequestHandler();
   bool dailyManagement = true;
   int contador = 0;
@@ -41,7 +38,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
   Map<String, int> counters = {};
   bool flagMensal = false;
 
-  QRViewController? controller;
   int counter = 0;
   String lastScannedMessage = '';
   bool buttonPressed = false;
@@ -50,15 +46,14 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const HomeMenu(),
-          ),
+          MaterialPageRoute(builder: (context) => const HomeMenu()),
         );
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -68,9 +63,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const HomeMenu(),
-                ),
+                MaterialPageRoute(builder: (context) => const HomeMenu()),
               );
             },
           ),
@@ -80,10 +73,17 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
             const SizedBox(height: 10),
             Expanded(
               flex: 5,
-              child: QRView(
-                key: qrKey,
-                onQRViewCreated: _onQRViewCreated,
-              ),
+              child:
+                  kIsWeb ||
+                      defaultTargetPlatform == TargetPlatform.android ||
+                      defaultTargetPlatform == TargetPlatform.iOS ||
+                      defaultTargetPlatform == TargetPlatform.macOS
+                  ? MobileScanner(onDetect: _onDetect)
+                  : const Center(
+                      child: Text(
+                        'A leitura por câmara está disponível na versão Web e nos dispositivos móveis.',
+                      ),
+                    ),
             ),
             const SizedBox(height: 10),
             Text(
@@ -93,11 +93,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _handleButtonPress,
-              child: const Row(
-                children: [
-                  Icon(Icons.add),
-                ],
-              ),
+              child: const Row(children: [Icon(Icons.add)]),
             ),
             ElevatedButton(
               onPressed: () {
@@ -112,53 +108,62 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                   String? registrationNumber;
 
                   // Expressões regulares para identificar e extrair os dados
-                  final regexProductCode =
-                      RegExp(r"01(\d{14})"); // GTIN de 14 dígitos
+                  final regexProductCode = RegExp(
+                    r"01(\d{14})",
+                  ); // GTIN de 14 dígitos
                   final regexSerialNumber = RegExp(
-                      r"21([A-Za-z0-9]{1,20})"); // Número de Série alfanumérico de até 20 caracteres
+                    r"21([A-Za-z0-9]{1,20})",
+                  ); // Número de Série alfanumérico de até 20 caracteres
                   final regexBatchNumber = RegExp(
-                      r"10([A-Za-z0-9]{1,20})"); // Número do Lote alfanumérico de até 20 caracteres
+                    r"10([A-Za-z0-9]{1,20})",
+                  ); // Número do Lote alfanumérico de até 20 caracteres
                   final regexExpirationDate = RegExp(
-                      r"17(\d{6})"); // Data de Validade em formato AAMMDD
+                    r"17(\d{6})",
+                  ); // Data de Validade em formato AAMMDD
                   final regexRegistrationNumber = RegExp(
-                      r"714(\d{7})"); // Número de Registo Nacional de 7 dígitos
+                    r"714(\d{7})",
+                  ); // Número de Registo Nacional de 7 dígitos
 
                   // Extrair o código do produto (GTIN)
-                  final productCodeMatch =
-                      regexProductCode.firstMatch(dataMatrix);
+                  final productCodeMatch = regexProductCode.firstMatch(
+                    dataMatrix,
+                  );
                   if (productCodeMatch != null) {
                     productCode = productCodeMatch.group(1);
                   }
 
                   // Extrair o número de série
-                  final serialNumberMatch =
-                      regexSerialNumber.firstMatch(dataMatrix);
+                  final serialNumberMatch = regexSerialNumber.firstMatch(
+                    dataMatrix,
+                  );
                   if (serialNumberMatch != null) {
                     serialNumber = serialNumberMatch.group(1);
                   }
 
                   // Extrair o número do lote
-                  final batchNumberMatch =
-                      regexBatchNumber.firstMatch(dataMatrix);
+                  final batchNumberMatch = regexBatchNumber.firstMatch(
+                    dataMatrix,
+                  );
                   if (batchNumberMatch != null) {
                     batchNumber = batchNumberMatch.group(1);
                   }
 
                   // Extrair a data de validade
-                  final expirationDateMatch =
-                      regexExpirationDate.firstMatch(dataMatrix);
+                  final expirationDateMatch = regexExpirationDate.firstMatch(
+                    dataMatrix,
+                  );
                   if (expirationDateMatch != null) {
                     String expirationDateStr = expirationDateMatch.group(1)!;
                     // Converter para o formato legível (AAAA-MM-DD)
-                    String year = "20" + expirationDateStr.substring(0, 2);
+                    String year = "20${expirationDateStr.substring(0, 2)}";
                     String month = expirationDateStr.substring(2, 4);
                     String day = expirationDateStr.substring(4, 6);
                     expirationDate = "$day/$month/$year";
                   }
 
                   // Extrair o número de registo nacional
-                  final registrationNumberMatch =
-                      regexRegistrationNumber.firstMatch(dataMatrix);
+                  final registrationNumberMatch = regexRegistrationNumber
+                      .firstMatch(dataMatrix);
                   if (registrationNumberMatch != null) {
                     registrationNumber = registrationNumberMatch.group(1);
                   }
@@ -178,7 +183,8 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                             Text('Número do Lote: $batchNumber'),
                             Text('Data de Validade: $expirationDate'),
                             Text(
-                                'Número de Registo Nacional: $registrationNumber'),
+                              'Número de Registo Nacional: $registrationNumber',
+                            ),
                           ],
                         ),
                         actions: <Widget>[
@@ -198,10 +204,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                 extractGS1Data(fullString);
               },
               child: const Row(
-                children: [
-                  SizedBox(width: 8),
-                  Text('Verificar Data'),
-                ],
+                children: [SizedBox(width: 8), Text('Verificar Data')],
               ),
             ),
             ElevatedButton(
@@ -231,10 +234,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                 );
               },
               child: const Row(
-                children: [
-                  SizedBox(width: 8),
-                  Text('Relatorio final'),
-                ],
+                children: [SizedBox(width: 8), Text('Relatorio final')],
               ),
             ),
           ],
@@ -243,15 +243,12 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
     );
   }
 
-  void _onQRViewCreated(QRViewController controller) {
+  void _onDetect(BarcodeCapture capture) {
+    if (!mounted || capture.barcodes.isEmpty) return;
+    final value = capture.barcodes.first.rawValue;
+    if (value == null || value.isEmpty) return;
     setState(() {
-      this.controller = controller;
-    });
-
-    controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        lastScannedMessage = scanData.code!;
-      });
+      lastScannedMessage = value;
     });
   }
 
@@ -259,34 +256,40 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
     buttonPressed = true;
     if (buttonPressed) {
       List<String> code = fullString.split('/');
-      //print(code);
+      //debugPrint(code);
       if (code.length == 2) {
         String data = await handler.getNumDrawers(code[0], code[1]);
         if (data.isNotEmpty) {
           counter++;
         }
-        print(data);
+        debugPrint(data);
         int numD = int.parse(data);
         int numB = int.parse(code[1]);
+
+        if (!mounted) return;
 
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GridDrawers(
-              blockNumber: numB,
-              numDs: numD,
-              handler: handler,
-            ),
+            builder: (context) =>
+                GridDrawers(blockNumber: numB, numDs: numD, handler: handler),
           ),
         );
       }
       if (code.length == 3) {
-        List<String> shape =
-            await handler.getDrawerShape(code[0], code[1], code[2]);
+        List<String> shape = await handler.getDrawerShape(
+          code[0],
+          code[1],
+          code[2],
+        );
         int nLins = int.parse(shape[0]);
         int nCols = int.parse(shape[1]);
-        List<Map<String, dynamic>> slots =
-            await handler.getSlots(code[0], code[1], code[2]);
+        List<Map<String, dynamic>> slots = await handler.getSlots(
+          code[0],
+          code[1],
+          code[2],
+        );
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -304,7 +307,11 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       if (code.length == 4) {
         List<String> resultados = [];
         List<String> nameMaxQ = await handler.updateSlotQuantity(
-            code[0], code[1], code[2], code[3]);
+          code[0],
+          code[1],
+          code[2],
+          code[3],
+        );
         String nome = nameMaxQ[0];
         if (!counters.containsKey(nome)) {
           counters[nome] = 0;
@@ -315,6 +322,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         resultados.add('$nome ${counters[nome]!}');
       }
 
+      if (!mounted) return;
       setState(() {
         fullString = lastScannedMessage;
       });
@@ -323,7 +331,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
 
   @override
   void dispose() {
-    controller?.dispose();
+    handler.closeClient();
     super.dispose();
   }
 }

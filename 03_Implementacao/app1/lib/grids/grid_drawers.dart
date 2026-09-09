@@ -8,7 +8,8 @@ class GridDrawers extends StatelessWidget {
   final int numDs;
   final RequestHandler handler;
 
-  const GridDrawers({super.key, 
+  const GridDrawers({
+    super.key,
     required this.blockNumber,
     required this.numDs,
     required this.handler,
@@ -18,10 +19,8 @@ class GridDrawers extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UpdateDrawerShape(
-          drawerName: drawerName,
-          handler: handler,
-        ),
+        builder: (context) =>
+            UpdateDrawerShape(drawerName: drawerName, handler: handler),
       ),
     );
   }
@@ -29,9 +28,7 @@ class GridDrawers extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Drawers'),
-      ),
+      appBar: AppBar(title: const Text('Drawers')),
       body: SingleChildScrollView(
         child: Center(
           child: Column(

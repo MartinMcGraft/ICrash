@@ -16,13 +16,15 @@ class GridCrashCarts extends StatelessWidget {
   final String inst;
   final RequestHandler handler;
 
-  const GridCrashCarts(
-      {super.key, required this.numCCs,
-      required this.inst,
-      required String descr,
-      required this.handler});
+  const GridCrashCarts({
+    super.key,
+    required this.numCCs,
+    required this.inst,
+    required String descr,
+    required this.handler,
+  });
 
-/*
+  /*
 
 A função build é onde ocorre a construção do widget da classe Grid.
 
@@ -54,9 +56,7 @@ e um peso de fonte em negrito (fontWeight: FontWeight.bold).
     double spacing = 5;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(inst),
-      ),
+      appBar: AppBar(title: Text(inst)),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 10,

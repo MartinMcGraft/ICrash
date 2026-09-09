@@ -78,52 +78,35 @@ class _TesteDataMatrixState extends State<TesteDataMatrix> {
       final recognizedText = await textRecognizer.processImage(inputImage);
       final text = recognizedText.text;
 
-      // Expressão regular para capturar datas precedidas por expressões como "exp", "val", etc.
-      final regexDateWithLabel = RegExp(
-        r'\b(?:exp|val|venc|validade|expiration|expiry)[ :]*\d{2}[\\/.,\- ]\d{4}\b',
-        caseSensitive: false,
-      );
+      // Expressões regulares para capturar datas nos formatos comuns, incluindo YYYY-MM, YYYY MM e variantes com espaços
       final regexDate = RegExp(
         r'\b(\d{2}[\\/.,\- ]\d{2}[\\/.,\- ]\d{4}|\d{4}[\\/.,\- ]\d{2}[\\/.,\- ]\d{2}|\d{2}[\\/.,\- ]\d{4}|\d{4}[\\/.,\- ]\d{2}|\d{4}\s\d{2})\b',
       );
 
-      String? selectedDate;
-      final labeledMatch = regexDateWithLabel.firstMatch(text);
+      // Busca apenas por datas na imagem
+      final matches = regexDate
+          .allMatches(text)
+          .map((match) => match.group(0))
+          .toList();
+      if (matches.isNotEmpty) {
+        final selectedDate = matches.length > 1
+            ? matches[1]
+            : matches[0]; // Seleciona a segunda data ou a única disponível
 
-      if (labeledMatch != null) {
-        selectedDate = labeledMatch
-            .group(0)
-            ?.replaceAll(RegExp(r'[^\d/\-]'), '')
-            .trim();
-      } else {
-        final matches = regexDate
-            .allMatches(text)
-            .map((match) => match.group(0))
-            .toList();
-        if (matches.length > 1) {
-          selectedDate = matches[1];
-        } else if (matches.isNotEmpty) {
-          selectedDate = matches[0];
-        }
-      }
-
-      if (selectedDate != null) {
+        // Verifica se a data está dentro ou fora do prazo de validade
         final now = DateTime.now();
         DateTime? parsedDate;
 
         try {
-          if (selectedDate.contains(RegExp(r'[\\/]'))) {
+          if (selectedDate!.contains(RegExp(r'[\\/]'))) {
             parsedDate = DateFormat('dd/MM/yyyy')
                 .parse(selectedDate.replaceAll(RegExp(r'[.,\- ]'), '/'));
           } else if (selectedDate.contains(RegExp(r'[.,\- ]'))) {
-            if (selectedDate.split(RegExp(r'[.,\- ]')).length == 2) {
-              // Caso especial: Formato MM YYYY ou YYYY MM
-              final parts = selectedDate.split(RegExp(r'[.,\- ]'));
-              parsedDate = DateTime(
-                int.parse(parts[1]),
-                int.parse(parts[0]),
-                1,
-              );
+            if (selectedDate.split(RegExp(r'[.,\- ]')).length == 2 ||
+                selectedDate.contains(' ')) {
+              // Caso especial: Formato YYYY-MM, YYYY MM ou variantes com espaços
+              parsedDate = DateFormat('yyyy-MM')
+                  .parse(selectedDate.replaceAll(RegExp(r'[.,\- ]'), '-'));
             } else {
               parsedDate = DateFormat('yyyy-MM-dd')
                   .parse(selectedDate.replaceAll(RegExp(r'[.,\- ]'), '-'));
@@ -134,19 +117,13 @@ class _TesteDataMatrixState extends State<TesteDataMatrix> {
         }
 
         if (parsedDate != null) {
-          // Se a data tiver apenas mês e ano, assume o primeiro dia do mês
-          if (selectedDate.split(RegExp(r'[.,\- ]')).length == 2) {
-            parsedDate = DateTime(parsedDate.year, parsedDate.month, 1);
-          }
-
           final difference = parsedDate.difference(now).inDays;
-          final formattedDate = DateFormat('dd/MM/yyyy').format(parsedDate);
           if (difference > 30) {
-            return '$formattedDate - Dentro do prazo (mais de 1 mês)';
+            return '$selectedDate - Dentro do prazo (mais de 1 mês)';
           } else if (difference > 0) {
-            return '$formattedDate - Dentro do prazo (menos de 1 mês)';
+            return '$selectedDate - Dentro do prazo (menos de 1 mês)';
           } else {
-            return '$formattedDate - Fora do prazo';
+            return '$selectedDate - Fora do prazo';
           }
         }
 

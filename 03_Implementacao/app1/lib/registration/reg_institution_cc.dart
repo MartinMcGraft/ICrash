@@ -20,9 +20,7 @@ class RegInstitutionCCState extends State<RegInstitutionCC> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registration'),
-      ),
+      appBar: AppBar(title: const Text('Registration')),
       body: ListView(
         children: [
           Center(
@@ -33,8 +31,9 @@ class RegInstitutionCCState extends State<RegInstitutionCC> {
                 SizedBox(
                   width: 200.0,
                   child: TextField(
-                    decoration:
-                        const InputDecoration(labelText: 'Institution Name'),
+                    decoration: const InputDecoration(
+                      labelText: 'Institution Name',
+                    ),
                     keyboardType: TextInputType.text,
                     onChanged: (value) {
                       setState(() {
@@ -48,7 +47,8 @@ class RegInstitutionCCState extends State<RegInstitutionCC> {
                   width: 200.0,
                   child: TextField(
                     decoration: const InputDecoration(
-                        labelText: 'Institution Description'),
+                      labelText: 'Institution Description',
+                    ),
                     keyboardType: TextInputType.text,
                     onChanged: (value) {
                       setState(() {
@@ -62,7 +62,8 @@ class RegInstitutionCCState extends State<RegInstitutionCC> {
                   width: 200.0,
                   child: TextField(
                     decoration: const InputDecoration(
-                        labelText: 'Number of CrashCarts'),
+                      labelText: 'Number of CrashCarts',
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       setState(() {
@@ -76,9 +77,12 @@ class RegInstitutionCCState extends State<RegInstitutionCC> {
                   onPressed: () async {
                     //registo do nome, descrição e numero de carros de uma instituição no servidor ao clicar no botão de registar.
                     if (await handler.createInstitution(
-                        institution, description)) {
+                      institution,
+                      description,
+                    )) {
                       if (await handler.getInstitutionID()) {
                         if (await handler.createCrashCarts(numCC.toString())) {
+                          if (!context.mounted) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(

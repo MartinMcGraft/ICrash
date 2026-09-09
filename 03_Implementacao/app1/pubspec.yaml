@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.6 <4.0.0'
+  sdk: '^3.13.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -34,15 +34,17 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
-  http: ^1.1.0
-  qr_code_scanner: ^1.0.1
-  intl: ^0.18.1
+  cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  mobile_scanner: ^7.4.0
+  intl: ^0.20.3
   #para adicionar as datamatrix
   #google_ml_kit: ^0.7.3 
-  camera: ^0.10.0+1
-  image: ^3.2.2
-  zxing_lib: ^1.1.2        # Biblioteca para ler DataMatrix
+  camera: ^0.12.1
+  image: ^4.9.2
+  google_mlkit_barcode_scanning: ^0.16.1
+  google_mlkit_text_recognition: ^0.17.1
+  zxing_lib: ^1.1.4        # Biblioteca para ler DataMatrix
 
 dev_dependencies:
   flutter_test:
@@ -53,7 +55,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

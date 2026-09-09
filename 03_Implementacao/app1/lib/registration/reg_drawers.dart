@@ -6,7 +6,11 @@ class RegDrawers extends StatefulWidget {
   final int blockNumber;
   final RequestHandler handler;
 
-  const RegDrawers({super.key, required this.blockNumber, required this.handler});
+  const RegDrawers({
+    super.key,
+    required this.blockNumber,
+    required this.handler,
+  });
 
   @override
   RegDrawersState createState() => RegDrawersState();
@@ -18,9 +22,7 @@ class RegDrawersState extends State<RegDrawers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Number of Drawers'),
-      ),
+      appBar: AppBar(title: const Text('Number of Drawers')),
       body: ListView(
         children: [
           Center(
@@ -48,10 +50,13 @@ class RegDrawersState extends State<RegDrawers> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () async {
-                    if (await widget.handler
-                        .getCrashCartID('CrashCart${widget.blockNumber + 1}')) {
-                      if (await widget.handler
-                          .createDrawers(numDrawers.toString())) {
+                    if (await widget.handler.getCrashCartID(
+                      'CrashCart${widget.blockNumber + 1}',
+                    )) {
+                      if (await widget.handler.createDrawers(
+                        numDrawers.toString(),
+                      )) {
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(

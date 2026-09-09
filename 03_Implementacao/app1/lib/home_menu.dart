@@ -9,9 +9,7 @@ class HomeMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('I-Crash'),
-      ),
+      appBar: AppBar(title: const Text('I-Crash')),
       body: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(
@@ -57,7 +55,8 @@ class HomeMenu extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const QRCodeReader()),
+                      builder: (context) => const QRCodeReader(),
+                    ),
                   );
                 },
                 child: const Text('QR Code Reader'),

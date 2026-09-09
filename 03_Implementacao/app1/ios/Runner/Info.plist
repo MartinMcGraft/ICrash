@@ -47,5 +47,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+<key>NSCameraUsageDescription</key>
+<string>A câmara permite ler os códigos dos consumíveis e carros de emergência.</string>
 </dict>
 </plist>

@@ -9,11 +9,13 @@ class ProductDetails extends StatefulWidget {
   final int mergeh;
   final RequestHandler handler;
 
-  const ProductDetails(
-      {super.key, required this.bloco,
-      required this.mergev,
-      required this.mergeh,
-      required this.handler});
+  const ProductDetails({
+    super.key,
+    required this.bloco,
+    required this.mergev,
+    required this.mergeh,
+    required this.handler,
+  });
 
   @override
   ProductDetailsState createState() => ProductDetailsState();
@@ -35,10 +37,12 @@ class ProductDetailsState extends State<ProductDetails> {
     super.initState();
     _nomeProdutoController = TextEditingController(text: widget.bloco.nome);
     _infoProdutoController = TextEditingController(text: widget.bloco.info);
-    _formulaProdutoController =
-        TextEditingController(text: widget.bloco.formula);
-    _maximoProdutoController =
-        TextEditingController(text: widget.bloco.maximo.toString());
+    _formulaProdutoController = TextEditingController(
+      text: widget.bloco.formula,
+    );
+    _maximoProdutoController = TextEditingController(
+      text: widget.bloco.maximo.toString(),
+    );
   }
 
   @override
@@ -78,23 +82,16 @@ class ProductDetailsState extends State<ProductDetails> {
             children: [
               const Text(
                 'Detalhes do Produto',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _nomeProdutoController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome do Produto',
-                ),
+                decoration: const InputDecoration(labelText: 'Nome do Produto'),
               ),
               TextField(
                 controller: _infoProdutoController,
-                decoration: const InputDecoration(
-                  labelText: 'Volume/peso',
-                ),
+                decoration: const InputDecoration(labelText: 'Volume/peso'),
               ),
               TextField(
                 controller: _formulaProdutoController,
@@ -124,12 +121,12 @@ class ProductDetailsState extends State<ProductDetails> {
                   ElevatedButton(
                     onPressed: () async {
                       _salvarDetalhes();
-                      print('mergev: ${widget.mergev.toStringAsFixed(2)}');
-                      print('mergeh: ${widget.mergeh.toStringAsFixed(2)}');
-                      print(_nomeProdutoController.text);
-                      print(_infoProdutoController.text);
-                      print(_formulaProdutoController.text);
-                      print(_maximoProdutoController.text);
+                      debugPrint('mergev: ${widget.mergev.toStringAsFixed(2)}');
+                      debugPrint('mergeh: ${widget.mergeh.toStringAsFixed(2)}');
+                      debugPrint(_nomeProdutoController.text);
+                      debugPrint(_infoProdutoController.text);
+                      debugPrint(_formulaProdutoController.text);
+                      debugPrint(_maximoProdutoController.text);
                       await widget.handler.createSlot(
                         widget.mergeh.toString(),
                         widget.mergev.toString(),

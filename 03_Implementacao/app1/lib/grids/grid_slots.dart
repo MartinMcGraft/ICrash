@@ -45,7 +45,8 @@ class GridSlots extends StatefulWidget {
   final bool flag;
   final List<dynamic>? list;
 
-  const GridSlots({super.key, 
+  const GridSlots({
+    super.key,
     required this.numCols,
     required this.numLins,
     required this.handler,
@@ -163,19 +164,16 @@ class GridSlotsState extends State<GridSlots> {
     final larguraNovoBloco = larguraOriginal / mergeCounth;
     final alturaNovoBloco = alturaOriginal / mergeCountv;
 
-    final novosBlocos = List.generate(
-      mergeCounth * mergeCountv,
-      (index) {
-        return Bloco(
-          nome: bloco.nome,
-          info: bloco.info,
-          formula: bloco.formula,
-          largura: larguraNovoBloco,
-          altura: alturaNovoBloco,
-          maximo: bloco.maximo,
-        );
-      },
-    );
+    final novosBlocos = List.generate(mergeCounth * mergeCountv, (index) {
+      return Bloco(
+        nome: bloco.nome,
+        info: bloco.info,
+        formula: bloco.formula,
+        largura: larguraNovoBloco,
+        altura: alturaNovoBloco,
+        maximo: bloco.maximo,
+      );
+    });
 
     final indiceLinha = grelha.indexWhere((linha) => linha.contains(bloco));
     final indiceColuna = grelha[indiceLinha].indexOf(bloco);
@@ -280,8 +278,9 @@ class GridSlotsState extends State<GridSlots> {
           grelha[indiceLinha1].remove(bloco1);
           grelha[indiceLinha2].remove(bloco2);
 
-          final indiceLinhaSuperior =
-              indiceLinha1 < indiceLinha2 ? indiceLinha1 : indiceLinha2;
+          final indiceLinhaSuperior = indiceLinha1 < indiceLinha2
+              ? indiceLinha1
+              : indiceLinha2;
           grelha[indiceLinhaSuperior].insert(indiceColuna1, blocoMerged);
           blocoMerged.mergeCountv++;
         } else {
@@ -394,10 +393,11 @@ class GridSlotsState extends State<GridSlots> {
                         context: context,
                         builder: (BuildContext context) {
                           return ProductDetails(
-                              bloco: bloco,
-                              mergev: bloco.mergeCountv,
-                              mergeh: bloco.mergeCounth,
-                              handler: widget.handler);
+                            bloco: bloco,
+                            mergev: bloco.mergeCountv,
+                            mergeh: bloco.mergeCounth,
+                            handler: widget.handler,
+                          );
                         },
                       ).then((value) {
                         setState(() {});
@@ -467,9 +467,7 @@ class GridSlotsState extends State<GridSlots> {
               widget.handler.closeClient();
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const HomeMenu(),
-                ),
+                MaterialPageRoute(builder: (context) => const HomeMenu()),
               );
             },
             child: const Text('Terminar'),
@@ -478,9 +476,7 @@ class GridSlotsState extends State<GridSlots> {
       ),
       body: Container(
         padding: const EdgeInsets.all(8.0),
-        child: SingleChildScrollView(
-          child: construirGrelha(),
-        ),
+        child: SingleChildScrollView(child: construirGrelha()),
       ),
     );
   }
