@@ -2,6 +2,18 @@
 
 Updated: 2026-09-09
 
+## Phase 2, membership management — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, against local emulators seeded via `firestore-tests/seed_emulator.mjs`, signed in as the seeded `institutionAdmin`:
+
+- Members screen: WORKING. Reachable via a new "Membros" `AppBar` icon on the institution home screen, shown only for an institution admin/platform super admin (verified a manager does not see it, in `institution_home_screen_test.dart`). Lists the signed-in admin's own membership with no action menu on their own row (self-escalation is blocked by Rules, but the menu is also hidden for clarity).
+- Member creation: WORKING. "Novo membro" dialog (e-mail, temporary password, role) creates a brand-new Firebase Auth account and its `memberships`/`memberIndex` docs in one `WriteBatch`, without signing the admin out of their own session — confirmed live: the admin stayed on the members list, watching the new member appear instantly via the Firestore stream, immediately after submitting the dialog.
+- Role change: WORKING. "Mudar cargo" on a member's row opens a role picker; selecting a new role updates the list live.
+- Enable/disable: WORKING. "Desativar"/"Reativar" toggles `memberships.status` and `memberIndex.status` together; the status chip updates live.
+- No fatal `pt.icrash.app` exceptions in logcat during the whole walkthrough.
+
+No new Firestore Rules were needed — `memberships`/`memberIndex` `create`/`update` were already institution-admin-scoped from the architecture-foundation phase; this phase only added the app code that exercises them (previously only `firestore-tests/seed_emulator.mjs` did).
+
 ## Phase 2, cart list and creation — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, against local emulators freshly seeded via `firestore-tests/seed_emulator.mjs` (emulator data does not persist across restarts; a stale cached Auth session from a prior emulator run showed "Ainda não tem acesso a nenhuma instituição" until signing out and back in — expected, not a bug: the cached uid no longer existed in the fresh emulator instance):
@@ -34,7 +46,7 @@ Three real bugs were found and fixed only because of this live run — none of t
 ## Phase 2 foundation — automated validation
 
 - `flutter analyze --no-pub`: passed, no issues, after adding `lib/src/**` (domain/data/services/presentation/common layers) and rewiring `lib/main.dart` to `bootstrapFirebase()`.
-- `flutter test --no-pub`: passed, 23 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (5, cart list/empty-state/creation/role-gated FAB/legacy access).
+- `flutter test --no-pub`: passed, 30 tests — `test/domain/inventory_rules_test.dart` (11, including the two literal critical inventory scenarios from spec sections 58 and 59), `test/widget_test.dart` (legacy `HomeMenu` smoke test, now pumped directly rather than via `MyApp` since `MyApp` requires a real Firebase app), and presentation-layer suites using fakes from `test/fakes/fake_repositories.dart`: `login_screen_test.dart` (3), `institution_selection_screen_test.dart` (3), `institution_home_screen_test.dart` (7, cart list/empty-state/creation/role-gated FAB/Membros-icon-gating/legacy access), `members_screen_test.dart` (5, empty state/list/create/self-row-hides-menu/disable).
 - `flutter build apk --debug --no-pub`: passed, confirming the Firebase bootstrap (emulator-by-default in debug, cloud in release) compiles end to end on Android.
 - `firebase emulators:exec --only firestore --project demo-icrash-v2 "npm --prefix firestore-tests test"`: passed, 22/22 Firestore Rules tests — spec section 60's security scenarios plus the `memberIndex` collection-group query (own-institution read, cross-user denial, admin-only writes).
 - Full Android emulator live walkthrough of the new screens: see the sections above.

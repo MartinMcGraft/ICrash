@@ -69,6 +69,18 @@ Status: complete and validated live on the Android emulator.
 - New/renamed tests: `institution_home_screen_test.dart` (5 tests: empty state, list+navigate to detail, FAB shown for manager + creates a cart, FAB hidden for a normal user, legacy app still reachable); `institution_selection_screen_test.dart` updated for the rename.
 - Live Android validation: seeded institution already had one cart from `seed_emulator.mjs`; the list rendered it correctly, "Novo carro" was visible (seeded user is `institutionAdmin`), and creating a cart updated the list live via the Firestore snapshot stream. See `docs/TEST_STATUS.md`.
 
-Not started: everything else in workstreams A-D (drawer/slot/product/assignment screens, membership-management UI — there is currently no in-app way to create a membership, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
+Not started: everything else in workstreams A-D (drawer/slot/product/assignment screens, cart edit/duplicate/template), offline-state UI, ScannerService/ReportService/NotificationService implementations, the real dashboard (alerts/expiry/audit summary), reports, localization scaffolding, and everything downstream of them.
+
+## Phase 2 continued — membership management
+
+Status: complete and validated live on the Android emulator.
+
+- `InstitutionRepository` gained `watchMembers`, `createMember`, `updateMemberRole`, `setMembershipStatus`. `FirestoreInstitutionRepository.createMember` provisions a brand-new Firebase Auth account (no Cloud Function exists yet to invite an existing user by e-mail alone) via a throwaway, uniquely-named secondary `FirebaseApp` (`createIsolatedAccountCreationAuth` in `firebase_bootstrap.dart`) so the admin's own session is never disturbed, then writes `memberships`/`memberIndex` in one `WriteBatch`. `setMembershipStatus` writes both docs' `status` field together in a `WriteBatch`; `updateMemberRole` is a single-document update (`memberIndex` has no role field).
+- New `lib/src/presentation/members/`: `members_screen.dart` (list, role change, enable/disable, institution-admin-only), `add_member_dialog.dart` (e-mail/temporary-password/role form), `membership_labels.dart` (PT-PT role/status labels).
+- `InstitutionHomeScreen` gained a "Membros" `AppBar` icon, gated on institution-admin/platform-super-admin (stricter than the cart FAB's manager-or-above) via the same `getMyMembership` call, refactored to a single shared `Future` for both gates.
+- No `firestore.rules`/`firestore.indexes.json` changes were needed — the `memberships`/`memberIndex` admin-only write rules already existed from the architecture-foundation phase.
+- `RepositoryFailureReason` gained `invalidInput`; `firestore_exception_mapper.dart` now maps `FirebaseAuthException` codes (`email-already-in-use` → `conflict`, `invalid-email`/`weak-password` → `invalidInput`) instead of collapsing every Auth error to `unauthenticated`.
+- New/extended tests: `members_screen_test.dart` (5 tests), `institution_home_screen_test.dart` gained 2 tests for the Membros icon's role gating. `FakeInstitutionRepository` gained real in-memory `watchMembers`/`createMember`/`updateMemberRole`/`setMembershipStatus`.
+- Live Android validation: created a member (new Auth account + both Firestore docs, admin session undisturbed), changed their role, disabled them — all reflected instantly via the Firestore stream. See `docs/TEST_STATUS.md`.
 
 See `MODERNIZATION_2026.md` for the baseline modernization and `ICRASH_V2_SPECIFICATION.md` for the authoritative V2 scope.

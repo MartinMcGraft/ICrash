@@ -6,16 +6,24 @@ Updated: 2026-09-09
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this continuation: `001f88d` (`docs: record V2 login slice status, live test results and handoff`)
+- Last published commit before this continuation: `884dc78` (`docs: record Firestore rules/indexes deployment to the cloud project`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
 ## Completed work
 
-Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added two V2 presentation slices** — (1) login, institution selection, dashboard placeholder, and (2) turning that placeholder into a real per-institution cart list with creation — both validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest.
+Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added three V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, and (3) institution-admin membership management (create/role-change/enable-disable) — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
 
-### Cart list/creation sub-phase (most recent)
+### Membership management sub-phase (most recent)
+
+- `InstitutionRepository` gained `watchMembers`, `createMember`, `updateMemberRole`, `setMembershipStatus`. No Rules changes needed — `memberships`/`memberIndex` admin-only writes already existed.
+- `createMember` provisions a brand-new Firebase Auth account (no Cloud Function to invite by e-mail alone exists yet) via a throwaway, uniquely-named secondary `FirebaseApp` (`createIsolatedAccountCreationAuth` in `firebase_bootstrap.dart`) so creating a member never signs the admin out of their own session, then writes `memberships`+`memberIndex` in one `WriteBatch`.
+- New `lib/src/presentation/members/`: `members_screen.dart`, `add_member_dialog.dart`, `membership_labels.dart`. `InstitutionHomeScreen` gained a "Membros" `AppBar` icon gated on institution-admin/platform-super-admin (stricter than the cart FAB's manager-or-above).
+- `RepositoryFailureReason` gained `invalidInput`; `firestore_exception_mapper.dart` now distinguishes `email-already-in-use`/`invalid-email`/`weak-password` instead of collapsing every Auth error to `unauthenticated`.
+- Live-validated on Android: created a member, changed their role, disabled them — each reflected instantly via the Firestore stream, admin session never disturbed, no fatal exceptions.
+
+### Cart list/creation sub-phase
 
 - `dashboard/dashboard_placeholder_screen.dart` → renamed/rewritten as `dashboard/institution_home_screen.dart` (`InstitutionHomeScreen`): real cart list (`CartRepository.watchAccessibleCarts`), a "Novo carro" FAB gated on role (`InstitutionRepository.getMyMembership`), legacy-app access moved to an `AppBar` icon.
 - New `lib/src/presentation/cart/`: `cart_detail_screen.dart`, `cart_status_label.dart`, `create_cart_dialog.dart`.
@@ -26,6 +34,19 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 - Live-validated: cart list renders seed data, "Novo carro" creates a cart and the list updates instantly via the Firestore stream (no manual refresh), cart detail opens, legacy app still reachable, no fatal exceptions.
 
 ## Exact files changed this session
+
+Membership management (this sub-phase, most recent):
+- `03_Implementacao/app1/lib/src/domain/repositories/institution_repository.dart` — added `watchMembers`, `createMember`, `updateMemberRole`, `setMembershipStatus`.
+- `03_Implementacao/app1/lib/src/data/firebase/firestore_institution_repository.dart` — implements the four new methods; `createMember` uses `createIsolatedAccountCreationAuth()` then a `WriteBatch`; `setMembershipStatus` also uses a `WriteBatch`; `updateMemberRole` is a single-doc update.
+- `03_Implementacao/app1/lib/src/data/firebase/firebase_bootstrap.dart` — added `createIsolatedAccountCreationAuth()`: a throwaway, uniquely-named secondary `FirebaseApp` so creating another user's Auth account never signs out the current user.
+- `03_Implementacao/app1/lib/src/common/repository_failure.dart` — added `RepositoryFailureReason.invalidInput`.
+- `03_Implementacao/app1/lib/src/data/firebase/firestore_exception_mapper.dart` — maps `FirebaseAuthException` codes (`email-already-in-use` → `conflict`, `invalid-email`/`weak-password` → `invalidInput`) instead of always `unauthenticated`.
+- `03_Implementacao/app1/lib/src/presentation/members/members_screen.dart`, `add_member_dialog.dart`, `membership_labels.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/dashboard/institution_home_screen.dart` — added the "Membros" `AppBar` icon; refactored `_canManageCarts`/new `_isInstitutionAdmin` to share one `Future<Membership?> _myMembership` instead of two separate loads.
+- `03_Implementacao/app1/test/fakes/fake_repositories.dart` — `FakeInstitutionRepository` gained real in-memory `watchMembers`/`createMember`/`updateMemberRole`/`setMembershipStatus`.
+- `03_Implementacao/app1/test/presentation/members_screen_test.dart` — new (5 tests). `institution_home_screen_test.dart` gained 2 tests for the Membros icon's role gating.
+- `firestore.rules`, `firestore.indexes.json` — deployed to the cloud project `i-crash-pt-2026` this sub-phase (unchanged content — no new rules were needed for membership management itself; see "Firebase configuration status" below for the deployment).
+- `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/TEST_STATUS.md` — updated.
 
 Security fix (legacy, inert, historical-reference-only Django backend — not restored or developed, only its manifest was patched):
 - `03_Implementacao/server/Pipfile`, `Pipfile.lock` — bumped Django 4.2.2 (EOL)/DRF 3.14.0/psycopg2 2.9.6 → Django 5.2.17 (current LTS)/DRF 3.18.1/psycopg2 2.9.12, regenerated via `pipenv lock`, to close the ~60 Dependabot alerts GitHub reported (those alerts track `main`'s dependency graph; this fix is only on `DEV-Pedro` and the user explicitly chose not to open a PR to `main` for it — see "Do not redo" below).
@@ -59,7 +80,9 @@ V2 login/institution-selection slice (this sub-phase):
 
 - **Dependency wiring, previously left open, now decided**: `AppServices` + `AppServicesScope` (`InheritedWidget`), no DI package. A screen calls `AppServicesScope.of(context).xxx`. Keep using this pattern for every future screen.
 - **Emulator mode needs its own named `FirebaseApp`, never `[DEFAULT]`, and its own demo project id.** This is not optional/simplifiable — see "Two real bugs" below. Any future refactor of `firebase_bootstrap.dart` must preserve both properties.
-- `FirestoreInstitutionRepository.watchMyInstitutions` reads a denormalized `memberIndex` collection, not `memberships` directly, because of a Firestore Rules/emulator limitation with mixing collection-group and nested-exact rules on one collection name. **Nothing keeps `memberIndex` in sync automatically yet** — there is no membership-creation flow in the app (only `firestore-tests/seed_emulator.mjs` writes it, by hand, for manual QA). Whoever builds membership management (workstream A) must write both `memberships/{uid}` and `memberIndex/{uid}` — ideally in one `WriteBatch` — on create/disable/re-enable. Full details in `docs/FIREBASE_MODEL.md`.
+- `FirestoreInstitutionRepository.watchMyInstitutions` reads a denormalized `memberIndex` collection, not `memberships` directly, because of a Firestore Rules/emulator limitation with mixing collection-group and nested-exact rules on one collection name. Full details in `docs/FIREBASE_MODEL.md`.
+- **`memberIndex` is now kept in sync from the app itself**: `InstitutionRepository.createMember`/`setMembershipStatus` always write `memberships`+`memberIndex` together in one `WriteBatch` (see `FirestoreInstitutionRepository`). `updateMemberRole` only touches `memberships` since `memberIndex` has no role field. Any future direct write to `memberships` must keep following this pattern — never write one without the other.
+- **Creating another user's Firebase Auth account without disturbing the caller's session** requires a throwaway secondary `FirebaseApp` (`createIsolatedAccountCreationAuth()` in `firebase_bootstrap.dart`), because `createUserWithEmailAndPassword` signs in as the new user on whichever `FirebaseAuth` instance it's called on. This is a workaround for Phase 1 having no Cloud Functions; replace it with a callable Function if one is ever introduced.
 
 ## Two real bugs found only by live-testing on Android (read before repeating this class of mistake)
 
@@ -78,7 +101,7 @@ The user asked for the same sample data that's in the local emulator (`Hospital 
 
 ## Firestore collections already implemented (schema, not deployed data)
 
-Same as before, plus `institutions/{id}/memberIndex/{uid}` (see `docs/FIREBASE_MODEL.md`, "Why `memberIndex` exists"). No membership-creation flow exists in the app yet — only the emulator seed script writes `memberships`/`memberIndex` docs, for manual QA.
+Same as before, plus `institutions/{id}/memberIndex/{uid}` (see `docs/FIREBASE_MODEL.md`, "Why `memberIndex` exists"). `memberships`/`memberIndex` can now be created and updated from within the app (`MembersScreen`), not just by the emulator seed script.
 
 ## Domain models already implemented
 
@@ -94,24 +117,27 @@ None.
 
 ## Security rules status
 
-22/22 passing locally (`firestore-tests/rules.test.mjs`). Deployed to `i-crash-pt-2026` (2026-09-09), untested there directly (the rules test suite only runs against the emulator) — treat the emulator suite as the source of truth and redeploy after any change. Known gaps unchanged from the architecture-foundation handoff (offline-replay test, `platformAdmins` bootstrap, slot-geometry validation) — see prior AI_HANDOFF content in git history (`b2badfe`..`31705a9`) if needed, or `docs/FIREBASE_MODEL.md`.
+22/22 passing locally (`firestore-tests/rules.test.mjs`). Deployed to `i-crash-pt-2026` (2026-09-09), untested there directly (the rules test suite only runs against the emulator) — treat the emulator suite as the source of truth and redeploy after any change. Membership management needed no new rules — `memberships`/`memberIndex` admin-only writes were already covered. Known gaps unchanged from the architecture-foundation handoff (offline-replay test, `platformAdmins` bootstrap, slot-geometry validation) — see prior AI_HANDOFF content in git history (`b2badfe`..`31705a9`) if needed, or `docs/FIREBASE_MODEL.md`.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 23/23. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Two full live Android walkthroughs: login/institution-selection, then cart list/creation — see `docs/TEST_STATUS.md` for detail and the four bugs they caught.
+`flutter analyze` clean. `flutter test`: 30/30. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Three full live Android walkthroughs: login/institution-selection, cart list/creation, then membership management — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
 
 ## Android emulator tests already performed
 
-This session, on `ICrash_API_36`, across two builds:
+This session, on `ICrash_API_36`, across three builds:
 
 1. Login slice: fresh install → login screen renders → validation errors on empty submit → successful sign-in with the seeded test account → institution list shows "Hospital de Teste" → tapping it opens the institution home → legacy app reachable → back navigation returns correctly.
 2. Cart list/creation slice (separate emulator restart — emulator data does not persist, re-seed with `npm --prefix firestore-tests run seed` after every `emulators:start`): institution home shows the seeded "Carro de Emergência 1"; "Novo carro" FAB visible for the seeded `institutionAdmin`; created "Carro2" via the dialog, list updated live with no manual refresh; opened its detail screen; opened the legacy app via the new `AppBar` icon.
+3. Membership management slice (same emulator instance as #2, re-seeded): "Membros" icon visible for the `institutionAdmin`; members list showed the admin's own row with no action menu; "Novo membro" created a new Auth account + `memberships`/`memberIndex` docs, appearing instantly in the list; "Mudar cargo" changed the new member's role live; "Desativar" toggled their status live. Admin's own session was never disrupted by creating the other account.
 
-No fatal `pt.icrash.app` exceptions in logcat in either run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
+No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
+
+**Lesson from this sub-phase's live testing**: `adb shell uiautomator dump <path>` must be run with `MSYS_NO_PATHCONV=1` in this Git-Bash environment, exactly like `adb pull` already needed — otherwise the `/sdcard/...` argument gets silently mangled into a Windows-style path, the dump fails on-device, and a subsequent `adb pull` of the same path silently re-fetches a stale file from an earlier successful dump instead of erroring. This produced a very convincing false "bug" (a button appearing to render inconsistently) that cost significant time to debug before the stale-dump cause was found via `adb logcat`. Always set `MSYS_NO_PATHCONV=1` on both the `uiautomator dump` and the `adb pull` call, and treat a suspicious/unchanging dump result as a reason to check logcat for a dump failure before trusting it.
 
 ## Known bugs
 
-None known to remain. The four found this session (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live.
+None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management sub-phase.
 
 ## Known platform limitations
 
@@ -149,18 +175,19 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-Login, institution selection, and cart list/creation are done. Continue workstream A/B/C (spec item 5). Sensible next slice, in order:
+Login, institution selection, cart list/creation, and membership management are done. Continue workstream B/C (spec item 5). Sensible next slice, in order:
 
-1. **Membership management** (create/disable a member, assign a role) — the first thing that needs to write both `memberships` and `memberIndex` atomically (a `WriteBatch`), so it's the natural place to add an `InstitutionRepository`/new small repository method for it (none exists yet — `InstitutionRepository` currently only has `createInstitution`). No in-app way to create a membership exists yet; still only `firestore-tests/seed_emulator.mjs`.
-2. **Drawer/slot editor** (workstream B) — the domain model (`CartDrawer`, `Slot` with row/column/rowSpan/columnSpan) and `DrawerRepository` already exist; nothing in presentation consumes them yet. Natural entry point: tapping into `CartDetailScreen` (currently a placeholder — replace it).
-3. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
+1. **Drawer/slot editor** (workstream B) — the domain model (`CartDrawer`, `Slot` with row/column/rowSpan/columnSpan) and `DrawerRepository` already exist; nothing in presentation consumes them yet. Natural entry point: tapping into `CartDetailScreen` (currently a placeholder — replace it).
+2. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
+3. Product/assignment screens (workstream C) — stock per cart/slot; needs the drawer/slot editor first so there's somewhere to assign a product to.
 
 Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap (FAB vs. bottom bars, etc.) since widget tests don't catch that — see the cart-list sub-phase's bug above.
 
 ## Temporary workarounds
 
-- `FirestoreInventoryRepository.reconcileAfterAudit` still uses a plain `WriteBatch` for the batch-collection replacement rather than one atomic transaction spanning batches+assignment (unchanged from the architecture-foundation handoff; noted again here since it's the same category of "not fully atomic" concern as the new `memberships`/`memberIndex` dual-write need).
-- No membership-creation UI exists; `memberIndex` is currently kept in sync only by `firestore-tests/seed_emulator.mjs` for manual QA. Do not build a screen that writes `memberships` without also writing `memberIndex`.
+- `FirestoreInventoryRepository.reconcileAfterAudit` still uses a plain `WriteBatch` for the batch-collection replacement rather than one atomic transaction spanning batches+assignment (unchanged from the architecture-foundation handoff).
+- `createIsolatedAccountCreationAuth()` (member creation) is a client-side workaround for having no Cloud Function to create a user's Auth account server-side. It works but is not how a real invite-by-email flow should ultimately work — revisit if/when Cloud Functions are introduced.
+- `memberships`/`memberIndex` are now written together everywhere (`createMember`, `setMembershipStatus` via `WriteBatch`). Any new code path that writes `memberships` directly must keep doing the same — never write one without the other.
 
 ## Things that must NOT be redone
 
