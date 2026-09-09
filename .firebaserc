@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "demo-icrash-v2"
+    "default": "demo-icrash-v2",
+    "local": "demo-icrash-v2",
+    "development": "i-crash-pt-2026"
   }
 }

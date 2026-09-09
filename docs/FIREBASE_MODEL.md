@@ -6,4 +6,6 @@ currentQuantity is the authoritative operational aggregate. Daily consumption ch
 Rules must enforce institution isolation, membership, cart assignment, roles, protected audit history and prevention of privilege escalation. Offline/concurrent writes and aggregate bounds require explicit design and emulator tests in Phase 2.
 Real Firestore location awaits user confirmation. No security guarantees claimed before implementation/testing.
 
+Cloud demo/development project: visible name `I-Crash`, ID `i-crash-pt-2026`, Spark plan. It has no database yet. The repository distinguishes this project from the local-only `demo-icrash-v2` emulator ID; do not make automated tests target the cloud project.
+
 Local emulator project ID: `demo-icrash-v2`. Auth listens on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081` (port 8080 is occupied by an existing local Apache service), and Emulator UI on `127.0.0.1:4000`. A locked deny-all Rules baseline is used until Phase 2 adds institution-scoped rules and automated tests.

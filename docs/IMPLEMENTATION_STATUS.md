@@ -25,7 +25,8 @@ Status: in progress.
 - Auth and Firestore emulators started and stopped successfully. Firestore begins with deny-all Rules until Phase 2 implements and tests authorization.
 - Firebase CLI is authenticated, but no cloud Firebase resource exists yet.
 - Real Firestore location remains an explicit user decision before database creation.
-- Firebase CLI login completed. Cloud project creation is currently blocked because the authenticated account has not accepted Google Cloud Terms of Service; no project or billing account was created.
+- Firebase CLI login completed. The initial Google Cloud Terms blocker was resolved before project creation.
+- Google Cloud Terms were accepted and the Firebase development project was created: visible name `I-Crash`, technical ID `i-crash-pt-2026`. It remains on the Spark plan; no billing account, Firestore database, Authentication provider, App Check setting, Storage bucket or Cloud Function was created.
 
 Phase 2 and workstreams A–J have not started.
 
