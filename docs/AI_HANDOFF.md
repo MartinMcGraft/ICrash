@@ -70,7 +70,11 @@ V2 login/institution-selection slice (this sub-phase):
 
 ## Firebase configuration status
 
-Unchanged from the architecture-foundation sub-phase except for the `memberIndex` additions above. `firestore.rules`/`firestore.indexes.json` are still **not deployed** anywhere — only tested against the local emulator. Do not deploy without explicit user confirmation.
+`firestore.rules`/`firestore.indexes.json` are now **deployed to the cloud project** `i-crash-pt-2026` (2026-09-09), with explicit user confirmation, matching the repo's copy exactly. No application data exists there yet (see "Cloud sample data — blocked" below). Any future change to `firestore.rules`/`firestore.indexes.json` still needs explicit user confirmation before redeploying.
+
+### Cloud sample data — blocked, needs a service-account key
+
+The user asked for the same sample data that's in the local emulator (`Hospital de Teste` institution, one `institutionAdmin` membership, one cart) to also exist in `i-crash-pt-2026`. This is **not done yet**: the deployed rules correctly make `platformAdmins`/the first `institutions` doc unwritable by any signed-in client (by design), so no client-side script can create the first document — and the sandbox's safety layer blocks deploying a temporarily-open rules file to a cloud project, even briefly, as a workaround. The only remaining path is a Firebase Admin SDK service-account key (bypasses Rules entirely, the officially-documented way to provision `platformAdmins`): the user generates one from `console.firebase.google.com/project/i-crash-pt-2026/settings/serviceaccounts/adminsdk` → "Generate new private key", saves the JSON, and gives the assistant its path so a one-off Node script (mirroring `firestore-tests/seed_emulator.mjs`, but against the real project) can seed the same four documents. Do not attempt the temporary-open-rules workaround again — it was already tried and blocked.
 
 ## Firestore collections already implemented (schema, not deployed data)
 
@@ -90,7 +94,7 @@ None.
 
 ## Security rules status
 
-22/22 passing locally (`firestore-tests/rules.test.mjs`). Still not deployed anywhere. Known gaps unchanged from the architecture-foundation handoff (offline-replay test, `platformAdmins` bootstrap, slot-geometry validation) — see prior AI_HANDOFF content in git history (`b2badfe`..`31705a9`) if needed, or `docs/FIREBASE_MODEL.md`.
+22/22 passing locally (`firestore-tests/rules.test.mjs`). Deployed to `i-crash-pt-2026` (2026-09-09), untested there directly (the rules test suite only runs against the emulator) — treat the emulator suite as the source of truth and redeploy after any change. Known gaps unchanged from the architecture-foundation handoff (offline-replay test, `platformAdmins` bootstrap, slot-geometry validation) — see prior AI_HANDOFF content in git history (`b2badfe`..`31705a9`) if needed, or `docs/FIREBASE_MODEL.md`.
 
 ## Tests already run
 
@@ -162,7 +166,7 @@ Whichever is picked, follow the same pattern established here: repository alread
 
 Everything from the Phase 1 handoff still applies: do not initialize another repository, develop on or push to `main`, restore Django (its manifest was only security-patched, not the code — do not start running/testing it), discard the backup, recreate Firebase without location approval, repeat the SDK modernization, commit secrets/build caches, or claim iOS/macOS validation from Windows.
 
-Additionally: do not re-derive the conservative-expiry logic inline (`InventoryRules` only). Do not deploy `firestore.rules`/`firestore.indexes.json` to the cloud project without explicit user confirmation. Do not "simplify" `firebase_bootstrap.dart` back to a single `[DEFAULT]` app or the real project id in emulator mode — both bugs described above will come straight back. Do not open a PR from `DEV-Pedro` to `main` for the Django dependency fix — the user was asked and explicitly chose to leave it as-is for now.
+Additionally: do not re-derive the conservative-expiry logic inline (`InventoryRules` only). `firestore.rules`/`firestore.indexes.json` are now deployed to the cloud project (see above) — any *future* change to either file still needs explicit user confirmation before redeploying. Do not "simplify" `firebase_bootstrap.dart` back to a single `[DEFAULT]` app or the real project id in emulator mode — both bugs described above will come straight back. Do not open a PR from `DEV-Pedro` to `main` for the Django dependency fix — the user was asked and explicitly chose to leave it as-is for now. Do not try deploying a temporarily-open/permissive `firestore.rules` to the cloud project to bootstrap data, even briefly — already attempted and blocked by the environment's safety layer; use a service-account key instead (see "Cloud sample data — blocked" above).
 
 ## Environment
 

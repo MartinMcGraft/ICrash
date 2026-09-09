@@ -1,6 +1,6 @@
 # Firebase model
 
-Status: Phase 2 collection model and Firestore Rules implemented and tested against the local emulator. No cloud data exists; nothing has been deployed to `i-crash-pt-2026`.
+Status: Phase 2 collection model and Firestore Rules implemented and tested against the local emulator. `firestore.rules` and `firestore.indexes.json` are now deployed to `i-crash-pt-2026` (2026-09-09), matching this document exactly. No application data exists there yet — the very first `institutions`/`platformAdmins` doc cannot be written by any client under these rules (by design; see "Why `memberIndex` exists" below and the note on provisioning `platformAdmins`), so seeding cloud sample data needs a Firebase Admin SDK service-account key, not a temporary rules relaxation.
 
 Authentication and Cloud Firestore are the only Firebase products in use. Local Auth/Firestore emulators are configured separately from the `i-crash-pt-2026` cloud project — see "Environments" below. No billing, Storage or deployed Functions exist.
 
@@ -82,6 +82,6 @@ Composite indexes (`firestore.indexes.json`): a `COLLECTION_GROUP` index on `mem
 ## Environments
 
 - **Local emulator** (`demo-icrash-v2`, from `.firebaserc`): Auth on `127.0.0.1:9099`, Firestore on `127.0.0.1:8081`, UI on `127.0.0.1:4000`. `AppEnvironment`/`bootstrapFirebase` (see `docs/ARCHITECTURE.md` for why this needs its own named `FirebaseApp` and matching demo project id) point the Flutter app here by default in debug builds.
-- **Cloud demo/development** (`i-crash-pt-2026`, from `.firebaserc`'s `development` alias): Standard/Native Firestore in `eur3`, Spark plan, e-mail/password Authentication enabled, no users or data. Only reached from a debug build via `--dart-define=ICRASH_BACKEND=cloud`, or automatically from a release build.
+- **Cloud demo/development** (`i-crash-pt-2026`, from `.firebaserc`'s `development` alias): Standard/Native Firestore in `eur3`, Spark plan, e-mail/password Authentication enabled, `firestore.rules`/`firestore.indexes.json` deployed (2026-09-09), no users or application data yet. Only reached from a debug build via `--dart-define=ICRASH_BACKEND=cloud`, or automatically from a release build.
 
 Real Firestore location (`eur3`) was already confirmed with the user in Phase 1; it is immutable and is not revisited here.
