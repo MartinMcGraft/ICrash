@@ -46,6 +46,8 @@ Phase 0 on the true repository: analyzer clean; widget test passed; Android debu
 
 Firebase CLI currently has no authorized account. An official Firebase login page has been handed to the user. Continue authentication only after the user completes the Google sign-in. Do not request or store passwords. Port 8080 remains owned by an unrelated Apache service, so Firestore emulator uses 8081.
 
+Firebase CLI is authenticated. `firebase projects:create i-crash-pt-2026 --display-name I-Crash` was attempted, but Google Cloud rejected it with `Callers must accept Terms of Service`; the operation did not create a project. The user must accept Google Cloud Terms of Service before retrying. Do not create Firestore until the user also expressly approves its irreversible location.
+
 ## Do not redo
 
 Do not initialize another repository, develop on or push to `main`, restore Django, discard the backup, recreate Firebase without location approval, repeat the SDK modernization, commit secrets/build caches, or claim iOS/macOS validation from Windows.

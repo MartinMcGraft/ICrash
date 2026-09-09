@@ -23,8 +23,9 @@ Status: in progress.
 - Firebase CLI 15.29.0 and FlutterFire CLI 1.4.1 installed; FlutterFire added to the user PATH.
 - Safe local project `demo-icrash-v2` configured with Auth on 9099, Firestore on 8081 and Emulator UI on 4000.
 - Auth and Firestore emulators started and stopped successfully. Firestore begins with deny-all Rules until Phase 2 implements and tests authorization.
-- No Google account is authenticated and no cloud Firebase resource exists yet. The browser login is waiting for user completion.
+- Firebase CLI is authenticated, but no cloud Firebase resource exists yet.
 - Real Firestore location remains an explicit user decision before database creation.
+- Firebase CLI login completed. Cloud project creation is currently blocked because the authenticated account has not accepted Google Cloud Terms of Service; no project or billing account was created.
 
 Phase 2 and workstreams A–J have not started.
 
