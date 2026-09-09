@@ -1,37 +1,124 @@
 import 'package:flutter/material.dart';
 
+import '../../common/app_services.dart';
+import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
+import '../../domain/entities/cart_drawer.dart';
+import '../../domain/entities/membership.dart';
+import '../../domain/entities/role.dart';
 import 'cart_status_label.dart';
+import 'create_drawer_dialog.dart';
+import 'slot_editor_screen.dart';
 
-/// Placeholder for the real cart detail (drawers/slots/stock — workstreams
-/// B/C/E/F). Shows what already exists (name, status) so the cart list is
-/// still useful before those land.
-class CartDetailScreen extends StatelessWidget {
+/// Cart detail: status plus its drawers (spec section 36). Slot layout for
+/// each drawer is edited in [SlotEditorScreen]; stock/assignments
+/// (workstreams C/E/F) are still future work.
+class CartDetailScreen extends StatefulWidget {
   const CartDetailScreen({super.key, required this.cart});
 
   final Cart cart;
 
   @override
+  State<CartDetailScreen> createState() => _CartDetailScreenState();
+}
+
+class _CartDetailScreenState extends State<CartDetailScreen> {
+  late final Future<Membership?> _myMembership =
+      AppServicesScope.of(context).institutions.getMyMembership(widget.cart.institutionId);
+
+  bool _canManageDrawers(Membership? membership) {
+    if (membership == null || !membership.isActive) return false;
+    return membership.role == Role.institutionAdmin ||
+        membership.role == Role.manager ||
+        membership.role == Role.platformSuperAdmin;
+  }
+
+  Future<void> _createDrawer(BuildContext context) async {
+    final input = await showCreateDrawerDialog(context);
+    if (input == null || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      await services.drawers.createDrawer(
+        widget.cart.institutionId,
+        widget.cart.id,
+        CartDrawer(id: '', cartId: widget.cart.id, name: input.name, rows: input.rows, columns: input.columns),
+      );
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível criar a gaveta. Tente novamente.')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final services = AppServicesScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(cart.name)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Chip(label: Text(cartStatusLabel(cart.status))),
-              const SizedBox(height: 16),
-              const Icon(Icons.construction_outlined, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                'As gavetas, slots e stock deste carro ainda estão em construção nesta versão V2.',
-                textAlign: TextAlign.center,
-              ),
-            ],
+      appBar: AppBar(
+        title: Text(widget.cart.name),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Chip(label: Text(cartStatusLabel(widget.cart.status))),
           ),
         ),
+      ),
+      body: StreamBuilder<List<CartDrawer>>(
+        stream: services.drawers.watchDrawers(widget.cart.institutionId, widget.cart.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('Não foi possível carregar as gavetas: ${snapshot.error}'),
+              ),
+            );
+          }
+          final drawers = snapshot.data ?? const <CartDrawer>[];
+          if (drawers.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('Ainda não existem gavetas neste carro.', textAlign: TextAlign.center),
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: drawers.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final drawer = drawers[index];
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.grid_view_outlined),
+                  title: Text(drawer.name),
+                  subtitle: Text('${drawer.rows} linhas × ${drawer.columns} colunas'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => SlotEditorScreen(cart: widget.cart, drawer: drawer)),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FutureBuilder<Membership?>(
+        future: _myMembership,
+        builder: (context, snapshot) {
+          if (!_canManageDrawers(snapshot.data)) return const SizedBox.shrink();
+          return FloatingActionButton.extended(
+            onPressed: () => _createDrawer(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Nova gaveta'),
+          );
+        },
       ),
     );
   }

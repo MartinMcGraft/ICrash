@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
+import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
@@ -143,7 +145,61 @@ class FakeCartRepository extends UnimplementedFake implements CartRepository {
   }
 }
 
-class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository {}
+class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository {
+  FakeDrawerRepository({List<CartDrawer>? drawers}) : drawers = drawers ?? [];
+
+  final List<CartDrawer> drawers;
+  final Map<String, List<Slot>> slotsByDrawer = {};
+  CartDrawer? lastCreatedDrawer;
+  List<Slot>? lastSavedSlots;
+  int _nextId = 1;
+  final _drawersController = StreamController<List<CartDrawer>>.broadcast();
+  final Map<String, StreamController<List<Slot>>> _slotsControllers = {};
+
+  void _emitDrawers() => _drawersController.add(List.unmodifiable(drawers));
+
+  StreamController<List<Slot>> _slotsController(String drawerId) =>
+      _slotsControllers.putIfAbsent(drawerId, () => StreamController<List<Slot>>.broadcast());
+
+  void _emitSlots(String drawerId) => _slotsController(drawerId).add(List.unmodifiable(slotsByDrawer[drawerId] ?? const []));
+
+  @override
+  Stream<List<CartDrawer>> watchDrawers(String institutionId, String cartId) {
+    scheduleMicrotask(_emitDrawers);
+    return _drawersController.stream;
+  }
+
+  @override
+  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer) async {
+    final created =
+        CartDrawer(id: 'drawer-${_nextId++}', cartId: cartId, name: drawer.name, rows: drawer.rows, columns: drawer.columns);
+    lastCreatedDrawer = created;
+    drawers.add(created);
+    _emitDrawers();
+    return created;
+  }
+
+  @override
+  Future<void> updateDrawer(String institutionId, String cartId, CartDrawer drawer) async {
+    final index = drawers.indexWhere((d) => d.id == drawer.id);
+    if (index != -1) drawers[index] = drawer;
+    _emitDrawers();
+  }
+
+  @override
+  Stream<List<Slot>> watchSlots(String institutionId, String cartId, String drawerId) {
+    final controller = _slotsController(drawerId);
+    scheduleMicrotask(() => _emitSlots(drawerId));
+    return controller.stream;
+  }
+
+  @override
+  Future<void> replaceSlots(String institutionId, String cartId, String drawerId, List<Slot> slots) async {
+    slotsByDrawer[drawerId] = List.of(slots);
+    lastSavedSlots = List.of(slots);
+    _emitSlots(drawerId);
+  }
+}
 
 class FakeProductRepository extends UnimplementedFake implements ProductRepository {}
 
