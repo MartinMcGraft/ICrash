@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:app1/main.dart';
+import 'package:icrash_app/main.dart';
 
 void main() {
   testWidgets('The I-Crash home menu loads with its existing entry points', (

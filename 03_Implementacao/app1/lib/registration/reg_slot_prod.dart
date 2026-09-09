@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:app1/grids/grid_slots.dart';
-import 'package:app1/request_handler/request_handler.dart';
+import 'package:icrash_app/grids/grid_slots.dart';
+import 'package:icrash_app/request_handler/request_handler.dart';
 
 class ProductDetails extends StatefulWidget {
   final Bloco bloco;

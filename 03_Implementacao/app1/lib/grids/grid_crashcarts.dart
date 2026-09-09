@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:app1/registration/reg_drawers.dart';
-import 'package:app1/request_handler/request_handler.dart';
+import 'package:icrash_app/registration/reg_drawers.dart';
+import 'package:icrash_app/request_handler/request_handler.dart';
 
 /*
 

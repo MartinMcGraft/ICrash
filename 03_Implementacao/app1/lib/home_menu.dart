@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:app1/qr_code_reader/qr_code_reader.dart';
-import 'package:app1/registration/reg_institution_cc.dart';
-import 'package:app1/teste/teste.dart';
+import 'package:icrash_app/qr_code_reader/qr_code_reader.dart';
+import 'package:icrash_app/registration/reg_institution_cc.dart';
+import 'package:icrash_app/teste/teste.dart';
 
 class HomeMenu extends StatelessWidget {
   const HomeMenu({super.key});

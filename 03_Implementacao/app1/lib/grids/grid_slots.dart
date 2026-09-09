@@ -1,7 +1,7 @@
-import 'package:app1/home_menu.dart';
+import 'package:icrash_app/home_menu.dart';
 import 'package:flutter/material.dart';
-import 'package:app1/registration/reg_slot_prod.dart';
-import 'package:app1/request_handler/request_handler.dart';
+import 'package:icrash_app/registration/reg_slot_prod.dart';
+import 'package:icrash_app/request_handler/request_handler.dart';
 
 class Bloco {
   String nome;

@@ -34,3 +34,10 @@ Physical-camera QR/GS1 validation, backend flows, Firebase, permissions, offline
 - Initial Firestore port 8080 was unavailable because an existing Apache service owns it; configuration moved to the free port 8081 and then passed.
 - No Flutter-to-emulator integration or Rules behavior test exists yet; these remain Phase 1/2 work.
 - Cloud Firestore database provisioning: passed. Default database confirmed as Standard / Native / `eur3` / free tier. No application data was written.
+- FlutterFire configuration: passed for Android, iOS, macOS, web and Windows options; the generated Dart configuration selects the correct platform at runtime.
+- Firebase Authentication: e-mail/password provider enabled in the Firebase console. No users were created.
+- `flutter analyze`: passed after Firebase integration, no issues.
+- `flutter test`: passed after Firebase integration, 1 widget test.
+- `flutter build web --wasm --no-web-resources-cdn`: passed after Firebase integration.
+- Android Firebase configuration was completed with the Google Services Gradle plugin and `flutter build apk --debug` passed.
+- Windows Firebase build: blocked by Visual Studio 2022 17.5 linker incompatibility with the current Firebase C++ SDK; update the C++ toolchain before retrying.

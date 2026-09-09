@@ -1,10 +1,10 @@
-import 'package:app1/grids/grid_drawers.dart';
+import 'package:icrash_app/grids/grid_drawers.dart';
 import 'package:flutter/material.dart';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/foundation.dart';
-import 'package:app1/home_menu.dart';
-import 'package:app1/request_handler/request_handler.dart';
+import 'package:icrash_app/home_menu.dart';
+import 'package:icrash_app/request_handler/request_handler.dart';
 
 import '../grids/grid_slots.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:app1/request_handler/request_handler.dart';
-import 'package:app1/updates/update_drawer_shape.dart';
+import 'package:icrash_app/request_handler/request_handler.dart';
+import 'package:icrash_app/updates/update_drawer_shape.dart';
 
 class GridDrawers extends StatelessWidget {
   final int blockNumber;

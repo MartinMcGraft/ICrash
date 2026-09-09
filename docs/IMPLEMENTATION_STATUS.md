@@ -23,11 +23,13 @@ Status: in progress.
 - Firebase CLI 15.29.0 and FlutterFire CLI 1.4.1 installed; FlutterFire added to the user PATH.
 - Safe local project `demo-icrash-v2` configured with Auth on 9099, Firestore on 8081 and Emulator UI on 4000.
 - Auth and Firestore emulators started and stopped successfully. Firestore begins with deny-all Rules until Phase 2 implements and tests authorization.
-- Firebase CLI is authenticated, but no cloud Firebase resource exists yet.
-- Real Firestore location remains an explicit user decision before database creation.
 - Firebase CLI login completed. The initial Google Cloud Terms blocker was resolved before project creation.
-- Google Cloud Terms were accepted and the Firebase development project was created: visible name `I-Crash`, technical ID `i-crash-pt-2026`. It remains on the Spark plan; no billing account, Firestore database, Authentication provider, App Check setting, Storage bucket or Cloud Function was created.
+- Google Cloud Terms were accepted and the Firebase development project was created: visible name `I-Crash`, technical ID `i-crash-pt-2026`. It remains on the Spark plan; no billing account, App Check setting, Storage bucket or Cloud Function was created.
 - The default Cloud Firestore database was created with the authorized immutable location `eur3`, Standard edition and Native mode. The Firebase CLI confirms `freeTier: true`; point-in-time recovery and delete protection remain disabled. Firebase's initial closed rules prevent external access until Phase 2 rules are deployed and tested.
+- FlutterFire registered Android, iOS, macOS, web and Windows app configurations. The production identifiers are `pt.icrash.app` (Android/iOS) and `pt.icrash.app.macos` (macOS); the legacy `com.example.app1` identifiers were removed.
+- Firebase Core, Authentication and Cloud Firestore are installed. Firebase is initialized before the Flutter application starts.
+- Firebase Authentication is active with e-mail and password only. No user was created and e-mail-link login remains disabled.
+- Android and web compile with the Firebase integration. Windows compilation is blocked only by the installed Visual Studio 2022 C++ toolchain (17.5); the current Firebase Windows SDK requires a newer toolchain.
 
 Phase 2 and workstreams A–J have not started.
 
