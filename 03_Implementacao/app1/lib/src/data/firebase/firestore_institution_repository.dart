@@ -25,8 +25,15 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
 
   @override
   Stream<List<Institution>> watchMyInstitutions() {
+    // Queries the denormalized `memberIndex` collection group, not
+    // `memberships` directly: Firestore only authorizes a collection-group
+    // query against a rule declared with a `{path=**}` wildcard, and keeping
+    // that wildcard rule on a separate collection name (rather than also
+    // putting it on `memberships`) avoids a `list`-validation conflict with
+    // the nested `institutions/{id}/memberships/{uid}` rule. See
+    // firestore.rules and docs/FIREBASE_MODEL.md for the full story.
     return _firestore
-        .collectionGroup('memberships')
+        .collectionGroup('memberIndex')
         .where('uid', isEqualTo: _uid)
         .where('status', isEqualTo: MembershipStatus.active.id)
         .snapshots()

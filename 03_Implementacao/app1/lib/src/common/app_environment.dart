@@ -39,4 +39,8 @@ class AppEnvironment {
 
   static const int authEmulatorPort = 9099;
   static const int firestoreEmulatorPort = 8081;
+
+  /// Must match `.firebaserc`'s `demo-icrash-v2` alias and `firebase.json`'s
+  /// `singleProjectMode` emulator configuration.
+  static const String emulatorProjectId = 'demo-icrash-v2';
 }

@@ -9,6 +9,12 @@ class FirestorePaths {
 
   static String memberships(String institutionId) => 'institutions/$institutionId/memberships';
 
+  /// Denormalized `{uid, status}` pointer read via `collectionGroup` by
+  /// `InstitutionRepository.watchMyInstitutions`; must be kept in sync with
+  /// [memberships] whenever a membership is created, disabled or re-enabled.
+  /// See the comment on the `memberIndex` rule in `firestore.rules`.
+  static String memberIndex(String institutionId) => 'institutions/$institutionId/memberIndex';
+
   static String products(String institutionId) => 'institutions/$institutionId/products';
 
   static String carts(String institutionId) => 'institutions/$institutionId/carts';
