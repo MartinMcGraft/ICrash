@@ -745,6 +745,564 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'{rows} linhas × {columns} colunas'**
   String drawerGridSize(int rows, int columns);
+
+  /// No description provided for @historyScreenTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Histórico'**
+  String get historyScreenTitle;
+
+  /// No description provided for @historyFilterAll.
+  ///
+  /// In pt, this message translates to:
+  /// **'Todos'**
+  String get historyFilterAll;
+
+  /// No description provided for @historyLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar o histórico: {error}'**
+  String historyLoadError(Object error);
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem eventos para mostrar.'**
+  String get historyEmpty;
+
+  /// No description provided for @exportCsvButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'Exportar CSV'**
+  String get exportCsvButton;
+
+  /// No description provided for @actionCopy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Copiar'**
+  String get actionCopy;
+
+  /// No description provided for @csvCopiedMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'CSV copiado.'**
+  String get csvCopiedMessage;
+
+  /// No description provided for @exportPdfButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'Exportar PDF'**
+  String get exportPdfButton;
+
+  /// No description provided for @historyPdfDocumentTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Histórico de atividade'**
+  String get historyPdfDocumentTitle;
+
+  /// No description provided for @summaryViewButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver resumo'**
+  String get summaryViewButton;
+
+  /// No description provided for @summaryDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo'**
+  String get summaryDialogTitle;
+
+  /// No description provided for @summaryGroupProduct.
+  ///
+  /// In pt, this message translates to:
+  /// **'Produto'**
+  String get summaryGroupProduct;
+
+  /// No description provided for @summaryGroupCart.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carro'**
+  String get summaryGroupCart;
+
+  /// No description provided for @summaryGroupPeriod.
+  ///
+  /// In pt, this message translates to:
+  /// **'Período'**
+  String get summaryGroupPeriod;
+
+  /// No description provided for @periodUnitDay.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dia'**
+  String get periodUnitDay;
+
+  /// No description provided for @periodUnitWeek.
+  ///
+  /// In pt, this message translates to:
+  /// **'Semana'**
+  String get periodUnitWeek;
+
+  /// No description provided for @periodUnitMonth.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mês'**
+  String get periodUnitMonth;
+
+  /// No description provided for @summaryEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem dados para resumir.'**
+  String get summaryEmpty;
+
+  /// No description provided for @summaryConsumedReplenished.
+  ///
+  /// In pt, this message translates to:
+  /// **'Consumido: {consumed}   Reposto: {replenished}'**
+  String summaryConsumedReplenished(int consumed, int replenished);
+
+  /// No description provided for @summaryOtherAdjustments.
+  ///
+  /// In pt, this message translates to:
+  /// **'   Outros ajustes: {value}'**
+  String summaryOtherAdjustments(String value);
+
+  /// No description provided for @productRemoved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Produto removido'**
+  String get productRemoved;
+
+  /// No description provided for @cartRemoved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carro removido'**
+  String get cartRemoved;
+
+  /// No description provided for @dashboardLegacyAppTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aplicação anterior (referência)'**
+  String get dashboardLegacyAppTooltip;
+
+  /// No description provided for @dashboardOpenCartError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível abrir este carro.'**
+  String get dashboardOpenCartError;
+
+  /// No description provided for @dashboardCreateCartError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível criar o carro. Tente novamente.'**
+  String get dashboardCreateCartError;
+
+  /// No description provided for @dashboardLoadCartsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar os carros: {error}'**
+  String dashboardLoadCartsError(Object error);
+
+  /// No description provided for @dashboardCartsEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não existem carros de emergência nesta instituição.'**
+  String get dashboardCartsEmpty;
+
+  /// No description provided for @dashboardSearchCartLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pesquisar carro'**
+  String get dashboardSearchCartLabel;
+
+  /// No description provided for @dashboardNoCartMatches.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum carro corresponde à pesquisa.'**
+  String get dashboardNoCartMatches;
+
+  /// No description provided for @dashboardAlertsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alertas'**
+  String get dashboardAlertsTitle;
+
+  /// No description provided for @alertBelowMinimum.
+  ///
+  /// In pt, this message translates to:
+  /// **'Stock abaixo do mínimo'**
+  String get alertBelowMinimum;
+
+  /// No description provided for @dashboardRecentActivityTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atividade recente'**
+  String get dashboardRecentActivityTitle;
+
+  /// No description provided for @assignConflictError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este produto já está atribuído a outro slot deste carro.'**
+  String get assignConflictError;
+
+  /// No description provided for @assignGenericError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível atribuir o produto. Tente novamente.'**
+  String get assignGenericError;
+
+  /// No description provided for @consumeExceedsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não pode consumir mais do que a quantidade atual.'**
+  String get consumeExceedsError;
+
+  /// No description provided for @consumeGenericError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível registar o consumo. Tente novamente.'**
+  String get consumeGenericError;
+
+  /// No description provided for @replenishMissingExpiry.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique a validade do lote.'**
+  String get replenishMissingExpiry;
+
+  /// No description provided for @replenishGenericError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível repor o stock. Tente novamente.'**
+  String get replenishGenericError;
+
+  /// No description provided for @gs1UnknownGtin.
+  ///
+  /// In pt, this message translates to:
+  /// **'GTIN não reconhecido no catálogo — não foi associado a nenhum produto.'**
+  String get gs1UnknownGtin;
+
+  /// No description provided for @gs1WrongProductWarning.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atenção: este código corresponde a \"{productName}\", não ao produto deste slot.'**
+  String gs1WrongProductWarning(String productName);
+
+  /// No description provided for @reconcileGenericError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível reconciliar. Tente novamente.'**
+  String get reconcileGenericError;
+
+  /// No description provided for @correctGenericError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível corrigir. Tente novamente.'**
+  String get correctGenericError;
+
+  /// No description provided for @emptySlotTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Slot vazio'**
+  String get emptySlotTitle;
+
+  /// No description provided for @emptySlotMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este slot ainda não tem produto atribuído.'**
+  String get emptySlotMessage;
+
+  /// No description provided for @assignDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atribuir produto'**
+  String get assignDialogTitle;
+
+  /// No description provided for @noProductsMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crie primeiro um produto no catálogo da instituição.'**
+  String get noProductsMessage;
+
+  /// No description provided for @productLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Produto'**
+  String get productLabel;
+
+  /// No description provided for @initialQuantityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade inicial'**
+  String get initialQuantityLabel;
+
+  /// No description provided for @targetQuantityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade alvo'**
+  String get targetQuantityLabel;
+
+  /// No description provided for @chooseProductValidation.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha um produto'**
+  String get chooseProductValidation;
+
+  /// No description provided for @actionAssign.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atribuir'**
+  String get actionAssign;
+
+  /// No description provided for @recordConsumptionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registar consumo'**
+  String get recordConsumptionTitle;
+
+  /// No description provided for @consumedQuantityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade consumida'**
+  String get consumedQuantityLabel;
+
+  /// No description provided for @validatePositiveInt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique um número positivo'**
+  String get validatePositiveInt;
+
+  /// No description provided for @replenishStockTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Repor stock'**
+  String get replenishStockTitle;
+
+  /// No description provided for @receivedQuantityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade recebida'**
+  String get receivedQuantityLabel;
+
+  /// No description provided for @lotNumberLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Número de lote'**
+  String get lotNumberLabel;
+
+  /// No description provided for @lotRequiredValidation.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique o lote'**
+  String get lotRequiredValidation;
+
+  /// No description provided for @chooseExpiryLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolher validade'**
+  String get chooseExpiryLabel;
+
+  /// No description provided for @expiryDateLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Validade: {date}'**
+  String expiryDateLabel(String date);
+
+  /// No description provided for @reconcileDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reconciliar (auditoria)'**
+  String get reconcileDialogTitle;
+
+  /// No description provided for @confirmedQuantityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quantidade confirmada fisicamente'**
+  String get confirmedQuantityLabel;
+
+  /// No description provided for @validateNonNegativeInt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique um número válido'**
+  String get validateNonNegativeInt;
+
+  /// No description provided for @noBatchesMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem lotes registados; a reconciliação fica sem lotes confirmados.'**
+  String get noBatchesMessage;
+
+  /// No description provided for @confirmedBatchesLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lotes confirmados como fisicamente presentes:'**
+  String get confirmedBatchesLabel;
+
+  /// No description provided for @batchLotLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lote {lotNumber}'**
+  String batchLotLabel(String lotNumber);
+
+  /// No description provided for @correctEventDialogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Corrigir evento'**
+  String get correctEventDialogTitle;
+
+  /// No description provided for @noEventsToCorrect.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não existem eventos para corrigir.'**
+  String get noEventsToCorrect;
+
+  /// No description provided for @eventToCorrectLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Evento a corrigir'**
+  String get eventToCorrectLabel;
+
+  /// No description provided for @chooseEventValidation.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha um evento'**
+  String get chooseEventValidation;
+
+  /// No description provided for @adjustmentLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuste (positivo ou negativo)'**
+  String get adjustmentLabel;
+
+  /// No description provided for @validateNonZeroInt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique um ajuste diferente de zero'**
+  String get validateNonZeroInt;
+
+  /// No description provided for @currentTargetLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atual: {current}   Alvo: {target}'**
+  String currentTargetLabel(int current, int target);
+
+  /// No description provided for @actionCorrect.
+  ///
+  /// In pt, this message translates to:
+  /// **'Corrigir'**
+  String get actionCorrect;
+
+  /// No description provided for @actionReconcile.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reconciliar'**
+  String get actionReconcile;
+
+  /// No description provided for @slotSelectionNotRectangle.
+  ///
+  /// In pt, this message translates to:
+  /// **'A seleção tem de formar um retângulo sem espaços.'**
+  String get slotSelectionNotRectangle;
+
+  /// No description provided for @drawerSavedMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gaveta guardada.'**
+  String get drawerSavedMessage;
+
+  /// No description provided for @drawerSaveError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível guardar a gaveta. Tente novamente.'**
+  String get drawerSaveError;
+
+  /// No description provided for @reassignSlotError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível reatribuir o slot. Tente novamente.'**
+  String get reassignSlotError;
+
+  /// No description provided for @removeAssignmentTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover atribuição'**
+  String get removeAssignmentTitle;
+
+  /// No description provided for @removeAssignmentMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta atribuição aponta para um slot que já não existe nesta gaveta. Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. Esta ação não pode ser desfeita.'**
+  String get removeAssignmentMessage;
+
+  /// No description provided for @actionRemove.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover'**
+  String get actionRemove;
+
+  /// No description provided for @deleteAssignmentError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível remover a atribuição. Tente novamente.'**
+  String get deleteAssignmentError;
+
+  /// No description provided for @loadSlotsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar os slots: {error}'**
+  String loadSlotsError(Object error);
+
+  /// No description provided for @actionMerge.
+  ///
+  /// In pt, this message translates to:
+  /// **'Juntar'**
+  String get actionMerge;
+
+  /// No description provided for @actionSplit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dividir'**
+  String get actionSplit;
+
+  /// No description provided for @orphanedAssignmentsHeader.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atribuições sem slot válido (de uma junção/divisão anterior):'**
+  String get orphanedAssignmentsHeader;
+
+  /// No description provided for @actionReassign.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reatribuir'**
+  String get actionReassign;
+
+  /// No description provided for @reassignTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reatribuir a um slot livre'**
+  String get reassignTooltip;
+
+  /// No description provided for @slotPositionTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Linha {row}, coluna {column}'**
+  String slotPositionTooltip(int row, int column);
+
+  /// No description provided for @languageSwitcherTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Idioma'**
+  String get languageSwitcherTooltip;
+
+  /// No description provided for @languagePortuguese.
+  ///
+  /// In pt, this message translates to:
+  /// **'Português'**
+  String get languagePortuguese;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In pt, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
 }
 
 class _AppLocalizationsDelegate

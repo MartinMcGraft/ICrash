@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/batch.dart';
 import '../../domain/entities/cart_product_assignment.dart';
@@ -121,9 +122,10 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       if (mounted) Navigator.of(context).pop();
     } on RepositoryFailure catch (error) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       final message = error.reason == RepositoryFailureReason.conflict
-          ? 'Este produto já está atribuído a outro slot deste carro.'
-          : 'Não foi possível atribuir o produto. Tente novamente.';
+          ? l10n.assignConflictError
+          : l10n.assignGenericError;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
@@ -137,8 +139,8 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     final amount = int.parse(_amountController.text);
     if (amount > assignment.currentQuantity) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não pode consumir mais do que a quantidade atual.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).consumeExceedsError),
         ),
       );
       return;
@@ -157,10 +159,8 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     } on RepositoryFailure catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível registar o consumo. Tente novamente.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).consumeGenericError),
         ),
       );
     } finally {
@@ -172,7 +172,9 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     if (!_formKey.currentState!.validate() || _expiryDate == null) {
       if (_expiryDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Indique a validade do lote.')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).replenishMissingExpiry),
+          ),
         );
       }
       return;
@@ -203,8 +205,8 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     } on RepositoryFailure catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível repor o stock. Tente novamente.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).replenishGenericError),
         ),
       );
     } finally {
@@ -234,21 +236,13 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
         result.gtin!,
       );
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       if (match == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'GTIN não reconhecido no catálogo — não foi associado a nenhum produto.',
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.gs1UnknownGtin)));
       } else if (match.id != widget.assignment!.productId) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Atenção: este código corresponde a "${match.name}", não ao produto deste slot.',
-            ),
-          ),
+          SnackBar(content: Text(l10n.gs1WrongProductWarning(match.name))),
         );
       }
     }
@@ -297,8 +291,8 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     } on RepositoryFailure catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível reconciliar. Tente novamente.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).reconcileGenericError),
         ),
       );
     } finally {
@@ -344,8 +338,8 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     } on RepositoryFailure catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível corrigir. Tente novamente.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).correctGenericError),
         ),
       );
     } finally {
@@ -355,15 +349,16 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final assignment = widget.assignment;
     if (assignment == null && !widget.canManage) {
       return AlertDialog(
-        title: const Text('Slot vazio'),
-        content: const Text('Este slot ainda não tem produto atribuído.'),
+        title: Text(l10n.emptySlotTitle),
+        content: Text(l10n.emptySlotMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
+            child: Text(l10n.actionClose),
           ),
         ],
       );
@@ -372,20 +367,18 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     switch (_mode) {
       case _Mode.assign:
         return AlertDialog(
-          title: const Text('Atribuir produto'),
+          title: Text(l10n.assignDialogTitle),
           content: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.products.isEmpty)
-                  const Text(
-                    'Crie primeiro um produto no catálogo da instituição.',
-                  )
+                  Text(l10n.noProductsMessage)
                 else
                   DropdownButtonFormField<Product>(
                     initialValue: _selectedProduct,
-                    decoration: const InputDecoration(labelText: 'Produto'),
+                    decoration: InputDecoration(labelText: l10n.productLabel),
                     items: [
                       for (final product in widget.products)
                         DropdownMenuItem(
@@ -396,23 +389,23 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                     onChanged: (value) =>
                         setState(() => _selectedProduct = value),
                     validator: (value) =>
-                        value == null ? 'Escolha um produto' : null,
+                        value == null ? l10n.chooseProductValidation : null,
                   ),
                 TextFormField(
                   controller: _initialController,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantidade inicial',
+                  decoration: InputDecoration(
+                    labelText: l10n.initialQuantityLabel,
                   ),
                   keyboardType: TextInputType.number,
-                  validator: _validateNonNegativeInt,
+                  validator: (value) => _validateNonNegativeInt(l10n, value),
                 ),
                 TextFormField(
                   controller: _targetController,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantidade alvo',
+                  decoration: InputDecoration(
+                    labelText: l10n.targetQuantityLabel,
                   ),
                   keyboardType: TextInputType.number,
-                  validator: _validateNonNegativeInt,
+                  validator: (value) => _validateNonNegativeInt(l10n, value),
                 ),
               ],
             ),
@@ -420,40 +413,40 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: Text(l10n.actionCancel),
             ),
             FilledButton(
               onPressed: (_saving || widget.products.isEmpty)
                   ? null
                   : _submitAssign,
-              child: const Text('Atribuir'),
+              child: Text(l10n.actionAssign),
             ),
           ],
         );
 
       case _Mode.consume:
         return AlertDialog(
-          title: const Text('Registar consumo'),
+          title: Text(l10n.recordConsumptionTitle),
           content: Form(
             key: _formKey,
             child: TextFormField(
               controller: _amountController,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Quantidade consumida',
+              decoration: InputDecoration(
+                labelText: l10n.consumedQuantityLabel,
               ),
               keyboardType: TextInputType.number,
-              validator: _validatePositiveInt,
+              validator: (value) => _validatePositiveInt(l10n, value),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => setState(() => _mode = _Mode.view),
-              child: const Text('Voltar'),
+              child: Text(l10n.actionBack),
             ),
             FilledButton(
               onPressed: _saving ? null : _submitConsumption,
-              child: const Text('Confirmar'),
+              child: Text(l10n.actionConfirm),
             ),
           ],
         );
@@ -461,7 +454,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       case _Mode.replenish:
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Repor stock'),
+            title: Text(l10n.replenishStockTitle),
             content: Form(
               key: _formKey,
               child: Column(
@@ -470,35 +463,33 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                   TextFormField(
                     controller: _amountController,
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantidade recebida',
+                    decoration: InputDecoration(
+                      labelText: l10n.receivedQuantityLabel,
                     ),
                     keyboardType: TextInputType.number,
-                    validator: _validatePositiveInt,
+                    validator: (value) => _validatePositiveInt(l10n, value),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: () => _startGs1Scan(setDialogState),
                     icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Digitalizar código GS1'),
+                    label: Text(l10n.gs1ScanTitle),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _lotController,
-                    decoration: const InputDecoration(
-                      labelText: 'Número de lote',
-                    ),
+                    decoration: InputDecoration(labelText: l10n.lotNumberLabel),
                     validator: (value) =>
                         (value == null || value.trim().isEmpty)
-                        ? 'Indique o lote'
+                        ? l10n.lotRequiredValidation
                         : null,
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       _expiryDate == null
-                          ? 'Escolher validade'
-                          : 'Validade: ${_formatDate(_expiryDate!)}',
+                          ? l10n.chooseExpiryLabel
+                          : l10n.expiryDateLabel(_formatDate(_expiryDate!)),
                     ),
                     trailing: const Icon(Icons.calendar_month_outlined),
                     onTap: () async {
@@ -521,11 +512,11 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
             actions: [
               TextButton(
                 onPressed: () => setState(() => _mode = _Mode.view),
-                child: const Text('Voltar'),
+                child: Text(l10n.actionBack),
               ),
               FilledButton(
                 onPressed: _saving ? null : _submitReplenishment,
-                child: const Text('Confirmar'),
+                child: Text(l10n.actionConfirm),
               ),
             ],
           ),
@@ -534,7 +525,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       case _Mode.reconcile:
         final batches = _batches ?? const <Batch>[];
         return AlertDialog(
-          title: const Text('Reconciliar (auditoria)'),
+          title: Text(l10n.reconcileDialogTitle),
           content: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -544,26 +535,24 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                 children: [
                   TextFormField(
                     controller: _confirmedQuantityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantidade confirmada fisicamente',
+                    decoration: InputDecoration(
+                      labelText: l10n.confirmedQuantityLabel,
                     ),
                     keyboardType: TextInputType.number,
-                    validator: _validateNonNegativeInt,
+                    validator: (value) => _validateNonNegativeInt(l10n, value),
                   ),
                   const SizedBox(height: 12),
                   if (batches.isEmpty)
-                    const Text(
-                      'Sem lotes registados; a reconciliação fica sem lotes confirmados.',
-                    )
+                    Text(l10n.noBatchesMessage)
                   else ...[
-                    const Text('Lotes confirmados como fisicamente presentes:'),
+                    Text(l10n.confirmedBatchesLabel),
                     for (final batch in batches)
                       CheckboxListTile(
                         contentPadding: EdgeInsets.zero,
                         value: _confirmedBatchIds.contains(batch.id),
-                        title: Text('Lote ${batch.lotNumber}'),
+                        title: Text(l10n.batchLotLabel(batch.lotNumber)),
                         subtitle: Text(
-                          'Validade: ${_formatDate(batch.expiryDate)}',
+                          l10n.expiryDateLabel(_formatDate(batch.expiryDate)),
                         ),
                         onChanged: (checked) => setState(() {
                           if (checked ?? false) {
@@ -581,11 +570,11 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           actions: [
             TextButton(
               onPressed: () => setState(() => _mode = _Mode.view),
-              child: const Text('Voltar'),
+              child: Text(l10n.actionBack),
             ),
             FilledButton(
               onPressed: _saving ? null : _submitReconciliation,
-              child: const Text('Confirmar'),
+              child: Text(l10n.actionConfirm),
             ),
           ],
         );
@@ -593,7 +582,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       case _Mode.correct:
         final events = _events ?? const <UsageEvent>[];
         return AlertDialog(
-          title: const Text('Corrigir evento'),
+          title: Text(l10n.correctEventDialogTitle),
           content: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -602,12 +591,12 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (events.isEmpty)
-                    const Text('Ainda não existem eventos para corrigir.')
+                    Text(l10n.noEventsToCorrect)
                   else
                     DropdownButtonFormField<UsageEvent>(
                       initialValue: _selectedEventToCorrect,
-                      decoration: const InputDecoration(
-                        labelText: 'Evento a corrigir',
+                      decoration: InputDecoration(
+                        labelText: l10n.eventToCorrectLabel,
                       ),
                       items: [
                         for (final event in events)
@@ -625,17 +614,17 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                             : '${-value.amount}';
                       }),
                       validator: (value) =>
-                          value == null ? 'Escolha um evento' : null,
+                          value == null ? l10n.chooseEventValidation : null,
                     ),
                   TextFormField(
                     controller: _correctionAmountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Ajuste (positivo ou negativo)',
+                    decoration: InputDecoration(
+                      labelText: l10n.adjustmentLabel,
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       signed: true,
                     ),
-                    validator: _validateNonZeroInt,
+                    validator: (value) => _validateNonZeroInt(l10n, value),
                   ),
                 ],
               ),
@@ -644,11 +633,11 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           actions: [
             TextButton(
               onPressed: () => setState(() => _mode = _Mode.view),
-              child: const Text('Voltar'),
+              child: Text(l10n.actionBack),
             ),
             FilledButton(
               onPressed: (_saving || events.isEmpty) ? null : _submitCorrection,
-              child: const Text('Confirmar'),
+              child: Text(l10n.actionConfirm),
             ),
           ],
         );
@@ -656,13 +645,16 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       case _Mode.view:
         final product = _productFor(assignment!.productId);
         return AlertDialog(
-          title: Text(product?.name ?? 'Produto removido'),
+          title: Text(product?.name ?? l10n.productRemoved),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Atual: ${assignment.currentQuantity}   Alvo: ${assignment.targetQuantity}',
+                l10n.currentTargetLabel(
+                  assignment.currentQuantity,
+                  assignment.targetQuantity,
+                ),
               ),
               const SizedBox(height: 8),
               Chip(
@@ -673,25 +665,25 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar'),
+              child: Text(l10n.actionClose),
             ),
             TextButton(
               onPressed: _enterCorrectMode,
-              child: const Text('Corrigir'),
+              child: Text(l10n.actionCorrect),
             ),
             if (widget.canManage) ...[
               TextButton(
                 onPressed: () => setState(() => _mode = _Mode.replenish),
-                child: const Text('Repor stock'),
+                child: Text(l10n.replenishStockTitle),
               ),
               TextButton(
                 onPressed: _enterReconcileMode,
-                child: const Text('Reconciliar'),
+                child: Text(l10n.actionReconcile),
               ),
             ],
             FilledButton(
               onPressed: () => setState(() => _mode = _Mode.consume),
-              child: const Text('Registar consumo'),
+              child: Text(l10n.recordConsumptionTitle),
             ),
           ],
         );
@@ -699,22 +691,22 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
   }
 }
 
-String? _validatePositiveInt(String? value) {
+String? _validatePositiveInt(AppLocalizations l10n, String? value) {
   final parsed = int.tryParse(value ?? '');
-  if (parsed == null || parsed <= 0) return 'Indique um número positivo';
+  if (parsed == null || parsed <= 0) return l10n.validatePositiveInt;
   return null;
 }
 
-String? _validateNonNegativeInt(String? value) {
+String? _validateNonNegativeInt(AppLocalizations l10n, String? value) {
   final parsed = int.tryParse(value ?? '');
-  if (parsed == null || parsed < 0) return 'Indique um número válido';
+  if (parsed == null || parsed < 0) return l10n.validateNonNegativeInt;
   return null;
 }
 
-String? _validateNonZeroInt(String? value) {
+String? _validateNonZeroInt(AppLocalizations l10n, String? value) {
   final parsed = int.tryParse(value ?? '');
   if (parsed == null || parsed == 0) {
-    return 'Indique um ajuste diferente de zero';
+    return l10n.validateNonZeroInt;
   }
   return null;
 }

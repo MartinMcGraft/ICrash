@@ -370,4 +370,322 @@ class AppLocalizationsPt extends AppLocalizations {
   String drawerGridSize(int rows, int columns) {
     return '$rows linhas × $columns colunas';
   }
+
+  @override
+  String get historyScreenTitle => 'Histórico';
+
+  @override
+  String get historyFilterAll => 'Todos';
+
+  @override
+  String historyLoadError(Object error) {
+    return 'Não foi possível carregar o histórico: $error';
+  }
+
+  @override
+  String get historyEmpty => 'Sem eventos para mostrar.';
+
+  @override
+  String get exportCsvButton => 'Exportar CSV';
+
+  @override
+  String get actionCopy => 'Copiar';
+
+  @override
+  String get csvCopiedMessage => 'CSV copiado.';
+
+  @override
+  String get exportPdfButton => 'Exportar PDF';
+
+  @override
+  String get historyPdfDocumentTitle => 'Histórico de atividade';
+
+  @override
+  String get summaryViewButton => 'Ver resumo';
+
+  @override
+  String get summaryDialogTitle => 'Resumo';
+
+  @override
+  String get summaryGroupProduct => 'Produto';
+
+  @override
+  String get summaryGroupCart => 'Carro';
+
+  @override
+  String get summaryGroupPeriod => 'Período';
+
+  @override
+  String get periodUnitDay => 'Dia';
+
+  @override
+  String get periodUnitWeek => 'Semana';
+
+  @override
+  String get periodUnitMonth => 'Mês';
+
+  @override
+  String get summaryEmpty => 'Sem dados para resumir.';
+
+  @override
+  String summaryConsumedReplenished(int consumed, int replenished) {
+    return 'Consumido: $consumed   Reposto: $replenished';
+  }
+
+  @override
+  String summaryOtherAdjustments(String value) {
+    return '   Outros ajustes: $value';
+  }
+
+  @override
+  String get productRemoved => 'Produto removido';
+
+  @override
+  String get cartRemoved => 'Carro removido';
+
+  @override
+  String get dashboardLegacyAppTooltip => 'Aplicação anterior (referência)';
+
+  @override
+  String get dashboardOpenCartError => 'Não foi possível abrir este carro.';
+
+  @override
+  String get dashboardCreateCartError =>
+      'Não foi possível criar o carro. Tente novamente.';
+
+  @override
+  String dashboardLoadCartsError(Object error) {
+    return 'Não foi possível carregar os carros: $error';
+  }
+
+  @override
+  String get dashboardCartsEmpty =>
+      'Ainda não existem carros de emergência nesta instituição.';
+
+  @override
+  String get dashboardSearchCartLabel => 'Pesquisar carro';
+
+  @override
+  String get dashboardNoCartMatches => 'Nenhum carro corresponde à pesquisa.';
+
+  @override
+  String get dashboardAlertsTitle => 'Alertas';
+
+  @override
+  String get alertBelowMinimum => 'Stock abaixo do mínimo';
+
+  @override
+  String get dashboardRecentActivityTitle => 'Atividade recente';
+
+  @override
+  String get assignConflictError =>
+      'Este produto já está atribuído a outro slot deste carro.';
+
+  @override
+  String get assignGenericError =>
+      'Não foi possível atribuir o produto. Tente novamente.';
+
+  @override
+  String get consumeExceedsError =>
+      'Não pode consumir mais do que a quantidade atual.';
+
+  @override
+  String get consumeGenericError =>
+      'Não foi possível registar o consumo. Tente novamente.';
+
+  @override
+  String get replenishMissingExpiry => 'Indique a validade do lote.';
+
+  @override
+  String get replenishGenericError =>
+      'Não foi possível repor o stock. Tente novamente.';
+
+  @override
+  String get gs1UnknownGtin =>
+      'GTIN não reconhecido no catálogo — não foi associado a nenhum produto.';
+
+  @override
+  String gs1WrongProductWarning(String productName) {
+    return 'Atenção: este código corresponde a \"$productName\", não ao produto deste slot.';
+  }
+
+  @override
+  String get reconcileGenericError =>
+      'Não foi possível reconciliar. Tente novamente.';
+
+  @override
+  String get correctGenericError =>
+      'Não foi possível corrigir. Tente novamente.';
+
+  @override
+  String get emptySlotTitle => 'Slot vazio';
+
+  @override
+  String get emptySlotMessage => 'Este slot ainda não tem produto atribuído.';
+
+  @override
+  String get assignDialogTitle => 'Atribuir produto';
+
+  @override
+  String get noProductsMessage =>
+      'Crie primeiro um produto no catálogo da instituição.';
+
+  @override
+  String get productLabel => 'Produto';
+
+  @override
+  String get initialQuantityLabel => 'Quantidade inicial';
+
+  @override
+  String get targetQuantityLabel => 'Quantidade alvo';
+
+  @override
+  String get chooseProductValidation => 'Escolha um produto';
+
+  @override
+  String get actionAssign => 'Atribuir';
+
+  @override
+  String get recordConsumptionTitle => 'Registar consumo';
+
+  @override
+  String get consumedQuantityLabel => 'Quantidade consumida';
+
+  @override
+  String get validatePositiveInt => 'Indique um número positivo';
+
+  @override
+  String get replenishStockTitle => 'Repor stock';
+
+  @override
+  String get receivedQuantityLabel => 'Quantidade recebida';
+
+  @override
+  String get lotNumberLabel => 'Número de lote';
+
+  @override
+  String get lotRequiredValidation => 'Indique o lote';
+
+  @override
+  String get chooseExpiryLabel => 'Escolher validade';
+
+  @override
+  String expiryDateLabel(String date) {
+    return 'Validade: $date';
+  }
+
+  @override
+  String get reconcileDialogTitle => 'Reconciliar (auditoria)';
+
+  @override
+  String get confirmedQuantityLabel => 'Quantidade confirmada fisicamente';
+
+  @override
+  String get validateNonNegativeInt => 'Indique um número válido';
+
+  @override
+  String get noBatchesMessage =>
+      'Sem lotes registados; a reconciliação fica sem lotes confirmados.';
+
+  @override
+  String get confirmedBatchesLabel =>
+      'Lotes confirmados como fisicamente presentes:';
+
+  @override
+  String batchLotLabel(String lotNumber) {
+    return 'Lote $lotNumber';
+  }
+
+  @override
+  String get correctEventDialogTitle => 'Corrigir evento';
+
+  @override
+  String get noEventsToCorrect => 'Ainda não existem eventos para corrigir.';
+
+  @override
+  String get eventToCorrectLabel => 'Evento a corrigir';
+
+  @override
+  String get chooseEventValidation => 'Escolha um evento';
+
+  @override
+  String get adjustmentLabel => 'Ajuste (positivo ou negativo)';
+
+  @override
+  String get validateNonZeroInt => 'Indique um ajuste diferente de zero';
+
+  @override
+  String currentTargetLabel(int current, int target) {
+    return 'Atual: $current   Alvo: $target';
+  }
+
+  @override
+  String get actionCorrect => 'Corrigir';
+
+  @override
+  String get actionReconcile => 'Reconciliar';
+
+  @override
+  String get slotSelectionNotRectangle =>
+      'A seleção tem de formar um retângulo sem espaços.';
+
+  @override
+  String get drawerSavedMessage => 'Gaveta guardada.';
+
+  @override
+  String get drawerSaveError =>
+      'Não foi possível guardar a gaveta. Tente novamente.';
+
+  @override
+  String get reassignSlotError =>
+      'Não foi possível reatribuir o slot. Tente novamente.';
+
+  @override
+  String get removeAssignmentTitle => 'Remover atribuição';
+
+  @override
+  String get removeAssignmentMessage =>
+      'Esta atribuição aponta para um slot que já não existe nesta gaveta. Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. Esta ação não pode ser desfeita.';
+
+  @override
+  String get actionRemove => 'Remover';
+
+  @override
+  String get deleteAssignmentError =>
+      'Não foi possível remover a atribuição. Tente novamente.';
+
+  @override
+  String loadSlotsError(Object error) {
+    return 'Não foi possível carregar os slots: $error';
+  }
+
+  @override
+  String get actionMerge => 'Juntar';
+
+  @override
+  String get actionSplit => 'Dividir';
+
+  @override
+  String get orphanedAssignmentsHeader =>
+      'Atribuições sem slot válido (de uma junção/divisão anterior):';
+
+  @override
+  String get actionReassign => 'Reatribuir';
+
+  @override
+  String get reassignTooltip => 'Reatribuir a um slot livre';
+
+  @override
+  String slotPositionTooltip(int row, int column) {
+    return 'Linha $row, coluna $column';
+  }
+
+  @override
+  String get languageSwitcherTooltip => 'Idioma';
+
+  @override
+  String get languagePortuguese => 'Português';
+
+  @override
+  String get languageEnglish => 'English';
 }

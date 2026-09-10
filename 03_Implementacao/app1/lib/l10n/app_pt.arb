@@ -170,5 +170,156 @@
       "rows": {"type": "int"},
       "columns": {"type": "int"}
     }
-  }
+  },
+
+  "historyScreenTitle": "Histórico",
+  "historyFilterAll": "Todos",
+  "historyLoadError": "Não foi possível carregar o histórico: {error}",
+  "@historyLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "historyEmpty": "Sem eventos para mostrar.",
+  "exportCsvButton": "Exportar CSV",
+  "actionCopy": "Copiar",
+  "csvCopiedMessage": "CSV copiado.",
+  "exportPdfButton": "Exportar PDF",
+  "historyPdfDocumentTitle": "Histórico de atividade",
+  "summaryViewButton": "Ver resumo",
+  "summaryDialogTitle": "Resumo",
+  "summaryGroupProduct": "Produto",
+  "summaryGroupCart": "Carro",
+  "summaryGroupPeriod": "Período",
+  "periodUnitDay": "Dia",
+  "periodUnitWeek": "Semana",
+  "periodUnitMonth": "Mês",
+  "summaryEmpty": "Sem dados para resumir.",
+  "summaryConsumedReplenished": "Consumido: {consumed}   Reposto: {replenished}",
+  "@summaryConsumedReplenished": {
+    "placeholders": {
+      "consumed": {"type": "int"},
+      "replenished": {"type": "int"}
+    }
+  },
+  "summaryOtherAdjustments": "   Outros ajustes: {value}",
+  "@summaryOtherAdjustments": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "productRemoved": "Produto removido",
+  "cartRemoved": "Carro removido",
+
+  "dashboardLegacyAppTooltip": "Aplicação anterior (referência)",
+  "dashboardOpenCartError": "Não foi possível abrir este carro.",
+  "dashboardCreateCartError": "Não foi possível criar o carro. Tente novamente.",
+  "dashboardLoadCartsError": "Não foi possível carregar os carros: {error}",
+  "@dashboardLoadCartsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "dashboardCartsEmpty": "Ainda não existem carros de emergência nesta instituição.",
+  "dashboardSearchCartLabel": "Pesquisar carro",
+  "dashboardNoCartMatches": "Nenhum carro corresponde à pesquisa.",
+  "dashboardAlertsTitle": "Alertas",
+  "alertBelowMinimum": "Stock abaixo do mínimo",
+  "dashboardRecentActivityTitle": "Atividade recente",
+
+  "assignConflictError": "Este produto já está atribuído a outro slot deste carro.",
+  "assignGenericError": "Não foi possível atribuir o produto. Tente novamente.",
+  "consumeExceedsError": "Não pode consumir mais do que a quantidade atual.",
+  "consumeGenericError": "Não foi possível registar o consumo. Tente novamente.",
+  "replenishMissingExpiry": "Indique a validade do lote.",
+  "replenishGenericError": "Não foi possível repor o stock. Tente novamente.",
+  "gs1UnknownGtin": "GTIN não reconhecido no catálogo — não foi associado a nenhum produto.",
+  "gs1WrongProductWarning": "Atenção: este código corresponde a \"{productName}\", não ao produto deste slot.",
+  "@gs1WrongProductWarning": {
+    "placeholders": {
+      "productName": {"type": "String"}
+    }
+  },
+  "reconcileGenericError": "Não foi possível reconciliar. Tente novamente.",
+  "correctGenericError": "Não foi possível corrigir. Tente novamente.",
+  "emptySlotTitle": "Slot vazio",
+  "emptySlotMessage": "Este slot ainda não tem produto atribuído.",
+  "assignDialogTitle": "Atribuir produto",
+  "noProductsMessage": "Crie primeiro um produto no catálogo da instituição.",
+  "productLabel": "Produto",
+  "initialQuantityLabel": "Quantidade inicial",
+  "targetQuantityLabel": "Quantidade alvo",
+  "chooseProductValidation": "Escolha um produto",
+  "actionAssign": "Atribuir",
+  "recordConsumptionTitle": "Registar consumo",
+  "consumedQuantityLabel": "Quantidade consumida",
+  "validatePositiveInt": "Indique um número positivo",
+  "replenishStockTitle": "Repor stock",
+  "receivedQuantityLabel": "Quantidade recebida",
+  "lotNumberLabel": "Número de lote",
+  "lotRequiredValidation": "Indique o lote",
+  "chooseExpiryLabel": "Escolher validade",
+  "expiryDateLabel": "Validade: {date}",
+  "@expiryDateLabel": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "reconcileDialogTitle": "Reconciliar (auditoria)",
+  "confirmedQuantityLabel": "Quantidade confirmada fisicamente",
+  "validateNonNegativeInt": "Indique um número válido",
+  "noBatchesMessage": "Sem lotes registados; a reconciliação fica sem lotes confirmados.",
+  "confirmedBatchesLabel": "Lotes confirmados como fisicamente presentes:",
+  "batchLotLabel": "Lote {lotNumber}",
+  "@batchLotLabel": {
+    "placeholders": {
+      "lotNumber": {"type": "String"}
+    }
+  },
+  "correctEventDialogTitle": "Corrigir evento",
+  "noEventsToCorrect": "Ainda não existem eventos para corrigir.",
+  "eventToCorrectLabel": "Evento a corrigir",
+  "chooseEventValidation": "Escolha um evento",
+  "adjustmentLabel": "Ajuste (positivo ou negativo)",
+  "validateNonZeroInt": "Indique um ajuste diferente de zero",
+  "currentTargetLabel": "Atual: {current}   Alvo: {target}",
+  "@currentTargetLabel": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
+  "actionCorrect": "Corrigir",
+  "actionReconcile": "Reconciliar",
+
+  "slotSelectionNotRectangle": "A seleção tem de formar um retângulo sem espaços.",
+  "drawerSavedMessage": "Gaveta guardada.",
+  "drawerSaveError": "Não foi possível guardar a gaveta. Tente novamente.",
+  "reassignSlotError": "Não foi possível reatribuir o slot. Tente novamente.",
+  "removeAssignmentTitle": "Remover atribuição",
+  "removeAssignmentMessage": "Esta atribuição aponta para um slot que já não existe nesta gaveta. Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. Esta ação não pode ser desfeita.",
+  "actionRemove": "Remover",
+  "deleteAssignmentError": "Não foi possível remover a atribuição. Tente novamente.",
+  "loadSlotsError": "Não foi possível carregar os slots: {error}",
+  "@loadSlotsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "actionMerge": "Juntar",
+  "actionSplit": "Dividir",
+  "orphanedAssignmentsHeader": "Atribuições sem slot válido (de uma junção/divisão anterior):",
+  "actionReassign": "Reatribuir",
+  "reassignTooltip": "Reatribuir a um slot livre",
+  "slotPositionTooltip": "Linha {row}, coluna {column}",
+  "@slotPositionTooltip": {
+    "placeholders": {
+      "row": {"type": "int"},
+      "column": {"type": "int"}
+    }
+  },
+
+  "languageSwitcherTooltip": "Idioma",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English"
 }

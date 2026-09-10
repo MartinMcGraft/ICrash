@@ -170,5 +170,156 @@
       "rows": {"type": "int"},
       "columns": {"type": "int"}
     }
-  }
+  },
+
+  "historyScreenTitle": "History",
+  "historyFilterAll": "All",
+  "historyLoadError": "Couldn't load the history: {error}",
+  "@historyLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "historyEmpty": "No events to show.",
+  "exportCsvButton": "Export CSV",
+  "actionCopy": "Copy",
+  "csvCopiedMessage": "CSV copied.",
+  "exportPdfButton": "Export PDF",
+  "historyPdfDocumentTitle": "Activity history",
+  "summaryViewButton": "View summary",
+  "summaryDialogTitle": "Summary",
+  "summaryGroupProduct": "Product",
+  "summaryGroupCart": "Cart",
+  "summaryGroupPeriod": "Period",
+  "periodUnitDay": "Day",
+  "periodUnitWeek": "Week",
+  "periodUnitMonth": "Month",
+  "summaryEmpty": "No data to summarize.",
+  "summaryConsumedReplenished": "Consumed: {consumed}   Replenished: {replenished}",
+  "@summaryConsumedReplenished": {
+    "placeholders": {
+      "consumed": {"type": "int"},
+      "replenished": {"type": "int"}
+    }
+  },
+  "summaryOtherAdjustments": "   Other adjustments: {value}",
+  "@summaryOtherAdjustments": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "productRemoved": "Removed product",
+  "cartRemoved": "Removed cart",
+
+  "dashboardLegacyAppTooltip": "Previous application (reference)",
+  "dashboardOpenCartError": "Couldn't open this cart.",
+  "dashboardCreateCartError": "Couldn't create the cart. Try again.",
+  "dashboardLoadCartsError": "Couldn't load carts: {error}",
+  "@dashboardLoadCartsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "dashboardCartsEmpty": "There are no emergency carts in this institution yet.",
+  "dashboardSearchCartLabel": "Search cart",
+  "dashboardNoCartMatches": "No cart matches the search.",
+  "dashboardAlertsTitle": "Alerts",
+  "alertBelowMinimum": "Stock below minimum",
+  "dashboardRecentActivityTitle": "Recent activity",
+
+  "assignConflictError": "This product is already assigned to another slot in this cart.",
+  "assignGenericError": "Couldn't assign the product. Try again.",
+  "consumeExceedsError": "You can't consume more than the current quantity.",
+  "consumeGenericError": "Couldn't record the consumption. Try again.",
+  "replenishMissingExpiry": "Enter the batch's expiry date.",
+  "replenishGenericError": "Couldn't replenish the stock. Try again.",
+  "gs1UnknownGtin": "GTIN not recognized in the catalogue — it wasn't linked to any product.",
+  "gs1WrongProductWarning": "Warning: this code matches \"{productName}\", not this slot's product.",
+  "@gs1WrongProductWarning": {
+    "placeholders": {
+      "productName": {"type": "String"}
+    }
+  },
+  "reconcileGenericError": "Couldn't reconcile. Try again.",
+  "correctGenericError": "Couldn't correct. Try again.",
+  "emptySlotTitle": "Empty slot",
+  "emptySlotMessage": "This slot doesn't have a product assigned yet.",
+  "assignDialogTitle": "Assign product",
+  "noProductsMessage": "First create a product in the institution's catalogue.",
+  "productLabel": "Product",
+  "initialQuantityLabel": "Initial quantity",
+  "targetQuantityLabel": "Target quantity",
+  "chooseProductValidation": "Choose a product",
+  "actionAssign": "Assign",
+  "recordConsumptionTitle": "Record consumption",
+  "consumedQuantityLabel": "Consumed quantity",
+  "validatePositiveInt": "Enter a positive number",
+  "replenishStockTitle": "Replenish stock",
+  "receivedQuantityLabel": "Received quantity",
+  "lotNumberLabel": "Lot number",
+  "lotRequiredValidation": "Enter the lot",
+  "chooseExpiryLabel": "Choose expiry date",
+  "expiryDateLabel": "Expiry: {date}",
+  "@expiryDateLabel": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "reconcileDialogTitle": "Reconcile (audit)",
+  "confirmedQuantityLabel": "Physically confirmed quantity",
+  "validateNonNegativeInt": "Enter a valid number",
+  "noBatchesMessage": "No batches recorded; the reconciliation ends up with no confirmed batches.",
+  "confirmedBatchesLabel": "Batches confirmed as physically present:",
+  "batchLotLabel": "Lot {lotNumber}",
+  "@batchLotLabel": {
+    "placeholders": {
+      "lotNumber": {"type": "String"}
+    }
+  },
+  "correctEventDialogTitle": "Correct event",
+  "noEventsToCorrect": "There are no events to correct yet.",
+  "eventToCorrectLabel": "Event to correct",
+  "chooseEventValidation": "Choose an event",
+  "adjustmentLabel": "Adjustment (positive or negative)",
+  "validateNonZeroInt": "Enter an adjustment other than zero",
+  "currentTargetLabel": "Current: {current}   Target: {target}",
+  "@currentTargetLabel": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
+  "actionCorrect": "Correct",
+  "actionReconcile": "Reconcile",
+
+  "slotSelectionNotRectangle": "The selection must form a rectangle with no gaps.",
+  "drawerSavedMessage": "Drawer saved.",
+  "drawerSaveError": "Couldn't save the drawer. Try again.",
+  "reassignSlotError": "Couldn't reassign the slot. Try again.",
+  "removeAssignmentTitle": "Remove assignment",
+  "removeAssignmentMessage": "This assignment points to a slot that no longer exists in this drawer. Removing the assignment also removes its recorded batches; the event history is kept. This action cannot be undone.",
+  "actionRemove": "Remove",
+  "deleteAssignmentError": "Couldn't remove the assignment. Try again.",
+  "loadSlotsError": "Couldn't load the slots: {error}",
+  "@loadSlotsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "actionMerge": "Merge",
+  "actionSplit": "Split",
+  "orphanedAssignmentsHeader": "Assignments with no valid slot (from a past merge/split):",
+  "actionReassign": "Reassign",
+  "reassignTooltip": "Reassign to a free slot",
+  "slotPositionTooltip": "Row {row}, column {column}",
+  "@slotPositionTooltip": {
+    "placeholders": {
+      "row": {"type": "int"},
+      "column": {"type": "int"}
+    }
+  },
+
+  "languageSwitcherTooltip": "Language",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English"
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/l10n/app_localizations.dart';
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/common/locale_scope.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/cart_status.dart';
@@ -35,6 +36,40 @@ Membership _membership(Role role) => Membership(
   role: role,
   status: MembershipStatus.active,
 );
+
+/// Mirrors `main.dart`'s `MyApp` locale-switching wiring (a mutable
+/// `LocaleScope` above `MaterialApp`) closely enough to prove the AppBar's
+/// language switcher actually changes rendered text, not just that it
+/// compiles against `LocaleScope.of(context)`.
+class _LocaleSwitchingHarness extends StatefulWidget {
+  const _LocaleSwitchingHarness({required this.services});
+
+  final AppServices services;
+
+  @override
+  State<_LocaleSwitchingHarness> createState() => _LocaleSwitchingHarnessState();
+}
+
+class _LocaleSwitchingHarnessState extends State<_LocaleSwitchingHarness> {
+  Locale _locale = const Locale('pt', 'PT');
+
+  @override
+  Widget build(BuildContext context) {
+    return AppServicesScope(
+      services: widget.services,
+      child: LocaleScope(
+        locale: _locale,
+        setLocale: (locale) => setState(() => _locale = locale),
+        child: MaterialApp(
+          locale: _locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const InstitutionHomeScreen(institution: _institution),
+        ),
+      ),
+    );
+  }
+}
 
 void main() {
   testWidgets('shows an empty state when the institution has no carts', (
@@ -393,5 +428,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Alertas'), findsNothing);
+  });
+
+  testWidgets('switches the whole screen to English via the language switcher', (
+    tester,
+  ) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    await tester.pumpWidget(
+      _LocaleSwitchingHarness(
+        services: buildTestServices(carts: FakeCartRepository(carts: [cart])),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Operacional'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.language));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Operational'), findsOneWidget);
+    expect(find.text('Search cart'), findsOneWidget);
   });
 }

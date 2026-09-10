@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:icrash_app/home_menu.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
+import '../../common/locale_scope.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_product_assignment.dart';
@@ -98,7 +100,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       if (!context.mounted) return;
       if (cart == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível abrir este carro.')),
+          SnackBar(content: Text(AppLocalizations.of(context).dashboardOpenCartError)),
         );
         return;
       }
@@ -108,7 +110,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível abrir este carro.')),
+        SnackBar(content: Text(AppLocalizations.of(context).dashboardOpenCartError)),
       );
     }
   }
@@ -125,9 +127,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível criar o carro. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).dashboardCreateCartError)),
       );
     }
   }
@@ -135,18 +135,19 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.institution.name),
         actions: [
           if (isCameraScanningSupported)
             IconButton(
-              tooltip: 'Ler código do carro',
+              tooltip: l10n.cartQrScanTitle,
               icon: const Icon(Icons.qr_code_scanner),
               onPressed: () => _scanCartQr(context),
             ),
           IconButton(
-            tooltip: 'Histórico',
+            tooltip: l10n.historyScreenTitle,
             icon: const Icon(Icons.receipt_long_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -162,7 +163,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                tooltip: 'Produtos',
+                tooltip: l10n.productsScreenTitle,
                 icon: const Icon(Icons.medication_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -182,7 +183,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                tooltip: 'Membros',
+                tooltip: l10n.membersScreenTitle,
                 icon: const Icon(Icons.group_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -194,14 +195,29 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             },
           ),
           IconButton(
-            tooltip: 'Aplicação anterior (referência)',
+            tooltip: l10n.dashboardLegacyAppTooltip,
             icon: const Icon(Icons.history),
             onPressed: () =>
                 Navigator.of(context)
                     .push(MaterialPageRoute(builder: (_) => const HomeMenu())),
           ),
+          PopupMenuButton<Locale>(
+            tooltip: l10n.languageSwitcherTooltip,
+            icon: const Icon(Icons.language),
+            onSelected: (locale) => LocaleScope.of(context).setLocale(locale),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: const Locale('pt'),
+                child: Text(l10n.languagePortuguese),
+              ),
+              PopupMenuItem(
+                value: const Locale('en'),
+                child: Text(l10n.languageEnglish),
+              ),
+            ],
+          ),
           IconButton(
-            tooltip: 'Terminar sessão',
+            tooltip: l10n.actionSignOut,
             icon: const Icon(Icons.logout),
             onPressed: () => services.auth.signOut(),
           ),
@@ -217,21 +233,16 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Não foi possível carregar os carros: ${snapshot.error}',
-                ),
+                child: Text(l10n.dashboardLoadCartsError(snapshot.error!)),
               ),
             );
           }
           final carts = snapshot.data ?? const <Cart>[];
           if (carts.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ainda não existem carros de emergência nesta instituição.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.dashboardCartsEmpty, textAlign: TextAlign.center),
               ),
             );
           }
@@ -268,22 +279,22 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    labelText: 'Pesquisar carro',
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    labelText: l10n.dashboardSearchCartLabel,
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                   onChanged: (value) => setState(() => _searchQuery = value),
                 ),
               ),
               Expanded(
                 child: filtered.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(24),
                           child: Text(
-                            'Nenhum carro corresponde à pesquisa.',
+                            l10n.dashboardNoCartMatches,
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -325,7 +336,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           return FloatingActionButton.extended(
             onPressed: () => _createCart(context),
             icon: const Icon(Icons.add),
-            label: const Text('Novo carro'),
+            label: Text(l10n.createCartTitle),
           );
         },
       ),
@@ -386,22 +397,23 @@ class _CrossCartAlerts extends StatelessWidget {
   final List<Cart> carts;
   final Future<List<Product>> products;
 
-  String _cartName(String cartId) {
+  String _cartName(AppLocalizations l10n, String cartId) {
     for (final cart in carts) {
       if (cart.id == cartId) return cart.name;
     }
-    return 'Carro removido';
+    return l10n.cartRemoved;
   }
 
-  String _productName(List<Product> products, String productId) {
+  String _productName(AppLocalizations l10n, List<Product> products, String productId) {
     for (final product in products) {
       if (product.id == productId) return product.name;
     }
-    return 'Produto removido';
+    return l10n.productRemoved;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return StreamBuilder<List<CartProductAssignment>>(
       stream: assignmentsStream,
       builder: (context, assignmentsSnapshot) {
@@ -429,15 +441,15 @@ class _CrossCartAlerts extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Alertas',
+                    l10n.dashboardAlertsTitle,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   for (final (assignment, alert) in alerts)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        '${_assignmentAlertLabel(alert)} · ${_productName(productList, assignment.productId)}'
-                        ' · ${_cartName(assignment.cartId)}',
+                        '${_assignmentAlertLabel(l10n, alert)} · ${_productName(l10n, productList, assignment.productId)}'
+                        ' · ${_cartName(l10n, assignment.cartId)}',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
@@ -453,10 +465,10 @@ class _CrossCartAlerts extends StatelessWidget {
   }
 }
 
-String _assignmentAlertLabel(AssignmentAlert alert) => switch (alert) {
-  AssignmentAlert.expired => 'Expirado',
-  AssignmentAlert.expiringSoon => 'A expirar em breve',
-  AssignmentAlert.belowMinimum => 'Stock abaixo do mínimo',
+String _assignmentAlertLabel(AppLocalizations l10n, AssignmentAlert alert) => switch (alert) {
+  AssignmentAlert.expired => l10n.assignmentStatusExpired,
+  AssignmentAlert.expiringSoon => l10n.assignmentStatusExpiringSoon,
+  AssignmentAlert.belowMinimum => l10n.alertBelowMinimum,
 };
 
 /// Institution-wide recent stock activity (spec section 49's "recent
@@ -469,15 +481,16 @@ class _RecentActivity extends StatelessWidget {
   final Stream<List<UsageEvent>> eventsStream;
   final Future<List<Product>> products;
 
-  String _productName(List<Product> products, String productId) {
+  String _productName(AppLocalizations l10n, List<Product> products, String productId) {
     for (final product in products) {
       if (product.id == productId) return product.name;
     }
-    return 'Produto removido';
+    return l10n.productRemoved;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return StreamBuilder<List<UsageEvent>>(
       stream: eventsStream,
       builder: (context, eventsSnapshot) {
@@ -493,14 +506,14 @@ class _RecentActivity extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Atividade recente',
+                    l10n.dashboardRecentActivityTitle,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   for (final event in events)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        '${usageEventTypeLabel(context, event.type)} · ${_productName(productList, event.productId)} '
+                        '${usageEventTypeLabel(context, event.type)} · ${_productName(l10n, productList, event.productId)} '
                         '(${event.amount > 0 ? '+' : ''}${event.amount})',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),

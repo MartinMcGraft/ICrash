@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_drawer.dart';
@@ -124,8 +125,8 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     final selected = slots.where((s) => _selectedIds.contains(s.id)).toList();
     if (!_selectionFormsRectangle(selected)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A seleção tem de formar um retângulo sem espaços.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).slotSelectionNotRectangle),
         ),
       );
       return;
@@ -178,15 +179,16 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       );
       await bumpCartLayoutVersion(services, widget.cart);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Gaveta guardada.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).drawerSavedMessage),
+        ),
+      );
       _refreshAllCartSlotIds();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível guardar a gaveta. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).drawerSaveError)),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -211,9 +213,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     } on RepositoryFailure catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível reatribuir o slot. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).reassignSlotError)),
       );
     }
   }
@@ -222,23 +222,20 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     BuildContext context,
     CartProductAssignment assignment,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remover atribuição'),
-        content: const Text(
-          'Esta atribuição aponta para um slot que já não existe nesta gaveta. '
-          'Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. '
-          'Esta ação não pode ser desfeita.',
-        ),
+        title: Text(l10n.removeAssignmentTitle),
+        content: Text(l10n.removeAssignmentMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remover'),
+            child: Text(l10n.actionRemove),
           ),
         ],
       ),
@@ -255,13 +252,8 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       _refreshAllCartSlotIds();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível remover a atribuição. Tente novamente.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.deleteAssignmentError)));
     }
   }
 
@@ -278,7 +270,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                tooltip: 'Guardar',
+                tooltip: AppLocalizations.of(context).actionSave,
                 icon: _saving
                     ? const SizedBox(
                         width: 20,
@@ -304,7 +296,8 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Text(
-                    'Não foi possível carregar os slots: ${snapshot.error}',
+                    AppLocalizations.of(context)
+                        .loadSlotsError(snapshot.error!),
                   ),
                 ),
               );
@@ -401,12 +394,16 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                                       ? _merge
                                       : null,
                                   icon: const Icon(Icons.call_merge),
-                                  label: const Text('Juntar'),
+                                  label: Text(
+                                    AppLocalizations.of(context).actionMerge,
+                                  ),
                                 ),
                                 FilledButton.icon(
                                   onPressed: canSplit ? _split : null,
                                   icon: const Icon(Icons.call_split),
-                                  label: const Text('Dividir'),
+                                  label: Text(
+                                    AppLocalizations.of(context).actionSplit,
+                                  ),
                                 ),
                               ],
                             ),
@@ -540,6 +537,7 @@ class _OrphanedAssignmentsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       color: theme.colorScheme.errorContainer,
@@ -548,7 +546,7 @@ class _OrphanedAssignmentsBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Atribuições sem slot válido (de uma junção/divisão anterior):',
+            l10n.orphanedAssignmentsHeader,
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onErrorContainer,
             ),
@@ -562,12 +560,12 @@ class _OrphanedAssignmentsBanner extends StatelessWidget {
                 children: [
                   Text(
                     _productFor(products, assignment.productId)?.name ??
-                        'Produto removido',
+                        l10n.productRemoved,
                     style: TextStyle(color: theme.colorScheme.onErrorContainer),
                   ),
                   if (emptySlots.isNotEmpty)
                     PopupMenuButton<Slot>(
-                      tooltip: 'Reatribuir a um slot livre',
+                      tooltip: l10n.reassignTooltip,
                       onSelected: (slot) => onReassign(assignment, slot),
                       itemBuilder: (context) => [
                         for (final slot in emptySlots)
@@ -581,12 +579,12 @@ class _OrphanedAssignmentsBanner extends StatelessWidget {
                       ],
                       child: Chip(
                         avatar: const Icon(Icons.swap_horiz, size: 18),
-                        label: const Text('Reatribuir'),
+                        label: Text(l10n.actionReassign),
                       ),
                     ),
                   ActionChip(
                     avatar: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Remover'),
+                    label: Text(l10n.actionRemove),
                     onPressed: () => onDelete(assignment),
                   ),
                 ],
@@ -620,7 +618,8 @@ class _SlotCell extends StatelessWidget {
     final theme = Theme.of(context);
     final assignment = this.assignment;
     return Tooltip(
-      message: 'Linha ${slot.row + 1}, coluna ${slot.column + 1}',
+      message: AppLocalizations.of(context)
+          .slotPositionTooltip(slot.row + 1, slot.column + 1),
       child: Semantics(
         selected: selected,
         button: true,
@@ -655,7 +654,8 @@ class _SlotCell extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            product?.name ?? 'Produto removido',
+                            product?.name ??
+                                AppLocalizations.of(context).productRemoved,
                             style: theme.textTheme.bodySmall,
                             textAlign: TextAlign.center,
                             maxLines: 2,

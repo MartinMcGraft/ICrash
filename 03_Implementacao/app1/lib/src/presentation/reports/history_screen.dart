@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/usage_event.dart';
@@ -44,11 +45,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   UsageEventType? _typeFilter;
 
-  String _productName(List<Product> products, String productId) {
+  String _productName(
+    AppLocalizations l10n,
+    List<Product> products,
+    String productId,
+  ) {
     for (final product in products) {
       if (product.id == productId) return product.name;
     }
-    return 'Produto removido';
+    return l10n.productRemoved;
   }
 
   /// Copies to the clipboard rather than writing a file, to avoid adding a
@@ -58,11 +63,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<UsageEvent> events,
     List<Product> products,
   ) {
+    final l10n = AppLocalizations.of(context);
     final csv = buildHistoryCsv(events, products);
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exportar CSV'),
+        title: Text(l10n.exportCsvButton),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(child: SelectableText(csv)),
@@ -70,16 +76,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
+            child: Text(l10n.actionClose),
           ),
           FilledButton(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: csv));
               if (!context.mounted) return;
               ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('CSV copiado.')));
+                  .showSnackBar(SnackBar(content: Text(l10n.csvCopiedMessage)));
             },
-            child: const Text('Copiar'),
+            child: Text(l10n.actionCopy),
           ),
         ],
       ),
@@ -94,9 +100,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<UsageEvent> events,
     List<Product> products,
   ) async {
+    final title = AppLocalizations.of(context).historyPdfDocumentTitle;
     await Printing.layoutPdf(
-      onLayout: (_) =>
-          buildHistoryPdf(events, products, title: 'Histórico de atividade'),
+      onLayout: (_) => buildHistoryPdf(events, products, title: title),
     );
   }
 
@@ -115,8 +121,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Histórico')),
+      appBar: AppBar(title: Text(l10n.historyScreenTitle)),
       body: Column(
         children: [
           Padding(
@@ -125,7 +132,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               spacing: 8,
               children: [
                 ChoiceChip(
-                  label: const Text('Todos'),
+                  label: Text(l10n.historyFilterAll),
                   selected: _typeFilter == null,
                   onSelected: (_) => setState(() => _typeFilter = null),
                 ),
@@ -149,9 +156,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        'Não foi possível carregar o histórico: ${eventsSnapshot.error}',
-                      ),
+                      child: Text(l10n.historyLoadError(eventsSnapshot.error!)),
                     ),
                   );
                 }
@@ -162,11 +167,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     )
                     .toList();
                 if (events.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Sem eventos para mostrar.',
+                        l10n.historyEmpty,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -196,7 +201,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       carts,
                                     ),
                                     icon: const Icon(Icons.summarize_outlined),
-                                    label: const Text('Ver resumo'),
+                                    label: Text(l10n.summaryViewButton),
                                   ),
                                   OutlinedButton.icon(
                                     onPressed: () =>
@@ -204,7 +209,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     icon: const Icon(
                                       Icons.file_download_outlined,
                                     ),
-                                    label: const Text('Exportar CSV'),
+                                    label: Text(l10n.exportCsvButton),
                                   ),
                                   OutlinedButton.icon(
                                     onPressed: () =>
@@ -212,7 +217,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     icon: const Icon(
                                       Icons.picture_as_pdf_outlined,
                                     ),
-                                    label: const Text('Exportar PDF'),
+                                    label: Text(l10n.exportPdfButton),
                                   ),
                                 ],
                               ),
@@ -231,7 +236,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         Icons.history_outlined,
                                       ),
                                       title: Text(
-                                        _productName(products, event.productId),
+                                        _productName(
+                                          l10n,
+                                          products,
+                                          event.productId,
+                                        ),
                                       ),
                                       subtitle: Text(
                                         usageEventTypeLabel(
@@ -267,14 +276,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 enum _SummaryGrouping { product, cart, period }
 
-String _periodLabel(SummaryPeriodUnit unit) {
+String _periodLabel(AppLocalizations l10n, SummaryPeriodUnit unit) {
   switch (unit) {
     case SummaryPeriodUnit.day:
-      return 'Dia';
+      return l10n.periodUnitDay;
     case SummaryPeriodUnit.week:
-      return 'Semana';
+      return l10n.periodUnitWeek;
     case SummaryPeriodUnit.month:
-      return 'Mês';
+      return l10n.periodUnitMonth;
   }
 }
 
@@ -314,8 +323,9 @@ class _SummaryDialogState extends State<_SummaryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Resumo'),
+      title: Text(l10n.summaryDialogTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -323,18 +333,18 @@ class _SummaryDialogState extends State<_SummaryDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SegmentedButton<_SummaryGrouping>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: _SummaryGrouping.product,
-                  label: Text('Produto'),
+                  label: Text(l10n.summaryGroupProduct),
                 ),
                 ButtonSegment(
                   value: _SummaryGrouping.cart,
-                  label: Text('Carro'),
+                  label: Text(l10n.summaryGroupCart),
                 ),
                 ButtonSegment(
                   value: _SummaryGrouping.period,
-                  label: Text('Período'),
+                  label: Text(l10n.summaryGroupPeriod),
                 ),
               ],
               selected: {_grouping},
@@ -346,7 +356,10 @@ class _SummaryDialogState extends State<_SummaryDialog> {
               SegmentedButton<SummaryPeriodUnit>(
                 segments: [
                   for (final unit in SummaryPeriodUnit.values)
-                    ButtonSegment(value: unit, label: Text(_periodLabel(unit))),
+                    ButtonSegment(
+                      value: unit,
+                      label: Text(_periodLabel(l10n, unit)),
+                    ),
                 ],
                 selected: {_periodUnit},
                 onSelectionChanged: (selection) =>
@@ -354,24 +367,28 @@ class _SummaryDialogState extends State<_SummaryDialog> {
               ),
             ],
             const SizedBox(height: 12),
-            Flexible(child: SingleChildScrollView(child: _buildContent())),
+            Flexible(child: SingleChildScrollView(child: _buildContent(l10n))),
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Fechar'),
+          child: Text(l10n.actionClose),
         ),
       ],
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppLocalizations l10n) {
     switch (_grouping) {
       case _SummaryGrouping.product:
-        final summaries = summarizeByProduct(widget.events, widget.products);
-        if (summaries.isEmpty) return const Text('Sem dados para resumir.');
+        final summaries = summarizeByProduct(
+          widget.events,
+          widget.products,
+          removedLabel: l10n.productRemoved,
+        );
+        if (summaries.isEmpty) return Text(l10n.summaryEmpty);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,8 +403,12 @@ class _SummaryDialogState extends State<_SummaryDialog> {
           ],
         );
       case _SummaryGrouping.cart:
-        final summaries = summarizeByCart(widget.events, widget.carts);
-        if (summaries.isEmpty) return const Text('Sem dados para resumir.');
+        final summaries = summarizeByCart(
+          widget.events,
+          widget.carts,
+          removedLabel: l10n.cartRemoved,
+        );
+        if (summaries.isEmpty) return Text(l10n.summaryEmpty);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +424,7 @@ class _SummaryDialogState extends State<_SummaryDialog> {
         );
       case _SummaryGrouping.period:
         final summaries = summarizeByPeriod(widget.events, _periodUnit);
-        if (summaries.isEmpty) return const Text('Sem dados para resumir.');
+        if (summaries.isEmpty) return Text(l10n.summaryEmpty);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,6 +457,7 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -443,8 +465,12 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(label, style: Theme.of(context).textTheme.titleSmall),
           Text(
-            'Consumido: $consumed   Reposto: $replenished'
-            '${otherAdjustments == 0 ? '' : '   Outros ajustes: ${otherAdjustments > 0 ? '+' : ''}$otherAdjustments'}',
+            l10n.summaryConsumedReplenished(consumed, replenished) +
+                (otherAdjustments == 0
+                    ? ''
+                    : l10n.summaryOtherAdjustments(
+                        '${otherAdjustments > 0 ? '+' : ''}$otherAdjustments',
+                      )),
           ),
         ],
       ),

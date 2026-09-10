@@ -363,4 +363,318 @@ class AppLocalizationsEn extends AppLocalizations {
   String drawerGridSize(int rows, int columns) {
     return '$rows rows × $columns columns';
   }
+
+  @override
+  String get historyScreenTitle => 'History';
+
+  @override
+  String get historyFilterAll => 'All';
+
+  @override
+  String historyLoadError(Object error) {
+    return 'Couldn\'t load the history: $error';
+  }
+
+  @override
+  String get historyEmpty => 'No events to show.';
+
+  @override
+  String get exportCsvButton => 'Export CSV';
+
+  @override
+  String get actionCopy => 'Copy';
+
+  @override
+  String get csvCopiedMessage => 'CSV copied.';
+
+  @override
+  String get exportPdfButton => 'Export PDF';
+
+  @override
+  String get historyPdfDocumentTitle => 'Activity history';
+
+  @override
+  String get summaryViewButton => 'View summary';
+
+  @override
+  String get summaryDialogTitle => 'Summary';
+
+  @override
+  String get summaryGroupProduct => 'Product';
+
+  @override
+  String get summaryGroupCart => 'Cart';
+
+  @override
+  String get summaryGroupPeriod => 'Period';
+
+  @override
+  String get periodUnitDay => 'Day';
+
+  @override
+  String get periodUnitWeek => 'Week';
+
+  @override
+  String get periodUnitMonth => 'Month';
+
+  @override
+  String get summaryEmpty => 'No data to summarize.';
+
+  @override
+  String summaryConsumedReplenished(int consumed, int replenished) {
+    return 'Consumed: $consumed   Replenished: $replenished';
+  }
+
+  @override
+  String summaryOtherAdjustments(String value) {
+    return '   Other adjustments: $value';
+  }
+
+  @override
+  String get productRemoved => 'Removed product';
+
+  @override
+  String get cartRemoved => 'Removed cart';
+
+  @override
+  String get dashboardLegacyAppTooltip => 'Previous application (reference)';
+
+  @override
+  String get dashboardOpenCartError => 'Couldn\'t open this cart.';
+
+  @override
+  String get dashboardCreateCartError =>
+      'Couldn\'t create the cart. Try again.';
+
+  @override
+  String dashboardLoadCartsError(Object error) {
+    return 'Couldn\'t load carts: $error';
+  }
+
+  @override
+  String get dashboardCartsEmpty =>
+      'There are no emergency carts in this institution yet.';
+
+  @override
+  String get dashboardSearchCartLabel => 'Search cart';
+
+  @override
+  String get dashboardNoCartMatches => 'No cart matches the search.';
+
+  @override
+  String get dashboardAlertsTitle => 'Alerts';
+
+  @override
+  String get alertBelowMinimum => 'Stock below minimum';
+
+  @override
+  String get dashboardRecentActivityTitle => 'Recent activity';
+
+  @override
+  String get assignConflictError =>
+      'This product is already assigned to another slot in this cart.';
+
+  @override
+  String get assignGenericError => 'Couldn\'t assign the product. Try again.';
+
+  @override
+  String get consumeExceedsError =>
+      'You can\'t consume more than the current quantity.';
+
+  @override
+  String get consumeGenericError =>
+      'Couldn\'t record the consumption. Try again.';
+
+  @override
+  String get replenishMissingExpiry => 'Enter the batch\'s expiry date.';
+
+  @override
+  String get replenishGenericError =>
+      'Couldn\'t replenish the stock. Try again.';
+
+  @override
+  String get gs1UnknownGtin =>
+      'GTIN not recognized in the catalogue — it wasn\'t linked to any product.';
+
+  @override
+  String gs1WrongProductWarning(String productName) {
+    return 'Warning: this code matches \"$productName\", not this slot\'s product.';
+  }
+
+  @override
+  String get reconcileGenericError => 'Couldn\'t reconcile. Try again.';
+
+  @override
+  String get correctGenericError => 'Couldn\'t correct. Try again.';
+
+  @override
+  String get emptySlotTitle => 'Empty slot';
+
+  @override
+  String get emptySlotMessage =>
+      'This slot doesn\'t have a product assigned yet.';
+
+  @override
+  String get assignDialogTitle => 'Assign product';
+
+  @override
+  String get noProductsMessage =>
+      'First create a product in the institution\'s catalogue.';
+
+  @override
+  String get productLabel => 'Product';
+
+  @override
+  String get initialQuantityLabel => 'Initial quantity';
+
+  @override
+  String get targetQuantityLabel => 'Target quantity';
+
+  @override
+  String get chooseProductValidation => 'Choose a product';
+
+  @override
+  String get actionAssign => 'Assign';
+
+  @override
+  String get recordConsumptionTitle => 'Record consumption';
+
+  @override
+  String get consumedQuantityLabel => 'Consumed quantity';
+
+  @override
+  String get validatePositiveInt => 'Enter a positive number';
+
+  @override
+  String get replenishStockTitle => 'Replenish stock';
+
+  @override
+  String get receivedQuantityLabel => 'Received quantity';
+
+  @override
+  String get lotNumberLabel => 'Lot number';
+
+  @override
+  String get lotRequiredValidation => 'Enter the lot';
+
+  @override
+  String get chooseExpiryLabel => 'Choose expiry date';
+
+  @override
+  String expiryDateLabel(String date) {
+    return 'Expiry: $date';
+  }
+
+  @override
+  String get reconcileDialogTitle => 'Reconcile (audit)';
+
+  @override
+  String get confirmedQuantityLabel => 'Physically confirmed quantity';
+
+  @override
+  String get validateNonNegativeInt => 'Enter a valid number';
+
+  @override
+  String get noBatchesMessage =>
+      'No batches recorded; the reconciliation ends up with no confirmed batches.';
+
+  @override
+  String get confirmedBatchesLabel =>
+      'Batches confirmed as physically present:';
+
+  @override
+  String batchLotLabel(String lotNumber) {
+    return 'Lot $lotNumber';
+  }
+
+  @override
+  String get correctEventDialogTitle => 'Correct event';
+
+  @override
+  String get noEventsToCorrect => 'There are no events to correct yet.';
+
+  @override
+  String get eventToCorrectLabel => 'Event to correct';
+
+  @override
+  String get chooseEventValidation => 'Choose an event';
+
+  @override
+  String get adjustmentLabel => 'Adjustment (positive or negative)';
+
+  @override
+  String get validateNonZeroInt => 'Enter an adjustment other than zero';
+
+  @override
+  String currentTargetLabel(int current, int target) {
+    return 'Current: $current   Target: $target';
+  }
+
+  @override
+  String get actionCorrect => 'Correct';
+
+  @override
+  String get actionReconcile => 'Reconcile';
+
+  @override
+  String get slotSelectionNotRectangle =>
+      'The selection must form a rectangle with no gaps.';
+
+  @override
+  String get drawerSavedMessage => 'Drawer saved.';
+
+  @override
+  String get drawerSaveError => 'Couldn\'t save the drawer. Try again.';
+
+  @override
+  String get reassignSlotError => 'Couldn\'t reassign the slot. Try again.';
+
+  @override
+  String get removeAssignmentTitle => 'Remove assignment';
+
+  @override
+  String get removeAssignmentMessage =>
+      'This assignment points to a slot that no longer exists in this drawer. Removing the assignment also removes its recorded batches; the event history is kept. This action cannot be undone.';
+
+  @override
+  String get actionRemove => 'Remove';
+
+  @override
+  String get deleteAssignmentError =>
+      'Couldn\'t remove the assignment. Try again.';
+
+  @override
+  String loadSlotsError(Object error) {
+    return 'Couldn\'t load the slots: $error';
+  }
+
+  @override
+  String get actionMerge => 'Merge';
+
+  @override
+  String get actionSplit => 'Split';
+
+  @override
+  String get orphanedAssignmentsHeader =>
+      'Assignments with no valid slot (from a past merge/split):';
+
+  @override
+  String get actionReassign => 'Reassign';
+
+  @override
+  String get reassignTooltip => 'Reassign to a free slot';
+
+  @override
+  String slotPositionTooltip(int row, int column) {
+    return 'Row $row, column $column';
+  }
+
+  @override
+  String get languageSwitcherTooltip => 'Language';
+
+  @override
+  String get languagePortuguese => 'Português';
+
+  @override
+  String get languageEnglish => 'English';
 }

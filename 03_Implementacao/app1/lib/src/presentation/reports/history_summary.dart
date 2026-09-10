@@ -31,8 +31,9 @@ class ProductUsageSummary {
 
 List<ProductUsageSummary> summarizeByProduct(
   List<UsageEvent> events,
-  List<Product> products,
-) {
+  List<Product> products, {
+  String removedLabel = 'Produto removido',
+}) {
   final consumedByProduct = <String, int>{};
   final replenishedByProduct = <String, int>{};
   final otherByProduct = <String, int>{};
@@ -56,7 +57,7 @@ List<ProductUsageSummary> summarizeByProduct(
     for (final product in products) {
       if (product.id == productId) return product.name;
     }
-    return 'Produto removido';
+    return removedLabel;
   }
 
   final productIds = {
@@ -99,8 +100,9 @@ class CartUsageSummary {
 
 List<CartUsageSummary> summarizeByCart(
   List<UsageEvent> events,
-  List<Cart> carts,
-) {
+  List<Cart> carts, {
+  String removedLabel = 'Carro removido',
+}) {
   final consumedByCart = <String, int>{};
   final replenishedByCart = <String, int>{};
   final otherByCart = <String, int>{};
@@ -124,7 +126,7 @@ List<CartUsageSummary> summarizeByCart(
     for (final cart in carts) {
       if (cart.id == cartId) return cart.name;
     }
-    return 'Carro removido';
+    return removedLabel;
   }
 
   final cartIds = {
