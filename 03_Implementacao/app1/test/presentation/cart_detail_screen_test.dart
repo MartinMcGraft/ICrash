@@ -63,6 +63,24 @@ void main() {
     expect(find.text('Gaveta Nova'), findsOneWidget);
   });
 
+  testWidgets('bumps the cart layout version after creating a drawer', (tester) async {
+    final carts = FakeCartRepository(carts: [_cart]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: carts,
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Nova gaveta'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Gaveta Nova');
+    await tester.tap(find.widgetWithText(FilledButton, 'Criar'));
+    await tester.pumpAndSettle();
+
+    expect(carts.carts.single.layoutVersion, 2);
+  });
+
   testWidgets('hides "Nova gaveta" for a normal user', (tester) async {
     await tester.pumpWidget(_wrap(buildTestServices(
       institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),

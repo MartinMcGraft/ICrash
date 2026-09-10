@@ -117,11 +117,12 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
         ),
       );
       if (mounted) Navigator.of(context).pop();
-    } on RepositoryFailure catch (_) {
+    } on RepositoryFailure catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível atribuir o produto. Tente novamente.')),
-      );
+      final message = error.reason == RepositoryFailureReason.conflict
+          ? 'Este produto já está atribuído a outro slot deste carro.'
+          : 'Não foi possível atribuir o produto. Tente novamente.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -6,6 +6,7 @@ import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_drawer.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
+import 'bump_layout_version.dart';
 import 'cart_status_label.dart';
 import 'create_drawer_dialog.dart';
 import 'slot_editor_screen.dart';
@@ -43,6 +44,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
         widget.cart.id,
         CartDrawer(id: '', cartId: widget.cart.id, name: input.name, rows: input.rows, columns: input.columns),
       );
+      await bumpCartLayoutVersion(services, widget.cart);
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

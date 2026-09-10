@@ -12,6 +12,7 @@ import '../../domain/entities/product.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/entities/slot.dart';
 import 'assignment_dialog.dart';
+import 'bump_layout_version.dart';
 
 /// Edits the rectangular slot layout of one [CartDrawer] (spec sections
 /// 36-37): every cell starts as its own 1x1 slot; adjacent slots whose
@@ -126,6 +127,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     final services = AppServicesScope.of(context);
     try {
       await services.drawers.replaceSlots(widget.cart.institutionId, widget.cart.id, widget.drawer.id, _slots!);
+      await bumpCartLayoutVersion(services, widget.cart);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gaveta guardada.')));
     } on RepositoryFailure catch (_) {

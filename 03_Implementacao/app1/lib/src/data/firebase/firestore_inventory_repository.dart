@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../common/repository_failure.dart';
 import '../../domain/entities/batch.dart';
 import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/usage_event.dart';
@@ -50,6 +51,19 @@ class FirestoreInventoryRepository implements InventoryRepository {
   @override
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment) async {
     try {
+      // Spec section 20: a given product may only exist in one slot within a
+      // single cart (a different cart, or a different slot's history, is
+      // unaffected). Enforced here rather than only in the UI, since Rules
+      // cannot express a cross-document uniqueness check.
+      final duplicate = await _firestore
+          .collection(FirestorePaths.assignments(institutionId, cartId))
+          .where('productId', isEqualTo: assignment.productId)
+          .limit(1)
+          .get();
+      if (duplicate.docs.isNotEmpty) {
+        throw const RepositoryFailure(RepositoryFailureReason.conflict);
+      }
+
       final ref = _firestore.collection(FirestorePaths.assignments(institutionId, cartId)).doc();
       await ref.set({
         ...assignment.toMap(),
@@ -58,6 +72,8 @@ class FirestoreInventoryRepository implements InventoryRepository {
       });
       final created = await ref.get();
       return CartProductAssignment.fromMap(ref.id, cartId, normalizeTimestamps(created.data()!, _assignmentTimestampFields));
+    } on RepositoryFailure {
+      rethrow;
     } catch (error) {
       throw mapFirebaseException(error);
     }

@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/common/repository_failure.dart';
 import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
+import 'package:icrash_app/src/domain/entities/cart_responsible_user.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
@@ -147,6 +149,50 @@ class FakeCartRepository extends UnimplementedFake implements CartRepository {
     _emit();
     return created;
   }
+
+  @override
+  Future<Cart?> getCart(String institutionId, String cartId) async {
+    for (final cart in carts) {
+      if (cart.id == cartId) return cart;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> updateCart(String institutionId, Cart cart) async {
+    final index = carts.indexWhere((c) => c.id == cart.id);
+    if (index == -1) {
+      carts.add(cart);
+    } else {
+      carts[index] = cart;
+    }
+    _emit();
+  }
+
+  final List<CartResponsibleUser> responsibleUsers = [];
+  final _responsibleUsersController = StreamController<List<CartResponsibleUser>>.broadcast();
+
+  void _emitResponsibleUsers() => _responsibleUsersController.add(List.unmodifiable(responsibleUsers));
+
+  @override
+  Stream<List<CartResponsibleUser>> watchResponsibleUsers(String institutionId, String cartId) {
+    scheduleMicrotask(_emitResponsibleUsers);
+    return _responsibleUsersController.stream;
+  }
+
+  @override
+  Future<void> assignResponsibleUser(String institutionId, String cartId, String uid) async {
+    if (!responsibleUsers.any((r) => r.uid == uid && r.cartId == cartId)) {
+      responsibleUsers.add(CartResponsibleUser(uid: uid, cartId: cartId));
+    }
+    _emitResponsibleUsers();
+  }
+
+  @override
+  Future<void> removeResponsibleUser(String institutionId, String cartId, String uid) async {
+    responsibleUsers.removeWhere((r) => r.uid == uid && r.cartId == cartId);
+    _emitResponsibleUsers();
+  }
 }
 
 class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository {
@@ -282,6 +328,9 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
 
   @override
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment) async {
+    if (assignments.any((a) => a.productId == assignment.productId)) {
+      throw const RepositoryFailure(RepositoryFailureReason.conflict);
+    }
     final created = CartProductAssignment(
       id: 'assignment-${_nextId++}',
       cartId: cartId,

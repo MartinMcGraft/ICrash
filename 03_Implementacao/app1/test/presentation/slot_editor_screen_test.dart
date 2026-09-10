@@ -122,6 +122,37 @@ void main() {
     expect(find.text('Adrenalina'), findsOneWidget);
   });
 
+  testWidgets('refuses to assign a product already assigned elsewhere in the same cart', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const existing = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r1c0',
+      productId: 'p1',
+      currentQuantity: 0,
+      targetQuantity: 1,
+    );
+    final inventory = FakeInventoryRepository(assignments: [existing]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('1,1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<Product>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Adrenalina').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Atribuir'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments, hasLength(1));
+    expect(find.textContaining('já está atribuído a outro slot'), findsOneWidget);
+  });
+
   testWidgets('records consumption on an assigned slot', (tester) async {
     const assignment = CartProductAssignment(
       id: 'assignment-1',
