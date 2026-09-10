@@ -1,6 +1,6 @@
 # Architecture
 
-Status: login → institution selection → per-institution dashboard/cart list/creation/edit/duplicate → responsible-user management → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct) → product search within a cart → institution-wide activity history, all live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases. The only major workstream left is GS1 Data Matrix scanning (spec sections 29-32).
+Status: login → institution selection → per-institution dashboard/cart list/creation/edit/duplicate → responsible-user management → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct, replenish now optionally scan-assisted via GS1 Data Matrix) → product search within a cart → institution-wide activity history, all live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases. All V2 workstreams from the specification's core scope are now implemented.
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -20,8 +20,10 @@ presentation/
   cart/product_search_screen.dart             find an assigned product by name within a cart
   cart/bump_layout_version.dart               shared helper: increments Cart.layoutVersion
   cart/slot_editor_screen.dart                merge/split grid editor for one drawer's slots
-  cart/assignment_dialog.dart                 per-slot: assign a product, replenish, consume
+  cart/assignment_dialog.dart                 per-slot: assign a product, replenish (optionally
+                                               via GS1 scan), consume
   cart/assignment_status_label.dart
+  scanning/gs1_scan_screen.dart               full-screen GS1 Data Matrix scanner
   members/members_screen.dart                 institution-admin-only: list/create/role/status
   members/add_member_dialog.dart, membership_labels.dart
   products/products_screen.dart               institution-wide product catalogue
@@ -38,11 +40,14 @@ domain/
 data/firebase/     Firestore/Auth implementations of every repository interface,
                    Firestore path constants, timestamp codec, exception mapping,
                    emulator bootstrap
-services/          ScannerService (internal QR + GS1 Data Matrix, separate
-                   interfaces), ReportService, NotificationService — contracts
-                   only, no implementation yet
+services/          scanner_service.dart (InternalQrScannerService contract-only;
+                   Gs1DataMatrixScannerService, implemented), gs1_camera_scanner_service.dart
+                   (mobile_scanner-backed implementation), gs1_data_matrix_parser.dart (pure,
+                   camera-independent AI 01/10/17 parser), ReportService/NotificationService
+                   — still contracts only
 common/            AppEnvironment (emulator vs cloud selection), AppServices
-                   (repository bundle + InheritedWidget), RepositoryFailure
+                   (repository bundle + InheritedWidget + Gs1DataMatrixScannerService
+                   factory), RepositoryFailure
 ```
 
 The domain layer imports nothing from `cloud_firestore`/`firebase_auth`/`firebase_core`. `lib/src/domain/inventory_rules.dart` is proof of this: it is exercised directly in `test/domain/inventory_rules_test.dart` with no emulator running.
@@ -76,6 +81,14 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 - **Product uniqueness per cart (spec section 20)**: `FirestoreInventoryRepository.createAssignment` now checks for an existing assignment with the same `productId` anywhere in the cart before creating a new one, throwing `RepositoryFailure(RepositoryFailureReason.conflict)` if found. `assignment_dialog.dart` shows a specific PT-PT message for this case ("Este produto já está atribuído a outro slot deste carro.") rather than the generic failure message.
 - **Layout versioning (spec section 38)**: `bump_layout_version.dart`'s `bumpCartLayoutVersion(services, cart)` re-reads the cart, increments `layoutVersion`, and writes it back via `CartRepository.updateCart`. Called after every structural change to a cart's drawers/slots — `CartDetailScreen._createDrawer` and `SlotEditorScreen._save` (merge/split/save) — so the version increments regardless of which screen triggered the change, rather than duplicating the read-increment-update logic at each call site.
 
+### GS1 Data Matrix scanning (spec sections 29-32)
+
+- `Gs1DataMatrixScannerService` (`services/scanner_service.dart`) is the abstraction business logic depends on — never `MobileScanner` directly (spec section 32). `MobileScannerGs1Service` (`services/gs1_camera_scanner_service.dart`) is the camera-backed implementation, wrapping a `MobileScannerController` restricted to `BarcodeFormat.dataMatrix` and exposing its `barcodes` stream as raw payload strings. `InternalQrScannerService` (cart/drawer QR navigation, spec section 33) remains a contract only — a separate, later workstream (spec section 67), deliberately not built here since GS1 medicine scanning and internal-QR navigation are two intentionally distinct domains (spec section 29) with no shared implementation need.
+- `services/gs1_data_matrix_parser.dart`'s `parseGs1DataMatrix` is a pure, camera-independent function (spec section 31's explicit testability requirement) extracting the three Application Identifiers this app needs: AI 01 (GTIN, 14 digits), AI 10 (batch/lot, variable length, terminated by an FNC1 separator when present or by the next recognized AI otherwise), and AI 17 (expiry, 6-digit YYMMDD, decoded per the GS1 general specification's year-window rule). Scanner recognition and GS1 parsing are kept as separate layers exactly as spec section 31 requires — the parser never touches `mobile_scanner` types.
+- `presentation/scanning/gs1_scan_screen.dart`'s `showGs1ScanScreen` pushes a full-screen scanner that listens to whatever `Gs1DataMatrixScannerService` it's given, parses every payload, and pops with the first result that yields at least one recognized field — or `null` if the user cancels. Scanning is always optional, retryable, and cancellable to manual entry (spec section 30); an unparseable payload shows an inline retry message and keeps listening rather than closing.
+- `AppServices` gained `createGs1Scanner` (a `Gs1DataMatrixScannerService Function()` factory, not a shared singleton — the service owns a camera resource, so a fresh instance is built and disposed per scan screen). The real constructor wires `MobileScannerGs1Service.new`; `buildTestServices` defaults to `FakeGs1DataMatrixScannerService.new`, which lets a widget test push canned payloads via `emit(...)` without touching a camera.
+- `assignment_dialog.dart`'s `_Mode.replenish` gained a "Digitalizar código GS1" button (hidden on platforms `mobile_scanner` doesn't support — Windows/Linux desktop, same `defaultTargetPlatform`/`kIsWeb` gate the legacy QR reader already uses). A successful scan pre-fills the lot/expiry fields (still freely editable — manual correction is never blocked, spec section 30) and, when the payload carried a GTIN, resolves it via `ProductRepository.findByGtin`: an unknown GTIN is never silently attached to any product (spec section 30's explicit requirement) — it only stays on the recorded `Batch.gtin`/`Batch.source`; a GTIN that resolves to a *different* product than the slot's own shows a warning but does not block submission, since spec section 72 leaves "should replenishment require confirming scanned-product-matches-slot-product" as an open decision — blocking would be the more conservative-sounding choice but was rejected here because it would make a valid manual-fallback replenishment (spec section 30's own requirement) impossible whenever the GTIN catalogue is incomplete, which is expected in this prototype.
+
 ### responsibleUsers, cart edit/duplicate, product search, dashboard, history
 
 - `ResponsibleUsersScreen` (spec section 17: institution membership alone does not grant cart access) lists every institution member via `InstitutionRepository.watchMembers`, with a `CheckboxListTile` per member reflecting `CartRepository.watchResponsibleUsers` and calling `assignResponsibleUser`/`removeResponsibleUser` on toggle; disabled for an inactive membership. Reachable from `CartDetailScreen`'s "Responsáveis" `AppBar` icon, manager+ gated. The repository methods already existed fully implemented in `FirestoreCartRepository` from the architecture-foundation phase — only the presentation layer was missing.
@@ -103,7 +116,7 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 
 ## What is intentionally not built yet
 
-- GS1 Data Matrix/QR-driven product lookup: `ProductRepository.findByGtin` exists and is unused; `ScannerService` is a contract only, with no implementation wired to the new domain model (the legacy QR/Data Matrix reader code under `lib/` is untouched and unrelated). This is the one remaining major workstream.
+- Internal QR-driven cart/drawer navigation (spec section 33): `InternalQrScannerService` remains a contract only. A separate workstream from GS1 medicine scanning (now implemented), deliberately not built alongside it (spec section 67).
 - Reporting export (PDF/CSV) and per-product/per-cart/per-period aggregate reports (the rest of spec section 51, beyond the read-only history view already built).
 - Cross-cart per-slot expiry/replenishment alerts on the dashboard (needs an institution-wide `assignments` collectionGroup query + Rules change — deferred, see above).
 - No dependency injection / service locator beyond `AppServicesScope`.
