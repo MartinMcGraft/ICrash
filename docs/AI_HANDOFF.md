@@ -6,7 +6,7 @@ Updated: 2026-09-10
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this continuation: `d4e6898` (`docs: record GS1 Data Matrix scanning status, live test results and handoff`)
+- Last published commit before this continuation: `5283c7f` (`feat: add HID barcode scanning, internal-QR cart navigation, cross-cart alerts`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
@@ -19,9 +19,15 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 2. **Internal QR cart navigation** (spec section 33) — `InternalQrScannerService` (previously a contract only) now has a camera implementation, plus screens to display a cart's own QR code and to scan one to jump straight to that cart.
 3. **Cross-cart dashboard alerts** (spec section 49) — expiring/expired products and stock below its minimum, across every cart in an institution at once, manager+ only (a Firestore Rules constraint, not a preference — see `docs/FIREBASE_MODEL.md`).
 
-All three validated live end-to-end on the Android emulator, zero new app bugs found. `flutter test` is now 108/108, Firestore Rules tests 27/27. See "Exact next implementation task" below for what's left in this batch (steps 4-10) and the full remaining punch-list once it's done.
+Also done: CSV export and a per-product summary on the activity history screen (steps 4-5). All five validated live end-to-end on the Android emulator, zero new app bugs found. `flutter test` is now 120/120, Firestore Rules tests 27/27. See "Exact next implementation task" below for what's left in this batch (steps 6-10) and the full remaining punch-list once it's done.
 
-### HID scanning / internal-QR navigation / cross-cart alerts sub-phase (most recent)
+### History CSV export / per-product summary sub-phase (most recent)
+
+- New `lib/src/presentation/reports/history_csv_export.dart` (`buildHistoryCsv`, pure) and `history_summary.dart` (`summarizeByProduct`, pure) — both operate on data `HistoryScreen` already has (no new repository calls). `HistoryScreen` gained "Exportar CSV" (clipboard-copy dialog) and "Ver resumo" (per-product totals dialog) buttons next to its type-filter chips.
+- 12 new tests: `test/presentation/history_csv_export_test.dart` (5), `test/presentation/history_summary_test.dart` (5), 2 more in `test/presentation/history_screen_test.dart`. Total 120/120.
+- Live-validated on Android against real seeded data (one replenishment event): "Ver resumo" showed "Adrenalina — Consumido: 0 Reposto: 5"; "Exportar CSV" showed the exact expected CSV and "Copiar" confirmed via SnackBar. No fatal exceptions.
+
+### HID scanning / internal-QR navigation / cross-cart alerts sub-phase
 
 - Full detail in `docs/IMPLEMENTATION_STATUS.md`'s matching section and `docs/ARCHITECTURE.md`'s "HID/keyboard-wedge scanning, and internal-QR cart navigation" / "Cross-cart dashboard alerts" sections — not duplicated here to avoid drift between the two.
 - One real Firestore Rules pitfall worth flagging prominently: a `list`/`collectionGroup` rule can only safely reference `resource.data` fields the query itself filters on. The first version of the cross-cart alerts rule reused the same `canAccessCart(institutionId, cartId)` every other cart-scoped rule in this file uses, and it broke the *entire query* (not just denied one document) for any non-manager candidate, with `Property cartId is undefined on object` — even though `cartId` was genuinely present on every document. Root-caused with a throwaway probe script isolating it down to a trivial rule with no function calls at all. Fixed by scoping the collection-group rule to `isManagerOrAbove(resource.data.institutionId)` only (the one field the query filters on) — **cross-cart alerts are manager+ only as a direct consequence**, not a UX choice made first. Read `docs/FIREBASE_MODEL.md`'s full account before touching this rule or extending it to normal users.
@@ -94,7 +100,13 @@ All three validated live end-to-end on the Android emulator, zero new app bugs f
 
 ## Exact files changed this session
 
-HID scanning / internal-QR navigation / cross-cart alerts (this sub-phase, most recent):
+History CSV export / per-product summary (this sub-phase, most recent):
+- New: `lib/src/presentation/reports/history_csv_export.dart`, `history_summary.dart`.
+- Modified: `lib/src/presentation/reports/history_screen.dart` ("Exportar CSV"/"Ver resumo" buttons and their dialogs).
+- New tests: `test/presentation/history_csv_export_test.dart`, `test/presentation/history_summary_test.dart`. Modified: `test/presentation/history_screen_test.dart` (+2).
+- `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/TEST_STATUS.md` — updated.
+
+HID scanning / internal-QR navigation / cross-cart alerts (prior sub-phase):
 - New: `lib/src/services/scanner_platform_support.dart`, `gs1_hid_scanner_service.dart`, `internal_qr_payload.dart`, `internal_qr_camera_scanner_service.dart`.
 - New: `lib/src/presentation/scanning/cart_qr_code_screen.dart`, `cart_qr_scan_screen.dart`.
 - Modified: `lib/src/common/app_services.dart` (`createInternalQrScanner`, camera-vs-HID selection for `createGs1Scanner`), `lib/src/presentation/cart/assignment_dialog.dart` (removed the platform gate on the GS1 scan button, uses shared `isCameraScanningSupported`), `lib/src/presentation/cart/cart_detail_screen.dart` ("Mostrar código QR" icon), `lib/src/presentation/dashboard/institution_home_screen.dart` ("Ler código do carro" icon, `_CrossCartAlerts` widget), `lib/src/presentation/scanning/gs1_scan_screen.dart` (HID branch, `_HidScanInput`).
@@ -251,7 +263,7 @@ None.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 108/108 (up from 83, 69, 48). `flutter build apk --debug`: passed. Firestore Rules tests: 27/27 (up from 22 — new `assignments` collection-group rule tests). Nine full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, drawer/slot editor, product catalogue/slot assignments, audit reconciliation/correction, correctness-fixes/responsibleUsers/cart-edit-duplicate/product-search/dashboard/history, GS1 Data Matrix scanning, then HID-scanning/internal-QR-navigation/cross-cart-alerts — see `docs/TEST_STATUS.md` for detail (zero new app bugs; the AVD's virtual camera cannot produce a real scannable code, so the GS1/internal-QR decode paths are validated via automated widget tests with fake scanners instead, per spec section 5's own prescribed strategy — but the cross-cart alerts feature *was* fully live-verified end-to-end against the real Firestore emulator, including creating a real product/assignment/replenishment and seeing the resulting "Alertas" line).
+`flutter analyze` clean. `flutter test`: 120/120 (up from 108, 83, 69, 48). `flutter build apk --debug`: passed. Firestore Rules tests: 27/27. Ten full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, drawer/slot editor, product catalogue/slot assignments, audit reconciliation/correction, correctness-fixes/responsibleUsers/cart-edit-duplicate/product-search/dashboard/history, GS1 Data Matrix scanning, HID-scanning/internal-QR-navigation/cross-cart-alerts, then history-CSV-export/per-product-summary — see `docs/TEST_STATUS.md` for detail (zero new app bugs; the AVD's virtual camera cannot produce a real scannable code, so the GS1/internal-QR decode paths are validated via automated widget tests with fake scanners instead, per spec section 5's own prescribed strategy — but cross-cart alerts and the CSV export/summary features *were* fully live-verified end-to-end against the real Firestore emulator).
 
 ## Android emulator tests already performed
 
@@ -315,10 +327,14 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-**Every major workstream from the V2 specification's core scope is implemented.** The user then explicitly asked for a self-directed batch of "the next 10 steps," to be followed by a full punch-list of everything still remaining. Steps 1-3 are done (HID scanning, internal-QR navigation, cross-cart alerts — see above). **Steps 4-10, in progress/remaining, in the order planned:**
+**Every major workstream from the V2 specification's core scope is implemented.** The user then explicitly asked for a self-directed batch of "the next 10 steps," to be followed by a full punch-list of everything still remaining. Steps 1-5 are done:
 
-4. **CSV export of the activity history** — `HistoryScreen`'s filtered event list, exported as CSV. Scoped to a clipboard-copy flow (`Clipboard.setData` + a `SelectableText` dialog showing the generated CSV), deliberately not a real file download, to avoid adding a new file-system dependency (`path_provider`/`share_plus`) for a prototype-phase feature. `ReportService`'s documented interface is PDF-shaped (`generateUsageReportPdf`); either extend it with a CSV method or add a small standalone CSV generator — check what's cleanest once there.
-5. **Reporting aggregates** — a simple per-product summary (total consumption/replenishment within the current history filter), likely a new section or tab on `HistoryScreen` or a new screen, grouping the same `UsageEvent` stream already fetched there by `productId`.
+1-3. HID scanning, internal-QR navigation, cross-cart alerts — see the sub-phase above.
+4. **CSV export of the activity history** — done. `reports/history_csv_export.dart`'s `buildHistoryCsv`, copied to the clipboard via a dialog (`Clipboard.setData` + `SelectableText`), deliberately not a real file download, to avoid a `path_provider`/`share_plus` dependency for a prototype-phase feature.
+5. **Reporting aggregates** — done, scoped to a per-product summary. `reports/history_summary.dart`'s `summarizeByProduct` groups the same filtered `UsageEvent` list by `productId` into consumed/replenished/other-adjustment totals, shown via a new "Ver resumo" dialog on `HistoryScreen`. Per-cart/per-period aggregates remain out of scope.
+
+**Steps 6-10, remaining, in the order planned:**
+
 6. **Accessibility review** — audit key screens for missing `tooltip`/`Semantics`, touch target sizing, and color-only status signaling; fix what's found.
 7. **Performance review** — check for obvious issues at this codebase's actual scale (repeated queries per rebuild, unbounded list rendering); document findings, fix low-hanging ones.
 8. **Offline/reconnection UX** — a simple connectivity-aware banner (e.g. via `snapshot.metadata.isFromCache` on a StreamBuilder, or the `connectivity_plus` package) on the main screens; explicitly listed as "not built" in `docs/ARCHITECTURE.md`.

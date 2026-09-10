@@ -114,7 +114,7 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 - `CartDetailScreen`'s overflow menu (manager+ gated, same check as the rest of the screen) adds "Editar" (`edit_cart_dialog.dart`: name + `CartStatus` dropdown, calls `CartRepository.updateCart`) and "Duplicar" (`duplicate_cart_dialog.dart`: confirms a name, then creates a new cart and copies every drawer and its slots via `createDrawer`/`replaceSlots` — deliberately **never** copies assignments, stock, or history, per spec section 39). There is no separate "template gallery" concept; any existing cart can serve as a duplication source.
 - `ProductSearchScreen` (spec section 41's "search/list" requirement, alongside the existing "virtual drawer" visual navigation) filters a cart's `InventoryRepository.watchAssignments` by product name and opens the same `showAssignmentDialog` the drawer grid uses — built entirely on repositories that already existed.
 - `InstitutionHomeScreen` (spec section 49, scoped down) gained a `_CartStatusSummary` (counts per `CartStatus`, derived from the same `watchAccessibleCarts` stream the list already used) and `_RecentActivity` (last 5 events from `UsageRepository.watchRecentEvents`, an institution-scoped query that already existed), plus a cart-name search field. Cross-cart per-slot expiry alerts are deliberately **not** included — they would need an institution-wide `assignments` collectionGroup query and a matching Rules change, which given the `memberIndex` collectionGroup/Rules quirks already documented above, is deferred as its own future slice.
-- `HistoryScreen` (spec section 51, scoped down to its read-only "detailed view" half) is a `ChoiceChip`-filterable list over the same `watchRecentEvents` stream, reachable from `InstitutionHomeScreen`'s new "Histórico" `AppBar` icon (any user). PDF/CSV export and per-product/per-cart/per-period aggregate reports are explicitly deferred.
+- `HistoryScreen` (spec section 51, scoped down to its read-only "detailed view" half) is a `ChoiceChip`-filterable list over the same `watchRecentEvents` stream, reachable from `InstitutionHomeScreen`'s new "Histórico" `AppBar` icon (any user). It also has "Ver resumo" (`reports/history_summary.dart`'s `summarizeByProduct`: per-product consumed/replenished/other-adjustment totals within the current filter) and "Exportar CSV" (`reports/history_csv_export.dart`'s `buildHistoryCsv`, copied to the clipboard rather than downloaded as a file, to avoid a `path_provider`/`share_plus` dependency for a prototype-phase feature) — both pure functions over the same events/products the screen already has. PDF export and per-cart/per-period aggregates remain deferred.
 
 ## Environment selection
 
@@ -135,7 +135,7 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 
 ## What is intentionally not built yet
 
-- Reporting export (PDF/CSV) and per-product/per-cart/per-period aggregate reports (the rest of spec section 51, beyond the read-only history view already built).
+- PDF export and per-cart/per-period aggregate reports (the rest of spec section 51) — CSV export (clipboard-based) and a per-product summary are now built; see `reports/history_csv_export.dart`/`history_summary.dart`.
 - Cross-cart alerts are manager+ only (see "Cross-cart dashboard alerts" above) — a normal user does not get an aggregate view of expiry/stock issues outside carts they're responsible for.
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ReportService`/`NotificationService` are contracts only.
