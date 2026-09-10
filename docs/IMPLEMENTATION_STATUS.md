@@ -175,4 +175,43 @@ Status: complete and validated live on the Android emulator.
 - New tests: `test/presentation/history_csv_export_test.dart` (5), `test/presentation/history_summary_test.dart` (5), 2 more in `test/presentation/history_screen_test.dart` (export-to-clipboard, shows-summary). Total: 120/120 passing, `flutter analyze --no-pub` clean, `flutter build apk --debug` passing.
 - Live Android validation: "Ver resumo" and "Exportar CSV" both render next to the type filter chips; "Ver resumo" against real seeded data showed "Adrenalina — Consumido: 0 Reposto: 5"; "Exportar CSV" showed the correct header row and a data row matching the same event, and "Copiar" showed a "CSV copiado." confirmation. No fatal exceptions in logcat.
 
+## Phase 2 continued — accessibility review
+
+Status: complete.
+
+A pass over every screen for missing `tooltip`/`Semantics`, touch-target sizing, and color-only status signaling found the codebase already in reasonable shape (every `IconButton` across the app — 11 of them — already carries a `tooltip`; every status/alert indicator already pairs color with a text label: cart-status `Chip`s, the assignment status `Chip`, the cross-cart "Alertas" lines, history event type/amount; every text field already uses `InputDecoration.labelText`, which screen readers announce). Two concrete gaps found and fixed:
+
+- `SlotEditorScreen`'s grid cells (`_SlotCell`) relied on a color change alone to show merge-selection state, with no `Semantics` node conveying it — a screen reader user tapping through the grid had no way to know which cells were currently selected before tapping "Juntar". Fixed by wrapping each cell in `Semantics(selected: selected, button: true, ...)`, alongside its existing `Tooltip` ("Linha X, coluna Y").
+- `CartQrCodeScreen`'s QR image had no semantic label at all — a screen reader would either skip it silently or read something generic. Fixed with `Semantics(label: 'Código QR do carro <nome>', image: true, ...)`.
+
+One known, deliberately *not* fixed gap: `SlotEditorScreen`'s grid cells can be smaller than the 48×48dp minimum recommended touch target on a densely-configured drawer (many rows/columns) — this falls directly out of the "the grid always fills the available screen area, mirroring a real physical drawer" design decision (`docs/ARCHITECTURE.md`), and resizing it would need redesigning that whole interaction model, out of scope for a review pass. Revisit only if real-device testing surfaces it as an actual usability problem for a specific drawer configuration.
+
+No new tests were added for this pass — the `Semantics` wrapping is additive and doesn't change any existing widget's find-by-text/type behavior, confirmed by the full suite (120/120) still passing unchanged.
+
+## Phase 2 continued — performance review
+
+Status: complete.
+
+The one concrete, reproducible issue found: several `StatefulWidget` screens create a `StreamBuilder`'s `stream:` by calling `services.x.watchY(...)` **inline inside `build()`**, while *also* having local UI state (a search field, filter chips) that calls `setState` very frequently (every keystroke, every chip tap). Since each `watchY(...)` call returns a **new** `Stream` instance, and `StreamBuilder` tears down and re-subscribes whenever it's handed a different `stream` instance, every keystroke was silently unsubscribing and re-subscribing the underlying Firestore snapshot listener instead of just re-filtering data already in memory — the opposite of the "no manual refresh, updates live via the stream" behavior this app has relied on throughout. Fixed in the three screens where this combination (frequent local `setState` + inline `watchY()` in the same `build()`) actually occurs, by hoisting the stream into a `late final` field — the exact same caching pattern this codebase already used for one-shot `Future`s (`_myMembership`, `_products`) everywhere, just extended to `Stream`s:
+
+- `InstitutionHomeScreen` (search field rebuilds re-subscribed the cart list, the cross-cart alerts query, *and* the recent-activity query on every keystroke — the worst instance, three listeners).
+- `HistoryScreen` (type-filter chips re-subscribed the event-history query on every filter tap).
+- `ProductSearchScreen` (search field re-subscribed the cart's assignment query on every keystroke).
+
+Checked and left unchanged, confirmed safe: `MembersScreen`, `ProductsScreen`, `CartDetailScreen` have no local `setState`-triggering UI state, so their own inline `stream: services.x.watchY(...)` calls only re-run when the screen itself is rebuilt by its parent (navigation, hot reload) — not a repeated-churn concern. `ResponsibleUsersScreen`/`InstitutionSelectionScreen` are `StatelessWidget`s with no local state at all.
+
+Other candidate performance issues considered and deliberately left as-is at this app's actual scale (a handful of carts/products/members per institution in the seeded data and realistically in a real institution too): the various linear `for` scans resolving a name from an id (`_productName`, `_cartName`, etc.) are O(n) over small in-memory lists already fetched for the screen, not a real cost; converting them to `Map`-based lookups would add code without a measurable benefit here.
+
+No new tests were added — this is a caching refactor with unchanged external behavior, confirmed by the full suite (120/120) passing unchanged before and after.
+
+## Phase 2 continued — offline/reconnection UX
+
+Status: complete and validated live on the Android emulator.
+
+Deliberately scoped to a simple, honest offline signal rather than a full per-query sync-state UI (synced/pending/failed per item): Firestore's own offline persistence already keeps every screen usable with the last-known cached data regardless of connectivity, and every write already queues and replays automatically on reconnect — this feature only needed to tell the user *that's* what's currently happening, not build a parallel sync engine. `ConnectivityBanner` (new, `lib/src/presentation/common/connectivity_banner.dart`) wraps `connectivity_plus`'s `onConnectivityChanged` stream plus an initial `checkConnectivity()` call, and shows a slim red banner — "Sem ligação à internet — a mostrar dados guardados localmente." — whenever every reported connectivity result is `none`. It's mounted once in `main.dart` via `MaterialApp.builder` (not `home`), so it persists across every pushed route instead of only the initial screen.
+
+Live Android validation: with wifi and mobile data both disabled (`adb shell svc wifi disable && adb shell svc data disable`), the banner appeared immediately and the previously-loaded institution list kept showing from Firestore's local cache. One issue found and fixed during validation: the banner initially rendered with a debug-mode "missing Material ancestor" squiggly underline, since it sits directly under `MaterialApp.builder`, outside any screen's own `Scaffold`/`Material`. Fixed by wrapping the banner's content in its own `Material` (plus `SafeArea(bottom: false, ...)`); re-verified live afterwards with a clean render, no artifact. Re-enabling wifi/data made the banner disappear again within the next connectivity check. No fatal exceptions in logcat across the whole validation pass.
+
+New tests: none added — `ConnectivityBanner` wraps `connectivity_plus`, a plugin package whose platform channel isn't available under `flutter test`'s default test bindings, so its live behavior was verified only on-device as described above (consistent with how this codebase treats other plugin-backed services, e.g. `mobile_scanner`). `flutter analyze --no-pub` clean, full suite still 120/120.
+
 See `MODERNIZATION_2026.md` for the baseline modernization and `ICRASH_V2_SPECIFICATION.md` for the authoritative V2 scope.

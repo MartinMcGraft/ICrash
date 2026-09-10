@@ -139,8 +139,8 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 - Cross-cart alerts are manager+ only (see "Cross-cart dashboard alerts" above) — a normal user does not get an aggregate view of expiry/stock issues outside carts they're responsible for.
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ReportService`/`NotificationService` are contracts only.
-- Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.
+- Per-query sync-state UI (synced/pending/failed per item) is not built; only a single app-wide "no connectivity, showing cached data" banner exists (`presentation/common/connectivity_banner.dart`, mounted via `MaterialApp.builder`) — Firestore's own offline cache is otherwise unconfigured beyond its native platform default.
 - Localization: screens currently hard-code PT-PT strings; `flutter_localizations`/`.arb` scaffolding is deferred to spec item 8.
-- Workstream J (QA/hardening/releases): accessibility review, performance review, offline/reconnection validation, release signing/environment separation are all still open — see spec section 68.
+- Workstream J (QA/hardening/releases): accessibility review, performance review, and offline/reconnection UX are now done (see `docs/IMPLEMENTATION_STATUS.md`) — release signing/environment separation is the one item still open, and is documentation-only in this codebase since real secrets/keystores are out of scope for the assistant to generate — see spec section 68 and `docs/RELEASE_CHECKLIST.md`.
 
 See `ICRASH_V2_SPECIFICATION.md` for authoritative scope and dependency order, and `docs/FIREBASE_MODEL.md` for the Firestore collection layout and the conservative-expiry rule those repositories implement.

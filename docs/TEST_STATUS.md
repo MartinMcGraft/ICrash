@@ -2,6 +2,19 @@
 
 Updated: 2026-09-10
 
+## Phase 2, accessibility/performance/offline-reconnection review — Android emulator live validation
+
+Full walkthrough on `ICrash_API_36`, signed in as the seeded `institutionAdmin`, covering workstream J's accessibility review, performance review, and offline/reconnection UX (see `docs/IMPLEMENTATION_STATUS.md` for what each pass found and fixed):
+
+- Accessibility: no separate live pass beyond re-running the full widget suite (120/120 unchanged) — the two fixes (`Semantics` on `SlotEditorScreen`'s grid cells and `CartQrCodeScreen`'s QR image) are additive semantic metadata with no visual/behavioral change, so `flutter analyze`/`flutter test` plus a visual spot-check of both screens (unchanged rendering, confirmed via screenshot) was the appropriate validation depth here.
+- Performance: same — the stream-caching fix changes *when* a Firestore listener resubscribes, not what renders, so validation was the automated suite (120/120 unchanged) plus a live spot-check on `InstitutionHomeScreen` (the worst instance, three listeners) confirming the cart list/alerts/recent-activity sections all still update live while typing in the "Pesquisar carro" field, with no visible flicker or reload.
+- Offline banner, initial render: WORKING with one issue found and fixed. With wifi and mobile data disabled (`adb shell svc wifi disable && adb shell svc data disable`), a red banner "Sem ligação à internet — a mostrar dados guardados localmente." appeared at the top of the screen immediately, above the existing "Escolher instituição" content, which kept showing the previously-loaded "Hospital de Teste" from Firestore's local cache. First screenshot showed the banner text rendered with a debug-mode red/yellow squiggly underline (missing-`Material`-ancestor artifact, since the banner sits directly under `MaterialApp.builder`, outside any screen's own `Scaffold`).
+- Offline banner, after fix: WORKING. Wrapped the banner's content in its own `Material` + `SafeArea(bottom: false, ...)`; rebuilt, reinstalled, relaunched while still offline — banner re-rendered cleanly with no artifact, same text, same position, cached institution list still showing underneath.
+- Reconnection: WORKING. Re-enabling wifi/data (`adb shell svc wifi enable && adb shell svc data enable`) made the banner disappear on the next `onConnectivityChanged` event, with the underlying screen unaffected.
+- No fatal `pt.icrash.app` exceptions in logcat across the whole session (`adb logcat -d -s AndroidRuntime:E flutter:E *:F` empty).
+
+No new Firestore Rules were needed for any of these three — accessibility/performance are presentation-layer-only changes, and the connectivity banner reads no Firestore data at all (`connectivity_plus` is a pure device-connectivity plugin).
+
 ## Phase 2, history CSV export and per-product summary — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, on `HistoryScreen` against real seeded data (one "Reposição · Adrenalina (+5)" event from the prior live-testing session):
@@ -165,7 +178,7 @@ Device: `ICrash_API_36`, Android 16 / API 36.
 
 ## Known gaps
 
-Physical-camera QR/GS1 validation, backend flows, permissions UI, offline/reconnection UX and full V2 screen coverage remain untested — nothing in the presentation layer consumes the new repositories yet. Security Rules now have automated coverage (see Phase 2 above), but only for the scenarios in spec section 60; broader domain scenarios (multi-lot replenishment through the real repository against the emulator, offline queued writes replaying against Rules) are still open. Scanner abstractions and mock GS1 inputs belong to later phases. iOS/macOS cannot be claimed from Windows. The complete screen classification is deferred until V2 screens replace the legacy ones, as required by the specification.
+Physical-camera QR/GS1 validation, backend flows, and permissions UI remain untested. A basic offline/reconnection UX (connectivity banner) is now live-validated — see the accessibility/performance/offline review section above — but broader domain scenarios around offline are still open: multi-lot replenishment through the real repository against the emulator while offline, and offline queued writes replaying against Rules once reconnected, have not been exercised. Security Rules have automated coverage (see Phase 2 above), but only for the scenarios in spec section 60. Scanner abstractions and mock GS1 inputs belong to later phases. iOS/macOS cannot be claimed from Windows. The complete screen classification is deferred until V2 screens replace the legacy ones, as required by the specification.
 
 ## Phase 1 local Firebase foundation
 
