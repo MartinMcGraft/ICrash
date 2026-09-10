@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/product.dart';
@@ -52,13 +53,14 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: TextField(
           controller: _controller,
           autofocus: true,
           style: Theme.of(context).textTheme.titleMedium,
-          decoration: const InputDecoration(hintText: 'Pesquisar produto neste carro...', border: InputBorder.none),
+          decoration: InputDecoration(hintText: l10n.productSearchHint, border: InputBorder.none),
           onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
         ),
       ),
@@ -77,18 +79,18 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
               ];
 
               if (_query.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Escreva o nome de um produto para o encontrar neste carro.', textAlign: TextAlign.center),
+                    padding: const EdgeInsets.all(24),
+                    child: Text(l10n.productSearchPrompt, textAlign: TextAlign.center),
                   ),
                 );
               }
               if (results.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Nenhum produto encontrado neste carro.', textAlign: TextAlign.center),
+                    padding: const EdgeInsets.all(24),
+                    child: Text(l10n.productSearchEmpty, textAlign: TextAlign.center),
                   ),
                 );
               }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../common/l10n/app_localizations.dart';
+
 class NewDrawerInput {
   const NewDrawerInput({required this.name, required this.rows, required this.columns});
 
@@ -22,59 +24,62 @@ Future<NewDrawerInput?> showCreateDrawerDialog(BuildContext context) {
   return showDialog<NewDrawerInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('Nova gaveta'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Nome da gaveta'),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Indique um nome' : null,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: rows,
-                      decoration: const InputDecoration(labelText: 'Linhas'),
-                      items: [for (final n in _gridSizeOptions) DropdownMenuItem(value: n, child: Text('$n'))],
-                      onChanged: (value) => setState(() => rows = value ?? rows),
+      builder: (context, setState) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l10n.createDrawerTitle),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(labelText: l10n.createDrawerNameLabel),
+                  validator: (value) => (value == null || value.trim().isEmpty) ? l10n.validationEnterName : null,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int>(
+                        initialValue: rows,
+                        decoration: InputDecoration(labelText: l10n.createDrawerRowsLabel),
+                        items: [for (final n in _gridSizeOptions) DropdownMenuItem(value: n, child: Text('$n'))],
+                        onChanged: (value) => setState(() => rows = value ?? rows),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: columns,
-                      decoration: const InputDecoration(labelText: 'Colunas'),
-                      items: [for (final n in _gridSizeOptions) DropdownMenuItem(value: n, child: Text('$n'))],
-                      onChanged: (value) => setState(() => columns = value ?? columns),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DropdownButtonFormField<int>(
+                        initialValue: columns,
+                        decoration: InputDecoration(labelText: l10n.createDrawerColumnsLabel),
+                        items: [for (final n in _gridSizeOptions) DropdownMenuItem(value: n, child: Text('$n'))],
+                        onChanged: (value) => setState(() => columns = value ?? columns),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(NewDrawerInput(name: nameController.text.trim(), rows: rows, columns: columns));
-              }
-            },
-            child: const Text('Criar'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.actionCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(context).pop(NewDrawerInput(name: nameController.text.trim(), rows: rows, columns: columns));
+                }
+              },
+              child: Text(l10n.actionCreate),
+            ),
+          ],
+        );
+      },
     ),
   );
 }

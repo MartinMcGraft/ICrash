@@ -29,5 +29,146 @@
 
   "membershipStatusActive": "Active",
   "membershipStatusInvited": "Invited",
-  "membershipStatusDisabled": "Disabled"
+  "membershipStatusDisabled": "Disabled",
+
+  "loginTagline": "Emergency cart management",
+  "loginEmailLabel": "Email",
+  "loginEmailRequired": "Enter your email",
+  "loginPasswordLabel": "Password",
+  "loginPasswordRequired": "Enter your password",
+  "loginSubmit": "Sign in",
+  "loginErrorInvalidCredentials": "Invalid credentials. Check your email and password.",
+  "loginErrorOffline": "No connection. Check your network and try again.",
+  "loginErrorGeneric": "Couldn't sign in. Try again.",
+
+  "actionCreate": "Create",
+  "actionDuplicate": "Duplicate",
+  "validationEnterName": "Enter a name",
+
+  "createCartTitle": "New cart",
+  "createCartNameLabel": "Cart name",
+
+  "createDrawerTitle": "New drawer",
+  "createDrawerNameLabel": "Drawer name",
+  "createDrawerRowsLabel": "Rows",
+  "createDrawerColumnsLabel": "Columns",
+
+  "duplicateCartTitle": "Duplicate cart",
+  "duplicateCartDescription": "Creates a new cart with the same drawers and slots. Does not copy products, stock, or history.",
+  "duplicateCartNameLabel": "New cart's name",
+
+  "editCartTitle": "Edit cart",
+  "editCartStatusLabel": "Status",
+
+  "createProductTitle": "New product",
+  "createProductNameLabel": "Name",
+  "createProductUnitLabel": "Unit (optional)",
+  "createProductUnitHint": "e.g.: 1 mg/mL, 1 mL ampoule",
+  "createProductGtinLabel": "GTIN (optional)",
+
+  "addMemberTitle": "New member",
+  "addMemberEmailRequired": "Enter an email",
+  "addMemberPasswordLabel": "Temporary password",
+  "addMemberPasswordMinLength": "Minimum 6 characters",
+  "addMemberRoleLabel": "Role",
+
+  "cartQrScreenTitle": "Cart code",
+  "cartQrSemanticLabel": "QR code for cart {cartName}",
+  "@cartQrSemanticLabel": {
+    "placeholders": {
+      "cartName": {"type": "String"}
+    }
+  },
+  "cartQrInstruction": "Scan this code to open this cart directly.",
+  "cartQrScanTitle": "Scan cart code",
+  "cartQrScanError": "Code read but it isn't a recognized cart code. Try again.",
+  "cartQrScanInstruction": "Point the camera at the cart's code.",
+  "scannerPreviewUnavailable": "Camera preview unavailable.",
+
+  "gs1ScanTitle": "Scan GS1 code",
+  "gs1ScanError": "Code read but no GTIN, lot, or expiry recognized. Try again.",
+  "gs1ScanInstructionHid": "Scan the code with the barcode reader connected to this computer.",
+  "gs1ScanInstructionCamera": "Point the camera at the package's GS1 Data Matrix code.",
+  "actionCancelManualEntry": "Cancel and enter manually",
+  "gs1HidWaitingLabel": "Waiting for scan...",
+
+  "actionSignOut": "Sign out",
+  "institutionSelectionTitle": "Choose institution",
+  "institutionSelectionLoadError": "Couldn't load institutions: {error}",
+  "@institutionSelectionLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "institutionSelectionEmpty": "You don't have access to any institution yet.\nContact your institution's administrator.",
+
+  "connectivityOfflineMessage": "No internet connection — showing locally saved data.",
+
+  "productsScreenTitle": "Products",
+  "productsCreateError": "Couldn't create the product. Try again.",
+  "productsLoadError": "Couldn't load products: {error}",
+  "@productsLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "productsEmpty": "There are no products in this institution yet.",
+
+  "membersScreenTitle": "Members",
+  "membersLoadError": "Couldn't load members: {error}",
+  "@membersLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "membersEmpty": "There are no members in this institution yet.",
+  "membersCreateErrorConflict": "An account with this email already exists.",
+  "membersCreateErrorInvalidInput": "Invalid email or password.",
+  "membersCreateErrorGeneric": "Couldn't create the member. Try again.",
+  "membersChangeRoleTitle": "Change role",
+  "membersChangeRoleError": "Couldn't change the role. Try again.",
+  "membersToggleStatusError": "Couldn't change the member's status. Try again.",
+  "membersDeactivate": "Deactivate",
+  "membersReactivate": "Reactivate",
+
+  "responsibleUsersTitle": "Cart's responsible users",
+
+  "productSearchHint": "Search for a product in this cart...",
+  "productSearchPrompt": "Type a product's name to find it in this cart.",
+  "productSearchEmpty": "No product found in this cart.",
+
+  "actionEdit": "Edit",
+  "actionShowQrCode": "Show QR code",
+  "actionSearchProduct": "Search product",
+  "actionResponsible": "Responsible users",
+  "cartDetailCreateDrawerError": "Couldn't create the drawer. Try again.",
+  "cartUpdatedMessage": "Cart updated.",
+  "cartDetailUpdateError": "Couldn't update the cart. Try again.",
+  "duplicateCartDefaultName": "{name} (copy)",
+  "@duplicateCartDefaultName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cartDuplicatedMessage": "Cart duplicated as \"{name}\".",
+  "@cartDuplicatedMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cartDetailDuplicateError": "Couldn't duplicate the cart. Try again.",
+  "cartDetailLoadDrawersError": "Couldn't load drawers: {error}",
+  "@cartDetailLoadDrawersError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "cartDetailDrawersEmpty": "There are no drawers in this cart yet.",
+  "drawerGridSize": "{rows} rows × {columns} columns",
+  "@drawerGridSize": {
+    "placeholders": {
+      "rows": {"type": "int"},
+      "columns": {"type": "int"}
+    }
+  }
 }

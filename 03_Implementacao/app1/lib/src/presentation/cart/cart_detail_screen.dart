@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_drawer.dart';
@@ -60,9 +61,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível criar a gaveta. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).cartDetailCreateDrawerError)),
       );
     }
   }
@@ -85,22 +84,21 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Carro atualizado.')));
+          .showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).cartUpdatedMessage)));
       Navigator.of(context).pop();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível atualizar o carro. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).cartDetailUpdateError)),
       );
     }
   }
 
   Future<void> _duplicateCart(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final newName = await showDuplicateCartDialog(
       context,
-      defaultName: '${widget.cart.name} (cópia)',
+      defaultName: l10n.duplicateCartDefaultName(widget.cart.name),
     );
     if (newName == null || !context.mounted) return;
     final services = AppServicesScope.of(context);
@@ -138,15 +136,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       }
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Carro duplicado como "${newCart.name}".')),
+        SnackBar(content: Text(l10n.cartDuplicatedMessage(newCart.name))),
       );
       Navigator.of(context).pop();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível duplicar o carro. Tente novamente.'),
-        ),
+        SnackBar(content: Text(l10n.cartDetailDuplicateError)),
       );
     }
   }
@@ -154,12 +150,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.cart.name),
         actions: [
           IconButton(
-            tooltip: 'Mostrar código QR',
+            tooltip: l10n.actionShowQrCode,
             icon: const Icon(Icons.qr_code_2),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -168,7 +165,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'Pesquisar produto',
+            tooltip: l10n.actionSearchProduct,
             icon: const Icon(Icons.search),
             onPressed: () async {
               final membership = await _myMembership;
@@ -195,10 +192,10 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                   if (action == 'duplicate') _duplicateCart(context);
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                  const PopupMenuItem(
+                  PopupMenuItem(value: 'edit', child: Text(l10n.actionEdit)),
+                  PopupMenuItem(
                     value: 'duplicate',
-                    child: Text('Duplicar'),
+                    child: Text(l10n.actionDuplicate),
                   ),
                 ],
               );
@@ -211,7 +208,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                 return const SizedBox.shrink();
               }
               return IconButton(
-                tooltip: 'Responsáveis',
+                tooltip: l10n.actionResponsible,
                 icon: const Icon(Icons.badge_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -248,21 +245,16 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Não foi possível carregar as gavetas: ${snapshot.error}',
-                ),
+                child: Text(l10n.cartDetailLoadDrawersError(snapshot.error!)),
               ),
             );
           }
           final drawers = snapshot.data ?? const <CartDrawer>[];
           if (drawers.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ainda não existem gavetas neste carro.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.cartDetailDrawersEmpty, textAlign: TextAlign.center),
               ),
             );
           }
@@ -276,9 +268,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.grid_view_outlined),
                   title: Text(drawer.name),
-                  subtitle: Text(
-                    '${drawer.rows} linhas × ${drawer.columns} colunas',
-                  ),
+                  subtitle: Text(l10n.drawerGridSize(drawer.rows, drawer.columns)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -299,7 +289,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           return FloatingActionButton.extended(
             onPressed: () => _createDrawer(context),
             icon: const Icon(Icons.add),
-            label: const Text('Nova gaveta'),
+            label: Text(l10n.createDrawerTitle),
           );
         },
       ),

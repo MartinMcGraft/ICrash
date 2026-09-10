@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../common/l10n/app_localizations.dart';
 import '../../services/gs1_camera_scanner_service.dart';
 import '../../services/gs1_data_matrix_parser.dart';
 import '../../services/gs1_hid_scanner_service.dart';
@@ -47,7 +48,7 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
   void _onPayload(String raw) {
     final parsed = parseGs1DataMatrix(raw);
     if (parsed.isEmpty) {
-      setState(() => _lastError = 'Código lido mas sem GTIN, lote ou validade reconhecidos. Tente novamente.');
+      setState(() => _lastError = AppLocalizations.of(context).gs1ScanError);
       return;
     }
     Navigator.of(context).pop(parsed);
@@ -62,10 +63,11 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final scanner = _scanner;
     final isHid = scanner is HidGs1ScannerService;
     return Scaffold(
-      appBar: AppBar(title: const Text('Digitalizar código GS1')),
+      appBar: AppBar(title: Text(l10n.gs1ScanTitle)),
       body: Column(
         children: [
           Expanded(
@@ -80,9 +82,7 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
             child: Column(
               children: [
                 Text(
-                  isHid
-                      ? 'Digitalize o código com o leitor de códigos de barras ligado a este computador.'
-                      : 'Aponte a câmara ao código GS1 Data Matrix da embalagem.',
+                  isHid ? l10n.gs1ScanInstructionHid : l10n.gs1ScanInstructionCamera,
                   textAlign: TextAlign.center,
                 ),
                 if (_lastError != null) ...[
@@ -92,7 +92,7 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar e inserir manualmente'),
+                  child: Text(l10n.actionCancelManualEntry),
                 ),
               ],
             ),
@@ -150,7 +150,10 @@ class _HidScanInputState extends State<_HidScanInput> {
                 controller: _controller,
                 focusNode: _focusNode,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Aguardando leitura...', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).gs1HidWaitingLabel,
+                  border: const OutlineInputBorder(),
+                ),
                 onSubmitted: _onSubmitted,
               ),
             ],
@@ -166,9 +169,9 @@ class _ScannerPreviewPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
+    return ColoredBox(
       color: Colors.black12,
-      child: Center(child: Text('Pré-visualização da câmara indisponível.')),
+      child: Center(child: Text(AppLocalizations.of(context).scannerPreviewUnavailable)),
     );
   }
 }

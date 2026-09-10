@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/institution.dart';
 import '../../domain/entities/membership.dart';
@@ -26,6 +27,7 @@ class _MembersScreenState extends State<MembersScreen> {
     final services = AppServicesScope.of(context);
     final input = await showAddMemberDialog(context);
     if (input == null || !context.mounted) return;
+    final l10n = AppLocalizations.of(context);
     try {
       await services.institutions.createMember(
         widget.institution.id,
@@ -36,14 +38,11 @@ class _MembersScreenState extends State<MembersScreen> {
     } on RepositoryFailure catch (error) {
       if (!context.mounted) return;
       final message = switch (error.reason) {
-        RepositoryFailureReason.conflict =>
-          'Já existe uma conta com este e-mail.',
-        RepositoryFailureReason.invalidInput =>
-          'E-mail ou palavra-passe inválidos.',
-        _ => 'Não foi possível criar o membro. Tente novamente.',
+        RepositoryFailureReason.conflict => l10n.membersCreateErrorConflict,
+        RepositoryFailureReason.invalidInput => l10n.membersCreateErrorInvalidInput,
+        _ => l10n.membersCreateErrorGeneric,
       };
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -52,7 +51,7 @@ class _MembersScreenState extends State<MembersScreen> {
     final selected = await showDialog<Role>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Mudar cargo'),
+        title: Text(AppLocalizations.of(context).membersChangeRoleTitle),
         children: [
           for (final r in assignableRoles)
             SimpleDialogOption(
@@ -74,9 +73,7 @@ class _MembersScreenState extends State<MembersScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível mudar o cargo. Tente novamente.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).membersChangeRoleError)),
       );
     }
   }
@@ -98,11 +95,7 @@ class _MembersScreenState extends State<MembersScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível alterar o estado do membro. Tente novamente.',
-          ),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context).membersToggleStatusError)),
       );
     }
   }
@@ -111,8 +104,9 @@ class _MembersScreenState extends State<MembersScreen> {
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
     final myUid = services.auth.currentUser?.uid;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Membros')),
+      appBar: AppBar(title: Text(l10n.membersScreenTitle)),
       body: StreamBuilder<List<Membership>>(
         stream: services.institutions.watchMembers(widget.institution.id),
         builder: (context, snapshot) {
@@ -123,21 +117,16 @@ class _MembersScreenState extends State<MembersScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Não foi possível carregar os membros: ${snapshot.error}',
-                ),
+                child: Text(l10n.membersLoadError(snapshot.error!)),
               ),
             );
           }
           final members = snapshot.data ?? const <Membership>[];
           if (members.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ainda não existem membros nesta instituição.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.membersEmpty, textAlign: TextAlign.center),
               ),
             );
           }
@@ -171,14 +160,14 @@ class _MembersScreenState extends State<MembersScreen> {
                             }
                           },
                           itemBuilder: (context) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'role',
-                              child: Text('Mudar cargo'),
+                              child: Text(l10n.membersChangeRoleTitle),
                             ),
                             PopupMenuItem(
                               value: 'status',
                               child: Text(
-                                member.isActive ? 'Desativar' : 'Reativar',
+                                member.isActive ? l10n.membersDeactivate : l10n.membersReactivate,
                               ),
                             ),
                           ],
@@ -194,7 +183,7 @@ class _MembersScreenState extends State<MembersScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addMember(context),
         icon: const Icon(Icons.person_add_alt),
-        label: const Text('Novo membro'),
+        label: Text(l10n.addMemberTitle),
       ),
     );
   }

@@ -29,5 +29,146 @@
 
   "membershipStatusActive": "Ativo",
   "membershipStatusInvited": "Convidado",
-  "membershipStatusDisabled": "Desativado"
+  "membershipStatusDisabled": "Desativado",
+
+  "loginTagline": "Gestão de carros de emergência",
+  "loginEmailLabel": "E-mail",
+  "loginEmailRequired": "Indique o e-mail",
+  "loginPasswordLabel": "Palavra-passe",
+  "loginPasswordRequired": "Indique a palavra-passe",
+  "loginSubmit": "Entrar",
+  "loginErrorInvalidCredentials": "Credenciais inválidas. Verifique o e-mail e a palavra-passe.",
+  "loginErrorOffline": "Sem ligação. Verifique a rede e tente novamente.",
+  "loginErrorGeneric": "Não foi possível iniciar sessão. Tente novamente.",
+
+  "actionCreate": "Criar",
+  "actionDuplicate": "Duplicar",
+  "validationEnterName": "Indique um nome",
+
+  "createCartTitle": "Novo carro",
+  "createCartNameLabel": "Nome do carro",
+
+  "createDrawerTitle": "Nova gaveta",
+  "createDrawerNameLabel": "Nome da gaveta",
+  "createDrawerRowsLabel": "Linhas",
+  "createDrawerColumnsLabel": "Colunas",
+
+  "duplicateCartTitle": "Duplicar carro",
+  "duplicateCartDescription": "Cria um novo carro com as mesmas gavetas e slots. Não copia produtos, stock nem histórico.",
+  "duplicateCartNameLabel": "Nome do novo carro",
+
+  "editCartTitle": "Editar carro",
+  "editCartStatusLabel": "Estado",
+
+  "createProductTitle": "Novo produto",
+  "createProductNameLabel": "Nome",
+  "createProductUnitLabel": "Unidade (opcional)",
+  "createProductUnitHint": "ex.: 1 mg/mL, ampola 1 mL",
+  "createProductGtinLabel": "GTIN (opcional)",
+
+  "addMemberTitle": "Novo membro",
+  "addMemberEmailRequired": "Indique um e-mail",
+  "addMemberPasswordLabel": "Palavra-passe temporária",
+  "addMemberPasswordMinLength": "Mínimo de 6 caracteres",
+  "addMemberRoleLabel": "Cargo",
+
+  "cartQrScreenTitle": "Código do carro",
+  "cartQrSemanticLabel": "Código QR do carro {cartName}",
+  "@cartQrSemanticLabel": {
+    "placeholders": {
+      "cartName": {"type": "String"}
+    }
+  },
+  "cartQrInstruction": "Digitalize este código para abrir diretamente este carro.",
+  "cartQrScanTitle": "Ler código do carro",
+  "cartQrScanError": "Código lido mas não é um código de carro reconhecido. Tente novamente.",
+  "cartQrScanInstruction": "Aponte a câmara ao código do carro.",
+  "scannerPreviewUnavailable": "Pré-visualização da câmara indisponível.",
+
+  "gs1ScanTitle": "Digitalizar código GS1",
+  "gs1ScanError": "Código lido mas sem GTIN, lote ou validade reconhecidos. Tente novamente.",
+  "gs1ScanInstructionHid": "Digitalize o código com o leitor de códigos de barras ligado a este computador.",
+  "gs1ScanInstructionCamera": "Aponte a câmara ao código GS1 Data Matrix da embalagem.",
+  "actionCancelManualEntry": "Cancelar e inserir manualmente",
+  "gs1HidWaitingLabel": "Aguardando leitura...",
+
+  "actionSignOut": "Terminar sessão",
+  "institutionSelectionTitle": "Escolher instituição",
+  "institutionSelectionLoadError": "Não foi possível carregar as instituições: {error}",
+  "@institutionSelectionLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "institutionSelectionEmpty": "Ainda não tem acesso a nenhuma instituição.\nContacte o administrador da sua instituição.",
+
+  "connectivityOfflineMessage": "Sem ligação à internet — a mostrar dados guardados localmente.",
+
+  "productsScreenTitle": "Produtos",
+  "productsCreateError": "Não foi possível criar o produto. Tente novamente.",
+  "productsLoadError": "Não foi possível carregar os produtos: {error}",
+  "@productsLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "productsEmpty": "Ainda não existem produtos nesta instituição.",
+
+  "membersScreenTitle": "Membros",
+  "membersLoadError": "Não foi possível carregar os membros: {error}",
+  "@membersLoadError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "membersEmpty": "Ainda não existem membros nesta instituição.",
+  "membersCreateErrorConflict": "Já existe uma conta com este e-mail.",
+  "membersCreateErrorInvalidInput": "E-mail ou palavra-passe inválidos.",
+  "membersCreateErrorGeneric": "Não foi possível criar o membro. Tente novamente.",
+  "membersChangeRoleTitle": "Mudar cargo",
+  "membersChangeRoleError": "Não foi possível mudar o cargo. Tente novamente.",
+  "membersToggleStatusError": "Não foi possível alterar o estado do membro. Tente novamente.",
+  "membersDeactivate": "Desativar",
+  "membersReactivate": "Reativar",
+
+  "responsibleUsersTitle": "Responsáveis pelo carro",
+
+  "productSearchHint": "Pesquisar produto neste carro...",
+  "productSearchPrompt": "Escreva o nome de um produto para o encontrar neste carro.",
+  "productSearchEmpty": "Nenhum produto encontrado neste carro.",
+
+  "actionEdit": "Editar",
+  "actionShowQrCode": "Mostrar código QR",
+  "actionSearchProduct": "Pesquisar produto",
+  "actionResponsible": "Responsáveis",
+  "cartDetailCreateDrawerError": "Não foi possível criar a gaveta. Tente novamente.",
+  "cartUpdatedMessage": "Carro atualizado.",
+  "cartDetailUpdateError": "Não foi possível atualizar o carro. Tente novamente.",
+  "duplicateCartDefaultName": "{name} (cópia)",
+  "@duplicateCartDefaultName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cartDuplicatedMessage": "Carro duplicado como \"{name}\".",
+  "@cartDuplicatedMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cartDetailDuplicateError": "Não foi possível duplicar o carro. Tente novamente.",
+  "cartDetailLoadDrawersError": "Não foi possível carregar as gavetas: {error}",
+  "@cartDetailLoadDrawersError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
+  "cartDetailDrawersEmpty": "Ainda não existem gavetas neste carro.",
+  "drawerGridSize": "{rows} linhas × {columns} colunas",
+  "@drawerGridSize": {
+    "placeholders": {
+      "rows": {"type": "int"},
+      "columns": {"type": "int"}
+    }
+  }
 }

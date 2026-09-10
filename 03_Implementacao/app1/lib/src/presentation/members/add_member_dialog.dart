@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/role.dart';
 import 'membership_labels.dart';
 
@@ -29,69 +30,72 @@ Future<NewMemberInput?> showAddMemberDialog(BuildContext context) {
   return showDialog<NewMemberInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('Novo membro'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: emailController,
-                autofocus: true,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'E-mail'),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? 'Indique um e-mail'
-                    : null,
-              ),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Palavra-passe temporária',
+      builder: (context, setState) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l10n.addMemberTitle),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: emailController,
+                  autofocus: true,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(labelText: l10n.loginEmailLabel),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? l10n.addMemberEmailRequired
+                      : null,
                 ),
-                validator: (value) => (value == null || value.length < 6)
-                    ? 'Mínimo de 6 caracteres'
-                    : null,
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<Role>(
-                initialValue: role,
-                decoration: const InputDecoration(labelText: 'Cargo'),
-                items: [
-                  for (final r in assignableRoles)
-                    DropdownMenuItem(
-                      value: r,
-                      child: Text(roleLabel(context, r)),
-                    ),
-                ],
-                onChanged: (value) => setState(() => role = value ?? role),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(
-                  NewMemberInput(
-                    email: emailController.text.trim(),
-                    password: passwordController.text,
-                    role: role,
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: l10n.addMemberPasswordLabel,
                   ),
-                );
-              }
-            },
-            child: const Text('Criar'),
+                  validator: (value) => (value == null || value.length < 6)
+                      ? l10n.addMemberPasswordMinLength
+                      : null,
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<Role>(
+                  initialValue: role,
+                  decoration: InputDecoration(labelText: l10n.addMemberRoleLabel),
+                  items: [
+                    for (final r in assignableRoles)
+                      DropdownMenuItem(
+                        value: r,
+                        child: Text(roleLabel(context, r)),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => role = value ?? role),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.actionCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(context).pop(
+                    NewMemberInput(
+                      email: emailController.text.trim(),
+                      password: passwordController.text,
+                      role: role,
+                    ),
+                  );
+                }
+              },
+              child: Text(l10n.actionCreate),
+            ),
+          ],
+        );
+      },
     ),
   );
 }

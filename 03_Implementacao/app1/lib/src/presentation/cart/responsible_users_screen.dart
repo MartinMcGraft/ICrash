@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/cart_responsible_user.dart';
 import '../../domain/entities/membership.dart';
 import '../members/membership_labels.dart';
@@ -24,8 +25,9 @@ class ResponsibleUsersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Responsáveis pelo carro')),
+      appBar: AppBar(title: Text(l10n.responsibleUsersTitle)),
       body: StreamBuilder<List<Membership>>(
         stream: services.institutions.watchMembers(institutionId),
         builder: (context, membersSnapshot) {
@@ -36,21 +38,16 @@ class ResponsibleUsersScreen extends StatelessWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Não foi possível carregar os membros: ${membersSnapshot.error}',
-                ),
+                child: Text(l10n.membersLoadError(membersSnapshot.error!)),
               ),
             );
           }
           final members = membersSnapshot.data ?? const <Membership>[];
           if (members.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ainda não existem membros nesta instituição.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.membersEmpty, textAlign: TextAlign.center),
               ),
             );
           }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/institution.dart';
 import '../dashboard/institution_home_screen.dart';
 
@@ -14,12 +15,13 @@ class InstitutionSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escolher instituição'),
+        title: Text(l10n.institutionSelectionTitle),
         actions: [
           IconButton(
-            tooltip: 'Terminar sessão',
+            tooltip: l10n.actionSignOut,
             icon: const Icon(Icons.logout),
             onPressed: () => services.auth.signOut(),
           ),
@@ -35,19 +37,16 @@ class InstitutionSelectionScreen extends StatelessWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar as instituições: ${snapshot.error}'),
+                child: Text(l10n.institutionSelectionLoadError(snapshot.error!)),
               ),
             );
           }
           final institutions = snapshot.data ?? const <Institution>[];
           if (institutions.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ainda não tem acesso a nenhuma instituição.\nContacte o administrador da sua instituição.',
-                  textAlign: TextAlign.center,
-                ),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.institutionSelectionEmpty, textAlign: TextAlign.center),
               ),
             );
           }

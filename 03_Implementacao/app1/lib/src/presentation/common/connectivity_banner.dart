@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
+import '../../common/l10n/app_localizations.dart';
+
 /// A slim banner shown whenever the device has no network connectivity,
 /// wrapped once around the whole app (see `main.dart`) rather than added to
 /// every screen individually. Deliberately scoped to a simple offline
@@ -58,7 +60,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
                 child: Text(
-                  'Sem ligação à internet — a mostrar dados guardados localmente.',
+                  AppLocalizations.of(context).connectivityOfflineMessage,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer, fontSize: 12),
                 ),

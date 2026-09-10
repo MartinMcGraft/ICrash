@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_status.dart';
 import 'cart_status_label.dart';
@@ -23,56 +24,57 @@ Future<EditCartInput?> showEditCartDialog(BuildContext context, Cart cart) {
   return showDialog<EditCartInput>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const Text('Editar carro'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameController,
-                autofocus: true,
-                decoration: const InputDecoration(labelText: 'Nome do carro'),
-                validator: (value) => (value == null || value.trim().isEmpty)
-                    ? 'Indique um nome'
-                    : null,
-              ),
-              DropdownButtonFormField<CartStatus>(
-                initialValue: status,
-                decoration: const InputDecoration(labelText: 'Estado'),
-                items: [
-                  for (final value in CartStatus.values)
-                    DropdownMenuItem(
-                      value: value,
-                      child: Text(cartStatusLabel(context, value)),
+      builder: (context, setState) {
+        final l10n = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(l10n.editCartTitle),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(labelText: l10n.createCartNameLabel),
+                  validator: (value) => (value == null || value.trim().isEmpty) ? l10n.validationEnterName : null,
+                ),
+                DropdownButtonFormField<CartStatus>(
+                  initialValue: status,
+                  decoration: InputDecoration(labelText: l10n.editCartStatusLabel),
+                  items: [
+                    for (final value in CartStatus.values)
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(cartStatusLabel(context, value)),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => status = value ?? status),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.actionCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(context).pop(
+                    EditCartInput(
+                      name: nameController.text.trim(),
+                      status: status,
                     ),
-                ],
-                onChanged: (value) => setState(() => status = value ?? status),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(
-                  EditCartInput(
-                    name: nameController.text.trim(),
-                    status: status,
-                  ),
-                );
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+                  );
+                }
+              },
+              child: Text(l10n.actionSave),
+            ),
+          ],
+        );
+      },
     ),
   );
 }

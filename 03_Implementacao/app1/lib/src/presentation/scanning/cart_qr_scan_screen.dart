@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../common/l10n/app_localizations.dart';
 import '../../services/internal_qr_camera_scanner_service.dart';
 import '../../services/internal_qr_payload.dart';
 import '../../services/scanner_service.dart';
@@ -42,7 +43,7 @@ class _CartQrScanScreenState extends State<CartQrScanScreen> {
   void _onPayload(String raw) {
     final target = decodeCartQrPayload(raw);
     if (target == null) {
-      setState(() => _lastError = 'Código lido mas não é um código de carro reconhecido. Tente novamente.');
+      setState(() => _lastError = AppLocalizations.of(context).cartQrScanError);
       return;
     }
     Navigator.of(context).pop(target);
@@ -57,9 +58,10 @@ class _CartQrScanScreenState extends State<CartQrScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final scanner = _scanner;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ler código do carro')),
+      appBar: AppBar(title: Text(l10n.cartQrScanTitle)),
       body: Column(
         children: [
           Expanded(
@@ -71,13 +73,13 @@ class _CartQrScanScreenState extends State<CartQrScanScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                const Text('Aponte a câmara ao código do carro.', textAlign: TextAlign.center),
+                Text(l10n.cartQrScanInstruction, textAlign: TextAlign.center),
                 if (_lastError != null) ...[
                   const SizedBox(height: 8),
                   Text(_lastError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
                 const SizedBox(height: 12),
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.actionCancel)),
               ],
             ),
           ),
@@ -92,9 +94,9 @@ class _ScannerPreviewPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
+    return ColoredBox(
       color: Colors.black12,
-      child: Center(child: Text('Pré-visualização da câmara indisponível.')),
+      child: Center(child: Text(AppLocalizations.of(context).scannerPreviewUnavailable)),
     );
   }
 }

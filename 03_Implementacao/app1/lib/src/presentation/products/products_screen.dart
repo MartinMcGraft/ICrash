@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
+import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/product.dart';
 import 'create_product_dialog.dart';
@@ -32,7 +33,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível criar o produto. Tente novamente.')),
+        SnackBar(content: Text(AppLocalizations.of(context).productsCreateError)),
       );
     }
   }
@@ -40,8 +41,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Produtos')),
+      appBar: AppBar(title: Text(l10n.productsScreenTitle)),
       body: StreamBuilder<List<Product>>(
         stream: services.products.watchProducts(widget.institutionId),
         builder: (context, snapshot) {
@@ -52,16 +54,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar os produtos: ${snapshot.error}'),
+                child: Text(l10n.productsLoadError(snapshot.error!)),
               ),
             );
           }
           final products = snapshot.data ?? const <Product>[];
           if (products.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Ainda não existem produtos nesta instituição.', textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.productsEmpty, textAlign: TextAlign.center),
               ),
             );
           }
@@ -86,7 +88,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => _createProduct(context),
               icon: const Icon(Icons.add),
-              label: const Text('Novo produto'),
+              label: Text(l10n.createProductTitle),
             )
           : null,
     );
