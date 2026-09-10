@@ -342,6 +342,77 @@ void main() {
     expect(find.text('Registar consumo'), findsOneWidget);
   });
 
+  testWidgets('flags an orphaned assignment and lets a manager delete it', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const orphan = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'slot-from-a-removed-merge',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 10,
+    );
+    final inventory = FakeInventoryRepository(assignments: [orphan]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('sem slot válido'), findsOneWidget);
+    expect(find.text('Adrenalina'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ActionChip, 'Remover'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Remover'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments, isEmpty);
+    expect(find.textContaining('sem slot válido'), findsNothing);
+  });
+
+  testWidgets('lets a manager reassign an orphaned assignment to a currently empty slot', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const orphan = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'slot-from-a-removed-merge',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 10,
+    );
+    final inventory = FakeInventoryRepository(assignments: [orphan]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'me')),
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Chip, 'Reatribuir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1,1').last);
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments.single.slotId, 'r0c0');
+    expect(find.textContaining('sem slot válido'), findsNothing);
+  });
+
+  testWidgets('scrolls instead of shrinking cells below the minimum touch target on a dense drawer', (tester) async {
+    const denseDrawer = CartDrawer(id: 'drawer-1', cartId: 'cart-1', name: 'Gaveta densa', rows: 10, columns: 10);
+    await tester.pumpWidget(AppServicesScope(
+      services: buildTestServices(institutions: FakeInstitutionRepository(myMembership: _manager())),
+      child: MaterialApp(home: const SlotEditorScreen(cart: _cart, drawer: denseDrawer)),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Scrollbar), findsOneWidget);
+  });
+
   testWidgets('a normal user long-pressing an empty slot only sees an informational message', (tester) async {
     await tester.pumpWidget(_wrap(buildTestServices(
       institutions: FakeInstitutionRepository(

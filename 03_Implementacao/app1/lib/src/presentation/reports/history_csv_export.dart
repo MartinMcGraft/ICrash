@@ -17,14 +17,20 @@ String buildHistoryCsv(List<UsageEvent> events, List<Product> products) {
   }
 
   final buffer = StringBuffer();
-  buffer.writeln(['Data', 'Tipo', 'Produto', 'Quantidade'].map(_csvCell).join(','));
+  buffer.writeln(
+    ['Data', 'Tipo', 'Produto', 'Quantidade'].map(_csvCell).join(','),
+  );
   for (final event in events) {
-    buffer.writeln([
-      event.serverTimestamp == null ? '' : _formatDateTime(event.serverTimestamp!),
-      usageEventTypeLabel(event.type),
-      productName(event.productId),
-      '${event.amount > 0 ? '+' : ''}${event.amount}',
-    ].map(_csvCell).join(','));
+    buffer.writeln(
+      [
+        event.serverTimestamp == null
+            ? ''
+            : _formatDateTime(event.serverTimestamp!),
+        usageEventTypeLabel(event.type),
+        productName(event.productId),
+        '${event.amount > 0 ? '+' : ''}${event.amount}',
+      ].map(_csvCell).join(','),
+    );
   }
   return buffer.toString();
 }

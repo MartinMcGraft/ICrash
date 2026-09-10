@@ -23,6 +23,30 @@ abstract class InventoryRepository {
 
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment);
 
+  /// Moves an assignment onto a different slot within the same cart, without
+  /// touching its product/quantities/history. Exists to recover an
+  /// assignment whose slot was removed by a drawer merge/split in
+  /// `SlotEditorScreen` (the slot id it pointed at no longer exists) — never
+  /// used for a routine re-slotting of a still-valid assignment.
+  Future<void> reassignSlot({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required String newSlotId,
+    required String actorUid,
+  });
+
+  /// Permanently removes an assignment and its batches, without touching
+  /// past `usageEvents` (spec sections 43-45: history is immutable and
+  /// outlives the assignment that produced it). Used to let a manager drop
+  /// an assignment whose slot no longer exists after a drawer merge/split,
+  /// when reassigning it to a different slot isn't the right call.
+  Future<void> deleteAssignment({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+  });
+
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId);
 
   /// Decrements `currentQuantity` by [amount] and appends a [UsageEvent] of

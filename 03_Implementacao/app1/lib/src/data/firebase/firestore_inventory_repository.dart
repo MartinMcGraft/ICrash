@@ -105,6 +105,44 @@ class FirestoreInventoryRepository implements InventoryRepository {
   }
 
   @override
+  Future<void> reassignSlot({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required String newSlotId,
+    required String actorUid,
+  }) async {
+    try {
+      await _assignmentRef(institutionId, cartId, assignmentId).update({
+        'slotId': newSlotId,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': actorUid,
+      });
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
+  Future<void> deleteAssignment({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+  }) async {
+    try {
+      final batches = await _firestore.collection(FirestorePaths.batches(institutionId, cartId, assignmentId)).get();
+      final writeBatch = _firestore.batch();
+      for (final doc in batches.docs) {
+        writeBatch.delete(doc.reference);
+      }
+      writeBatch.delete(_assignmentRef(institutionId, cartId, assignmentId));
+      await writeBatch.commit();
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
     return _firestore
         .collection(FirestorePaths.batches(institutionId, cartId, assignmentId))

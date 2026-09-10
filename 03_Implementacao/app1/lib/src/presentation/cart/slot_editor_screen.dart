@@ -14,6 +14,12 @@ import '../../domain/entities/slot.dart';
 import 'assignment_dialog.dart';
 import 'bump_layout_version.dart';
 
+/// Minimum touch-target side, in logical pixels, for a slot cell — below the
+/// WCAG 2.1 (2.5.5) / Material recommended 44-48dp minimum, a densely
+/// configured drawer would otherwise shrink cells proportionally to fit the
+/// available space with no floor, making them unreliably tappable.
+const double _minSlotCellExtent = 48;
+
 /// Edits the rectangular slot layout of one [CartDrawer] (spec sections
 /// 36-37): every cell starts as its own 1x1 slot; adjacent slots whose
 /// combined footprint is itself a rectangle can be merged into one bigger
@@ -34,21 +40,55 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       .drawers
       .watchSlots(widget.cart.institutionId, widget.cart.id, widget.drawer.id)
       .first;
-  late final Future<Membership?> _myMembership =
-      AppServicesScope.of(context).institutions.getMyMembership(widget.cart.institutionId);
+  late final Future<Membership?> _myMembership = AppServicesScope.of(context)
+      .institutions
+      .getMyMembership(widget.cart.institutionId);
   late final Stream<List<CartProductAssignment>> _assignments =
-      AppServicesScope.of(context).inventory.watchAssignments(widget.cart.institutionId, widget.cart.id);
-  late final Future<List<Product>> _products =
-      AppServicesScope.of(context).products.watchProducts(widget.cart.institutionId).first;
+      AppServicesScope.of(context).inventory
+          .watchAssignments(widget.cart.institutionId, widget.cart.id);
+  late final Future<List<Product>> _products = AppServicesScope.of(context)
+      .products
+      .watchProducts(widget.cart.institutionId)
+      .first;
 
   List<Slot>? _slots;
   Set<String> _selectedIds = {};
   bool _saving = false;
 
+  /// Every slot id that currently exists anywhere in this cart, across every
+  /// drawer — used to detect an assignment whose `slotId` was left behind by
+  /// a merge/split (spec sections 36-37): the id it points to no longer
+  /// exists in any drawer, not just this one, since ids are only unique
+  /// within their own drawer's grid.
+  late Future<Set<String>> _allCartSlotIds = _loadAllCartSlotIds();
+
+  Future<Set<String>> _loadAllCartSlotIds() async {
+    final services = AppServicesScope.of(context);
+    final drawers = await services.drawers
+        .watchDrawers(widget.cart.institutionId, widget.cart.id)
+        .first;
+    final ids = <String>{};
+    for (final drawer in drawers) {
+      final slots = await services.drawers
+          .watchSlots(widget.cart.institutionId, widget.cart.id, drawer.id)
+          .first;
+      ids.addAll(slots.map((s) => s.id));
+    }
+    return ids;
+  }
+
+  void _refreshAllCartSlotIds() {
+    final next = _loadAllCartSlotIds();
+    setState(() {
+      _allCartSlotIds = next;
+    });
+  }
+
   List<Slot> _unitGrid() => [
-        for (var r = 0; r < widget.drawer.rows; r++)
-          for (var c = 0; c < widget.drawer.columns; c++) Slot(id: 'r${r}c$c', drawerId: widget.drawer.id, row: r, column: c),
-      ];
+    for (var r = 0; r < widget.drawer.rows; r++)
+      for (var c = 0; c < widget.drawer.columns; c++)
+        Slot(id: 'r${r}c$c', drawerId: widget.drawer.id, row: r, column: c),
+  ];
 
   bool _canManage(Membership? membership) {
     if (membership == null || !membership.isActive) return false;
@@ -64,7 +104,10 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     final minCol = selected.map((s) => s.column).reduce(min);
     final maxCol = selected.map((s) => s.column + s.columnSpan).reduce(max);
     final rectangleArea = (maxRow - minRow) * (maxCol - minCol);
-    final selectedArea = selected.fold<int>(0, (sum, s) => sum + s.rowSpan * s.columnSpan);
+    final selectedArea = selected.fold<int>(
+      0,
+      (sum, s) => sum + s.rowSpan * s.columnSpan,
+    );
     return rectangleArea == selectedArea;
   }
 
@@ -81,7 +124,9 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     final selected = slots.where((s) => _selectedIds.contains(s.id)).toList();
     if (!_selectionFormsRectangle(selected)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A seleção tem de formar um retângulo sem espaços.')),
+        const SnackBar(
+          content: Text('A seleção tem de formar um retângulo sem espaços.'),
+        ),
       );
       return;
     }
@@ -98,10 +143,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       columnSpan: maxCol - minCol,
     );
     setState(() {
-      _slots = [
-        ...slots.where((s) => !_selectedIds.contains(s.id)),
-        merged,
-      ];
+      _slots = [...slots.where((s) => !_selectedIds.contains(s.id)), merged];
       _selectedIds = {merged.id};
     });
   }
@@ -111,13 +153,15 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     final unitCells = [
       for (var r = 0; r < slot.rowSpan; r++)
         for (var c = 0; c < slot.columnSpan; c++)
-          Slot(id: 'r${slot.row + r}c${slot.column + c}', drawerId: widget.drawer.id, row: slot.row + r, column: slot.column + c),
+          Slot(
+            id: 'r${slot.row + r}c${slot.column + c}',
+            drawerId: widget.drawer.id,
+            row: slot.row + r,
+            column: slot.column + c,
+          ),
     ];
     setState(() {
-      _slots = [
-        ..._slots!.where((s) => s.id != slot.id),
-        ...unitCells,
-      ];
+      _slots = [..._slots!.where((s) => s.id != slot.id), ...unitCells];
       _selectedIds = {};
     });
   }
@@ -126,17 +170,98 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     setState(() => _saving = true);
     final services = AppServicesScope.of(context);
     try {
-      await services.drawers.replaceSlots(widget.cart.institutionId, widget.cart.id, widget.drawer.id, _slots!);
+      await services.drawers.replaceSlots(
+        widget.cart.institutionId,
+        widget.cart.id,
+        widget.drawer.id,
+        _slots!,
+      );
       await bumpCartLayoutVersion(services, widget.cart);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gaveta guardada.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Gaveta guardada.')));
+      _refreshAllCartSlotIds();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível guardar a gaveta. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível guardar a gaveta. Tente novamente.'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _reassignOrphan(
+    CartProductAssignment assignment,
+    Slot newSlot,
+  ) async {
+    final services = AppServicesScope.of(context);
+    try {
+      await services.inventory.reassignSlot(
+        institutionId: widget.cart.institutionId,
+        cartId: widget.cart.id,
+        assignmentId: assignment.id,
+        newSlotId: newSlot.id,
+        actorUid: services.auth.currentUser!.uid,
+      );
+      if (!mounted) return;
+      _refreshAllCartSlotIds();
+    } on RepositoryFailure catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível reatribuir o slot. Tente novamente.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteOrphan(
+    BuildContext context,
+    CartProductAssignment assignment,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover atribuição'),
+        content: const Text(
+          'Esta atribuição aponta para um slot que já não existe nesta gaveta. '
+          'Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. '
+          'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      await services.inventory.deleteAssignment(
+        institutionId: widget.cart.institutionId,
+        cartId: widget.cart.id,
+        assignmentId: assignment.id,
+      );
+      if (!mounted) return;
+      _refreshAllCartSlotIds();
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível remover a atribuição. Tente novamente.',
+          ),
+        ),
+      );
     }
   }
 
@@ -149,11 +274,17 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
-              if (!_canManage(snapshot.data) || _slots == null) return const SizedBox.shrink();
+              if (!_canManage(snapshot.data) || _slots == null) {
+                return const SizedBox.shrink();
+              }
               return IconButton(
                 tooltip: 'Guardar',
                 icon: _saving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.save_outlined),
                 onPressed: _saving ? null : () => _save(context),
               );
@@ -172,7 +303,9 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Não foi possível carregar os slots: ${snapshot.error}'),
+                  child: Text(
+                    'Não foi possível carregar os slots: ${snapshot.error}',
+                  ),
                 ),
               );
             }
@@ -185,7 +318,12 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     );
   }
 
-  Future<void> _openAssignment(Slot slot, CartProductAssignment? assignment, List<Product> products, bool canManage) {
+  Future<void> _openAssignment(
+    Slot slot,
+    CartProductAssignment? assignment,
+    List<Product> products,
+    bool canManage,
+  ) {
     return showAssignmentDialog(
       context,
       institutionId: widget.cart.institutionId,
@@ -199,7 +337,9 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
 
   Widget _buildEditor(List<Slot> slots) {
     final selected = slots.where((s) => _selectedIds.contains(s.id)).toList();
-    final canSplit = selected.length == 1 && (selected.single.rowSpan > 1 || selected.single.columnSpan > 1);
+    final canSplit =
+        selected.length == 1 &&
+        (selected.single.rowSpan > 1 || selected.single.columnSpan > 1);
     return FutureBuilder<Membership?>(
       future: _myMembership,
       builder: (context, membershipSnapshot) {
@@ -208,77 +348,159 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
           stream: _assignments,
           builder: (context, assignmentsSnapshot) {
             final assignmentsBySlot = {
-              for (final assignment in assignmentsSnapshot.data ?? const <CartProductAssignment>[])
+              for (final assignment
+                  in assignmentsSnapshot.data ??
+                      const <CartProductAssignment>[])
                 assignment.slotId: assignment,
             };
+            final currentSlotIds = slots.map((s) => s.id).toSet();
+            final emptySlots = slots
+                .where((s) => assignmentsBySlot[s.id] == null)
+                .toList();
             return FutureBuilder<List<Product>>(
               future: _products,
               builder: (context, productsSnapshot) {
                 final products = productsSnapshot.data ?? const <Product>[];
-                return Column(
-                  children: [
-                    if (canManage)
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            FilledButton.icon(
-                              onPressed: _selectedIds.length >= 2 ? _merge : null,
-                              icon: const Icon(Icons.call_merge),
-                              label: const Text('Juntar'),
-                            ),
-                            FilledButton.icon(
-                              onPressed: canSplit ? _split : null,
-                              icon: const Icon(Icons.call_split),
-                              label: const Text('Dividir'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // The drawer's whole footprint always fills the
-                            // available space, split proportionally by
-                            // rows/columns — a single slot takes the entire
-                            // area, two slots split it in half, and so on,
-                            // matching a real physical drawer's layout rather
-                            // than a fixed-size scrollable grid.
-                            final cellWidth = constraints.maxWidth / widget.drawer.columns;
-                            final cellHeight = constraints.maxHeight / widget.drawer.rows;
-                            return Stack(
+                return FutureBuilder<Set<String>>(
+                  future: _allCartSlotIds,
+                  builder: (context, allSlotIdsSnapshot) {
+                    final allCartSlotIds = allSlotIdsSnapshot.data;
+                    // Orphaned strictly within this drawer's own slots: the
+                    // assignment's slotId isn't one of this drawer's current
+                    // cells *and* doesn't exist in any other drawer of the
+                    // cart either, so it can't legitimately belong elsewhere.
+                    final orphaned = allCartSlotIds == null
+                        ? const <CartProductAssignment>[]
+                        : (assignmentsSnapshot.data ??
+                                  const <CartProductAssignment>[])
+                              .where(
+                                (a) =>
+                                    !currentSlotIds.contains(a.slotId) &&
+                                    !allCartSlotIds.contains(a.slotId),
+                              )
+                              .toList();
+                    return Column(
+                      children: [
+                        if (canManage && orphaned.isNotEmpty)
+                          _OrphanedAssignmentsBanner(
+                            orphaned: orphaned,
+                            products: products,
+                            emptySlots: emptySlots,
+                            onReassign: _reassignOrphan,
+                            onDelete: (assignment) =>
+                                _deleteOrphan(context, assignment),
+                          ),
+                        if (canManage)
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Wrap(
+                              spacing: 8,
                               children: [
-                                for (final slot in slots)
-                                  Positioned(
-                                    left: slot.column * cellWidth,
-                                    top: slot.row * cellHeight,
-                                    width: slot.columnSpan * cellWidth,
-                                    height: slot.rowSpan * cellHeight,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2),
-                                      child: _SlotCell(
-                                        slot: slot,
-                                        assignment: assignmentsBySlot[slot.id],
-                                        product: assignmentsBySlot[slot.id] == null
-                                            ? null
-                                            : _productFor(products, assignmentsBySlot[slot.id]!.productId),
-                                        selected: _selectedIds.contains(slot.id),
-                                        onTap: canManage ? () => _toggleSelect(slot.id) : null,
-                                        onLongPress: () =>
-                                            _openAssignment(slot, assignmentsBySlot[slot.id], products, canManage),
-                                      ),
-                                    ),
-                                  ),
+                                FilledButton.icon(
+                                  onPressed: _selectedIds.length >= 2
+                                      ? _merge
+                                      : null,
+                                  icon: const Icon(Icons.call_merge),
+                                  label: const Text('Juntar'),
+                                ),
+                                FilledButton.icon(
+                                  onPressed: canSplit ? _split : null,
+                                  icon: const Icon(Icons.call_split),
+                                  label: const Text('Dividir'),
+                                ),
                               ],
-                            );
-                          },
+                            ),
+                          ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // The drawer's whole footprint fills the
+                                // available space, split proportionally by
+                                // rows/columns — a single slot takes the
+                                // entire area, two slots split it in half,
+                                // and so on, matching a real physical
+                                // drawer's layout — but never below
+                                // `_minSlotCellExtent`: a dense drawer scrolls
+                                // instead of shrinking cells past a reliably
+                                // tappable size.
+                                final idealCellWidth =
+                                    constraints.maxWidth /
+                                    widget.drawer.columns;
+                                final idealCellHeight =
+                                    constraints.maxHeight / widget.drawer.rows;
+                                final cellWidth = max(
+                                  idealCellWidth,
+                                  _minSlotCellExtent,
+                                );
+                                final cellHeight = max(
+                                  idealCellHeight,
+                                  _minSlotCellExtent,
+                                );
+                                final grid = SizedBox(
+                                  width: cellWidth * widget.drawer.columns,
+                                  height: cellHeight * widget.drawer.rows,
+                                  child: Stack(
+                                    children: [
+                                      for (final slot in slots)
+                                        Positioned(
+                                          left: slot.column * cellWidth,
+                                          top: slot.row * cellHeight,
+                                          width: slot.columnSpan * cellWidth,
+                                          height: slot.rowSpan * cellHeight,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(2),
+                                            child: _SlotCell(
+                                              slot: slot,
+                                              assignment:
+                                                  assignmentsBySlot[slot.id],
+                                              product:
+                                                  assignmentsBySlot[slot.id] ==
+                                                      null
+                                                  ? null
+                                                  : _productFor(
+                                                      products,
+                                                      assignmentsBySlot[slot
+                                                              .id]!
+                                                          .productId,
+                                                    ),
+                                              selected: _selectedIds.contains(
+                                                slot.id,
+                                              ),
+                                              onTap: canManage
+                                                  ? () => _toggleSelect(slot.id)
+                                                  : null,
+                                              onLongPress: () =>
+                                                  _openAssignment(
+                                                    slot,
+                                                    assignmentsBySlot[slot.id],
+                                                    products,
+                                                    canManage,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                                if (idealCellWidth >= _minSlotCellExtent &&
+                                    idealCellHeight >= _minSlotCellExtent) {
+                                  return grid;
+                                }
+                                return Scrollbar(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: SingleChildScrollView(child: grid),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -294,6 +516,86 @@ Product? _productFor(List<Product> products, String productId) {
     if (product.id == productId) return product;
   }
   return null;
+}
+
+/// Warns a manager about assignments left behind by a past merge/split whose
+/// slot no longer exists anywhere in the cart, and lets them either move the
+/// assignment onto a currently-empty slot in this drawer or delete it.
+class _OrphanedAssignmentsBanner extends StatelessWidget {
+  const _OrphanedAssignmentsBanner({
+    required this.orphaned,
+    required this.products,
+    required this.emptySlots,
+    required this.onReassign,
+    required this.onDelete,
+  });
+
+  final List<CartProductAssignment> orphaned;
+  final List<Product> products;
+  final List<Slot> emptySlots;
+  final void Function(CartProductAssignment assignment, Slot newSlot)
+  onReassign;
+  final void Function(CartProductAssignment assignment) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.errorContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Atribuições sem slot válido (de uma junção/divisão anterior):',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onErrorContainer,
+            ),
+          ),
+          for (final assignment in orphaned)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  Text(
+                    _productFor(products, assignment.productId)?.name ??
+                        'Produto removido',
+                    style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                  ),
+                  if (emptySlots.isNotEmpty)
+                    PopupMenuButton<Slot>(
+                      tooltip: 'Reatribuir a um slot livre',
+                      onSelected: (slot) => onReassign(assignment, slot),
+                      itemBuilder: (context) => [
+                        for (final slot in emptySlots)
+                          PopupMenuItem(
+                            value: slot,
+                            child: Text(
+                              slot.label ??
+                                  '${slot.row + 1},${slot.column + 1}',
+                            ),
+                          ),
+                      ],
+                      child: Chip(
+                        avatar: const Icon(Icons.swap_horiz, size: 18),
+                        label: const Text('Reatribuir'),
+                      ),
+                    ),
+                  ActionChip(
+                    avatar: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Remover'),
+                    onPressed: () => onDelete(assignment),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SlotCell extends StatelessWidget {
@@ -326,11 +628,15 @@ class _SlotCell extends StatelessWidget {
           color: selected
               ? theme.colorScheme.primaryContainer
               : assignment == null
-                  ? theme.colorScheme.surfaceContainerHighest
-                  : theme.colorScheme.secondaryContainer,
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.secondaryContainer,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
-            side: BorderSide(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
+            side: BorderSide(
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant,
+            ),
           ),
           child: InkWell(
             onTap: onTap,

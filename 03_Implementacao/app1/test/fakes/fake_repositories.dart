@@ -353,6 +353,42 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
   }
 
   @override
+  Future<void> reassignSlot({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+    required String newSlotId,
+    required String actorUid,
+  }) async {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    final current = assignments[index];
+    assignments[index] = CartProductAssignment(
+      id: current.id,
+      cartId: current.cartId,
+      slotId: newSlotId,
+      productId: current.productId,
+      currentQuantity: current.currentQuantity,
+      targetQuantity: current.targetQuantity,
+      minimumQuantity: current.minimumQuantity,
+      earliestKnownExpiry: current.earliestKnownExpiry,
+      status: current.status,
+    );
+    _emit();
+  }
+
+  @override
+  Future<void> deleteAssignment({
+    required String institutionId,
+    required String cartId,
+    required String assignmentId,
+  }) async {
+    assignments.removeWhere((a) => a.id == assignmentId);
+    batchesByAssignment.remove(assignmentId);
+    _emit();
+  }
+
+  @override
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
     return Stream.value(List.unmodifiable(batchesByAssignment[assignmentId] ?? const []));
   }
