@@ -27,6 +27,13 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
   late final Future<List<Product>> _products =
       AppServicesScope.of(context).products.watchProducts(widget.cart.institutionId).first;
 
+  // Cached once: the search field calls `setState` on every keystroke, and
+  // a fresh `watchAssignments(...)` call would otherwise re-subscribe the
+  // Firestore listener on every keystroke instead of just re-filtering
+  // already-received assignments.
+  late final Stream<List<CartProductAssignment>> _assignmentsStream =
+      AppServicesScope.of(context).inventory.watchAssignments(widget.cart.institutionId, widget.cart.id);
+
   final _controller = TextEditingController();
   String _query = '';
 
@@ -45,7 +52,6 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final services = AppServicesScope.of(context);
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -57,7 +63,7 @@ class _ProductSearchScreenState extends State<ProductSearchScreen> {
         ),
       ),
       body: StreamBuilder<List<CartProductAssignment>>(
-        stream: services.inventory.watchAssignments(widget.cart.institutionId, widget.cart.id),
+        stream: _assignmentsStream,
         builder: (context, assignmentsSnapshot) {
           return FutureBuilder<List<Product>>(
             future: _products,

@@ -26,7 +26,11 @@ class CartQrCodeScreen extends StatelessWidget {
             children: [
               Text(cart.name, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
               const SizedBox(height: 24),
-              QrImageView(data: payload, size: 240),
+              Semantics(
+                label: 'Código QR do carro ${cart.name}',
+                image: true,
+                child: QrImageView(data: payload, size: 240),
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Digitalize este código para abrir diretamente este carro.',

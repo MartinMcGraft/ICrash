@@ -319,46 +319,50 @@ class _SlotCell extends StatelessWidget {
     final assignment = this.assignment;
     return Tooltip(
       message: 'Linha ${slot.row + 1}, coluna ${slot.column + 1}',
-      child: Material(
-        color: selected
-            ? theme.colorScheme.primaryContainer
-            : assignment == null
-                ? theme.colorScheme.surfaceContainerHighest
-                : theme.colorScheme.secondaryContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(4),
-          child: Center(
-            child: assignment == null
-                ? Text(
-                    slot.label ?? '${slot.row + 1},${slot.column + 1}',
-                    style: theme.textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          product?.name ?? 'Produto removido',
-                          style: theme.textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '${assignment.currentQuantity}/${assignment.targetQuantity}',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                      ],
+      child: Semantics(
+        selected: selected,
+        button: true,
+        child: Material(
+          color: selected
+              ? theme.colorScheme.primaryContainer
+              : assignment == null
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : theme.colorScheme.secondaryContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+            side: BorderSide(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(4),
+            child: Center(
+              child: assignment == null
+                  ? Text(
+                      slot.label ?? '${slot.row + 1},${slot.column + 1}',
+                      style: theme.textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            product?.name ?? 'Produto removido',
+                            style: theme.textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '${assignment.currentQuantity}/${assignment.targetQuantity}',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),

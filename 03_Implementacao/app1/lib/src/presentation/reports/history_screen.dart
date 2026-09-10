@@ -27,6 +27,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
   late final Future<List<Product>> _products =
       AppServicesScope.of(context).products.watchProducts(widget.institutionId).first;
 
+  // Cached once: the type-filter chips call `setState` on every tap, and a
+  // fresh `watchRecentEvents(...)` call would otherwise re-subscribe the
+  // Firestore listener on every filter change instead of just re-filtering
+  // already-received events.
+  late final Stream<List<UsageEvent>> _eventsStream =
+      AppServicesScope.of(context).usage.watchRecentEvents(widget.institutionId, limit: 100);
+
   UsageEventType? _typeFilter;
 
   String _productName(List<Product> products, String productId) {
@@ -107,7 +114,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final services = AppServicesScope.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Histórico')),
       body: Column(
@@ -133,7 +139,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<UsageEvent>>(
-              stream: services.usage.watchRecentEvents(widget.institutionId, limit: 100),
+              stream: _eventsStream,
               builder: (context, eventsSnapshot) {
                 if (eventsSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

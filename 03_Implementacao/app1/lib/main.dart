@@ -3,6 +3,7 @@ import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/data/firebase/firebase_bootstrap.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/presentation/auth/login_screen.dart';
+import 'package:icrash_app/src/presentation/common/connectivity_banner.dart';
 import 'package:icrash_app/src/presentation/institution/institution_selection_screen.dart';
 
 Future<void> main() async {
@@ -23,6 +24,10 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'I-Crash',
         theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
+        // `builder`, not `home`, so the banner persists across every pushed
+        // route (Navigator.push replaces `home`'s content entirely, but
+        // `builder` wraps the whole navigator).
+        builder: (context, child) => ConnectivityBanner(child: child!),
         home: const _AuthGate(),
       ),
     );

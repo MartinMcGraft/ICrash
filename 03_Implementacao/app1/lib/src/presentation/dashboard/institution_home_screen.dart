@@ -46,6 +46,23 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   late final Future<List<Product>> _products =
       AppServicesScope.of(context).products.watchProducts(widget.institution.id).first;
 
+  // Cached once rather than created inline in `build()`: the search field
+  // and the type-ahead filter below both call `setState` on every keystroke,
+  // and a fresh `watchX(...)` call returns a new Stream each time, which
+  // would otherwise tear down and re-subscribe every Firestore listener on
+  // this screen on every keystroke instead of just re-filtering already-
+  // received data.
+  late final Stream<List<Cart>> _cartsStream = AppServicesScope.of(context).carts.watchAccessibleCarts(
+        widget.institution.id,
+      );
+  late final Stream<List<CartProductAssignment>> _allAssignmentsStream = AppServicesScope.of(context)
+      .inventory
+      .watchAllAssignments(widget.institution.id);
+  late final Stream<List<UsageEvent>> _recentEventsStream = AppServicesScope.of(context).usage.watchRecentEvents(
+        widget.institution.id,
+        limit: 5,
+      );
+
   String _searchQuery = '';
 
   bool _canManageCarts(Membership? membership) {
@@ -163,7 +180,7 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
         ],
       ),
       body: StreamBuilder<List<Cart>>(
-        stream: services.carts.watchAccessibleCarts(widget.institution.id),
+        stream: _cartsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -201,14 +218,14 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                 builder: (context, membershipSnapshot) {
                   if (!_canManageCarts(membershipSnapshot.data)) return const SizedBox.shrink();
                   return _CrossCartAlerts(
-                    institutionId: widget.institution.id,
+                    assignmentsStream: _allAssignmentsStream,
                     expiryWarningDays: widget.institution.expiryWarningDays,
                     carts: carts,
                     products: _products,
                   );
                 },
               ),
-              _RecentActivity(institutionId: widget.institution.id, products: _products),
+              _RecentActivity(eventsStream: _recentEventsStream, products: _products),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
@@ -303,13 +320,13 @@ class _CartStatusSummary extends StatelessWidget {
 /// fetched again.
 class _CrossCartAlerts extends StatelessWidget {
   const _CrossCartAlerts({
-    required this.institutionId,
+    required this.assignmentsStream,
     required this.expiryWarningDays,
     required this.carts,
     required this.products,
   });
 
-  final String institutionId;
+  final Stream<List<CartProductAssignment>> assignmentsStream;
   final int expiryWarningDays;
   final List<Cart> carts;
   final Future<List<Product>> products;
@@ -330,9 +347,8 @@ class _CrossCartAlerts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final services = AppServicesScope.of(context);
     return StreamBuilder<List<CartProductAssignment>>(
-      stream: services.inventory.watchAllAssignments(institutionId),
+      stream: assignmentsStream,
       builder: (context, assignmentsSnapshot) {
         final assignments = assignmentsSnapshot.data ?? const <CartProductAssignment>[];
         final now = DateTime.now();
@@ -383,9 +399,9 @@ String _assignmentAlertLabel(AssignmentAlert alert) => switch (alert) {
 /// a per-cart or cross-cart query: [UsageRepository.watchRecentEvents] is
 /// already scoped to the whole institution.
 class _RecentActivity extends StatelessWidget {
-  const _RecentActivity({required this.institutionId, required this.products});
+  const _RecentActivity({required this.eventsStream, required this.products});
 
-  final String institutionId;
+  final Stream<List<UsageEvent>> eventsStream;
   final Future<List<Product>> products;
 
   String _productName(List<Product> products, String productId) {
@@ -397,9 +413,8 @@ class _RecentActivity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final services = AppServicesScope.of(context);
     return StreamBuilder<List<UsageEvent>>(
-      stream: services.usage.watchRecentEvents(institutionId, limit: 5),
+      stream: eventsStream,
       builder: (context, eventsSnapshot) {
         final events = eventsSnapshot.data ?? const <UsageEvent>[];
         if (events.isEmpty) return const SizedBox.shrink();
