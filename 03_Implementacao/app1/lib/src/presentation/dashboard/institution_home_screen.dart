@@ -16,6 +16,7 @@ import '../cart/cart_status_label.dart';
 import '../cart/create_cart_dialog.dart';
 import '../members/members_screen.dart';
 import '../products/products_screen.dart';
+import '../reports/history_screen.dart';
 
 /// Per-institution home (spec section 49): a small dashboard — cart-status
 /// counts and recent activity — above the accessible-cart list, with a
@@ -77,6 +78,13 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       appBar: AppBar(
         title: Text(widget.institution.name),
         actions: [
+          IconButton(
+            tooltip: 'Histórico',
+            icon: const Icon(Icons.receipt_long_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => HistoryScreen(institutionId: widget.institution.id)),
+            ),
+          ),
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {

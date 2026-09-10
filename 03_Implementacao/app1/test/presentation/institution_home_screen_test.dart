@@ -134,6 +134,16 @@ void main() {
     expect(find.text('Carro Adultos'), findsNothing);
   });
 
+  testWidgets('shows the history action for any user', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      carts: FakeCartRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Histórico'), findsOneWidget);
+  });
+
   testWidgets('shows recent activity from usage events', (tester) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
     const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
