@@ -2,6 +2,10 @@
 
 Updated: 2026-09-10
 
+## Phase 2, Web/Windows build re-validation
+
+`flutter build web --no-pub`: passed (60.9s), including the Wasm dry run. `flutter build windows --no-pub`: passed (170.9s), producing `build/windows/x64/runner/Release/app1.exe`; launched it directly and confirmed it started and stayed running (no crash) with the new packages linked in — `mobile_scanner`, `camera`, `qr_flutter`, `connectivity_plus` — none of which have a real Windows implementation (`mobile_scanner`/`camera` have none at all; `isCameraScanningSupported` correctly gates their UI entry points off on this platform, which is exactly what HID scanning exists for). Confirms nothing added across this whole 10-step batch broke either target at the build level. No further live click-through was done beyond the launch-and-stay-running check — a fuller Windows UI walkthrough (HID scanning end-to-end, QR display, connectivity banner) remains open, same as it always has been for this platform (see `docs/AI_HANDOFF.md`'s "Known platform limitations").
+
 ## Phase 2, accessibility/performance/offline-reconnection review — Android emulator live validation
 
 Full walkthrough on `ICrash_API_36`, signed in as the seeded `institutionAdmin`, covering workstream J's accessibility review, performance review, and offline/reconnection UX (see `docs/IMPLEMENTATION_STATUS.md` for what each pass found and fixed):

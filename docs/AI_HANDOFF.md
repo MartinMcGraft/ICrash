@@ -19,9 +19,15 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 2. **Internal QR cart navigation** (spec section 33) — `InternalQrScannerService` (previously a contract only) now has a camera implementation, plus screens to display a cart's own QR code and to scan one to jump straight to that cart.
 3. **Cross-cart dashboard alerts** (spec section 49) — expiring/expired products and stock below its minimum, across every cart in an institution at once, manager+ only (a Firestore Rules constraint, not a preference — see `docs/FIREBASE_MODEL.md`).
 
-Also done: CSV export and a per-product summary on the activity history screen (steps 4-5), and workstream J's accessibility review, performance review, and offline/reconnection UX (steps 6-8). All eight validated live end-to-end on the Android emulator, zero new app bugs found (one debug-mode visual artifact was found and fixed during step 8's own validation — see below, not a separate bug). `flutter test` is still 120/120 (no new tests needed for 6-8, all three are refactors/additions with unchanged or purely additive behavior), Firestore Rules tests 27/27. Steps 9-10 (release configuration docs, Web/Windows re-validation) remain — see "Exact next implementation task" below for what's left and the full remaining punch-list once it's done.
+Also done: CSV export and a per-product summary on the activity history screen (steps 4-5), workstream J's accessibility review, performance review, and offline/reconnection UX (steps 6-8), a documentation-only release checklist (step 9), and Web/Windows build re-validation (step 10). **All 10 steps of this batch are now complete.** All eight UI-facing steps validated live end-to-end on the Android emulator, zero new app bugs found (one debug-mode visual artifact was found and fixed during step 8's own validation — not a separate bug). `flutter test` is still 120/120, Firestore Rules tests 27/27, `flutter build web`/`flutter build windows` both pass. See the full remaining punch-list at the end of this file for what's genuinely still open beyond this batch.
 
-### Accessibility / performance / offline-reconnection review sub-phase (most recent)
+### Release checklist / Web-Windows build re-validation sub-phase (most recent)
+
+- New `docs/RELEASE_CHECKLIST.md` (step 9): documents what's already correct (package identifiers on every platform, environment separation via `ICRASH_BACKEND`), what Android release signing still needs (currently signs with the debug key — needs a real upload keystore + `key.properties`, both **human action required**, before the `build.gradle` wiring an assistant could safely do), what iOS/macOS signing needs (Apple Developer account, unverifiable from Windows), Windows/store-listing notes, and the versioning scheme (`pubspec.yaml`'s single `version:` field drives every platform). No secrets were generated, requested, or handled — this file is pure documentation, as the task requires.
+- Step 10: `flutter build web --no-pub` and `flutter build windows --no-pub` both passed; the Windows `.exe` was launched directly and confirmed to start and keep running with no crash, with `mobile_scanner`/`camera`/`qr_flutter`/`connectivity_plus` all linked in (the first two have no real Windows implementation at all — `isCameraScanningSupported` already gates their UI off on this platform, which is exactly why HID scanning exists). Confirms nothing added across this whole 10-step batch broke either target at the build level.
+- Full detail: `docs/TEST_STATUS.md`'s "Web/Windows build re-validation" section.
+
+### Accessibility / performance / offline-reconnection review sub-phase
 
 - **Accessibility** (step 6): audited every screen for missing `tooltip`/`Semantics`, touch-target sizing, and color-only status signaling. Found the codebase already in reasonable shape (every `IconButton` already has a `tooltip`; every status/alert `Chip` already pairs color with text). Two gaps fixed: `SlotEditorScreen`'s `_SlotCell` grid cells relied on color alone for merge-selection state — wrapped in `Semantics(selected: selected, button: true, ...)`. `CartQrCodeScreen`'s QR image had no semantic label — added `Semantics(label: 'Código QR do carro <nome>', image: true, ...)`. One gap deliberately left open: the slot grid's cells can be smaller than the 48×48dp recommended touch target on a densely-configured drawer — this falls directly out of the "grid always fills the screen, mirroring a physical drawer" design decision, revisit only if real usability testing flags it.
 - **Performance** (step 7): found a real, reproducible issue — `InstitutionHomeScreen`, `HistoryScreen`, and `ProductSearchScreen` each built a `StreamBuilder`'s `stream:` by calling `services.x.watchY(...)` **inline inside `build()`**, while also having local `setState`-triggering UI state (search fields, filter chips). Since each call returns a new `Stream` instance, `StreamBuilder` re-subscribed the underlying Firestore listener on every keystroke/tap instead of just re-filtering already-received data. Fixed by hoisting each stream into a `late final` field, the same caching pattern already used for one-shot `Future`s throughout this codebase. `MembersScreen`/`ProductsScreen`/`CartDetailScreen` were checked and confirmed not to need the same fix (no local `setState`-triggering state). No new tests — pure caching refactor, unchanged behavior, confirmed by the full suite passing unchanged before and after.
@@ -108,7 +114,12 @@ Also done: CSV export and a per-product summary on the activity history screen (
 
 ## Exact files changed this session
 
-Accessibility / performance / offline-reconnection review (this sub-phase, most recent):
+Release checklist / Web-Windows build re-validation (this sub-phase, most recent):
+- New: `docs/RELEASE_CHECKLIST.md`.
+- No app code changes — step 10 was build validation only, nothing needed fixing.
+- `docs/AI_HANDOFF.md`, `docs/TEST_STATUS.md` — updated.
+
+Accessibility / performance / offline-reconnection review (prior sub-phase):
 - New: `lib/src/presentation/common/connectivity_banner.dart` (`ConnectivityBanner`).
 - Modified: `lib/main.dart` (`MaterialApp.builder` wraps `ConnectivityBanner` around every route).
 - Modified: `lib/src/presentation/cart/slot_editor_screen.dart` (`Semantics` on `_SlotCell`), `lib/src/presentation/scanning/cart_qr_code_screen.dart` (`Semantics` on the QR image).
@@ -311,7 +322,7 @@ None known to remain. The four found in the cart-list sub-phase (MainActivity pa
 
 ## Known platform limitations
 
-Physical-camera QR/GS1 and iOS/macOS (cannot validate from Windows) remain unchanged. Web/Windows have not been re-verified since early in this session's chain of work — that's step 10, still pending; do not assume the packages added since then (`mobile_scanner`, `camera`, `qr_flutter`, `connectivity_plus`) build cleanly for those targets until it's done.
+Physical-camera QR/GS1 and iOS/macOS (cannot validate from Windows) remain unchanged. Web and Windows **build** re-validation is done (step 10 — both `flutter build web`/`flutter build windows` pass with every package added this batch, and the Windows `.exe` launches and stays running); a full Web/Windows **UI** click-through walkthrough (HID scanning end-to-end, QR display, connectivity banner, etc.) has still never been done on either platform — only the Android emulator has full live UI validation throughout this project.
 
 ## Open business decisions
 
@@ -351,14 +362,37 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 4. **CSV export of the activity history** — done. `reports/history_csv_export.dart`'s `buildHistoryCsv`, copied to the clipboard via a dialog (`Clipboard.setData` + `SelectableText`), deliberately not a real file download, to avoid a `path_provider`/`share_plus` dependency for a prototype-phase feature.
 5. **Reporting aggregates** — done, scoped to a per-product summary. `reports/history_summary.dart`'s `summarizeByProduct` groups the same filtered `UsageEvent` list by `productId` into consumed/replenished/other-adjustment totals, shown via a new "Ver resumo" dialog on `HistoryScreen`. Per-cart/per-period aggregates remain out of scope.
 
-Steps 6-8 are done — see the sub-phase above. **Steps 9-10, remaining:**
-
-9. **Release configuration groundwork** — document (not perform, since it needs real secrets this environment must never handle) the release-signing/environment-separation checklist for workstream J (spec section 68); package identifiers are already correct (`pt.icrash.app`) from Phase 1.
-10. **Web/Windows build re-validation** — `flutter build web`/`flutter build windows`, confirming the scanning packages added this batch (`mobile_scanner`, `camera`, `qr_flutter`, `connectivity_plus`, etc.) don't break those targets; these haven't been re-run since early in this session's chain of work.
-
-After step 10, report back to the user everything genuinely still open: the rest of spec section 51 (aggregates beyond whatever step 5 covers, if scoped down further), cross-cart alerts being manager+ only (step 3's Rules-forced scope decision), all of `docs/OPEN_DECISIONS.md`'s clinical questions, and anything from workstream J not completed by steps 6-10.
+**All 10 steps of this batch are complete** — see the sub-phase sections above for 6-10. There is no more work queued from this specific batch; the next task is whatever the user asks for next, informed by the full remaining punch-list below.
 
 Whichever step is being worked, follow the same pattern established throughout: check `lib/src/domain/repositories/`/`lib/src/services/` first for what already exists, fakes go in `test/fakes/`, screens go in `lib/src/presentation/<area>/`, and validate live on the Android emulator before calling it done — not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap since widget tests don't catch that — see the cart-list sub-phase's bug above.
+
+## Full remaining punch-list (everything still genuinely open, as of this batch's completion)
+
+Compiled at the end of the 10-step batch, as the user explicitly asked for. Nothing here is a bug — it's scope deliberately deferred, a Rules-forced constraint, or a decision this assistant cannot make on its own.
+
+**Reporting (spec section 51), scoped down deliberately:**
+- PDF export was never built — CSV export (clipboard-based) and a per-product summary are the only two reporting features shipped.
+- Per-cart and per-period (e.g. weekly/monthly) aggregates were never built — the per-product summary is institution-wide over whatever the current type filter shows, nothing more granular.
+
+**Cross-cart dashboard alerts (spec section 49) — manager+ only, not a preference:**
+- A normal user (cart-responsible but not a manager) does not see the institution-wide "Alertas" section — only their own responsible carts' assignments, through the ordinary per-cart view. This is a direct, documented consequence of a Firestore Rules/collectionGroup-query limitation (`docs/FIREBASE_MODEL.md`), not a UX choice made first. Revisiting it would need either a different query shape or accepting the query-breaking Rules failure mode for some users — worth a deliberate conversation before attempting, not a quick fix.
+
+**Every open clinical/business question in `docs/OPEN_DECISIONS.md`** — unresolved by design; this assistant does not invent clinical or business answers to them. Read that file directly for the current list; it was not modified this session.
+
+**Workstream J (QA/hardening/release), what's left after this batch:**
+- Android release signing: still signs with the debug key. Needs a human-generated upload keystore + `key.properties` before any real Play Store or distributed-APK release — see `docs/RELEASE_CHECKLIST.md`.
+- iOS/macOS: no signing, no real-device testing, nothing verifiable from this Windows environment at all — needs someone with Mac access and an Apple Developer account.
+- Store listings (icons, screenshots, privacy policy, description): not started, human/product/legal work, not engineering.
+- A full Web/Windows **UI** click-through walkthrough has never been done — only the build succeeds (step 10); nobody has actually used the app's UI on either platform. Only the Android emulator has full live UI validation throughout this whole project.
+- Broader offline scenarios beyond the simple connectivity banner: offline queued writes replaying against Firestore Rules once reconnected, and multi-step flows (e.g. a multi-lot replenishment) attempted while offline, have not been exercised — Firestore's own offline queue is trusted but not independently verified end-to-end here.
+
+**Smaller, longstanding items already flagged in "Temporary workarounds" below, still open:**
+- `SlotEditorScreen`'s position-based slot ids can orphan a `CartProductAssignment.slotId` after a merge/split on an already-assigned drawer — no detection or cleanup UI exists for this yet.
+- `parseGs1DataMatrix`'s AI 10 (lot number) truncation when a payload omits its FNC1 terminator (documented, tested, accepted trade-off — not a priority unless it causes a real problem).
+- `createIsolatedAccountCreationAuth()`'s client-side member-creation workaround should be replaced with a callable Cloud Function if one is ever introduced.
+- `FirestoreInventoryRepository.reconcileAfterAudit` uses a plain `WriteBatch`, not one atomic transaction spanning batches+assignment.
+
+**Not a gap, just a reminder**: localization (PT-PT strings are hard-coded; `flutter_localizations`/`.arb` scaffolding is spec item 8, still not started) and the slot grid's touch-target size on densely-configured drawers (deliberately left open after the accessibility review — see `docs/IMPLEMENTATION_STATUS.md`) are both known, both deferred, neither is new.
 
 ## Temporary workarounds
 
