@@ -29,8 +29,9 @@ class CartDetailScreen extends StatefulWidget {
 }
 
 class _CartDetailScreenState extends State<CartDetailScreen> {
-  late final Future<Membership?> _myMembership =
-      AppServicesScope.of(context).institutions.getMyMembership(widget.cart.institutionId);
+  late final Future<Membership?> _myMembership = AppServicesScope.of(context)
+      .institutions
+      .getMyMembership(widget.cart.institutionId);
 
   bool _canManageDrawers(Membership? membership) {
     if (membership == null || !membership.isActive) return false;
@@ -47,13 +48,21 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       await services.drawers.createDrawer(
         widget.cart.institutionId,
         widget.cart.id,
-        CartDrawer(id: '', cartId: widget.cart.id, name: input.name, rows: input.rows, columns: input.columns),
+        CartDrawer(
+          id: '',
+          cartId: widget.cart.id,
+          name: input.name,
+          rows: input.rows,
+          columns: input.columns,
+        ),
       );
       await bumpCartLayoutVersion(services, widget.cart);
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível criar a gaveta. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível criar a gaveta. Tente novamente.'),
+        ),
       );
     }
   }
@@ -75,18 +84,24 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
         ),
       );
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Carro atualizado.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Carro atualizado.')));
       Navigator.of(context).pop();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível atualizar o carro. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível atualizar o carro. Tente novamente.'),
+        ),
       );
     }
   }
 
   Future<void> _duplicateCart(BuildContext context) async {
-    final newName = await showDuplicateCartDialog(context, defaultName: '${widget.cart.name} (cópia)');
+    final newName = await showDuplicateCartDialog(
+      context,
+      defaultName: '${widget.cart.name} (cópia)',
+    );
     if (newName == null || !context.mounted) return;
     final services = AppServicesScope.of(context);
     try {
@@ -94,25 +109,44 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
         widget.cart.institutionId,
         Cart(id: '', institutionId: widget.cart.institutionId, name: newName),
       );
-      final drawers = await services.drawers.watchDrawers(widget.cart.institutionId, widget.cart.id).first;
+      final drawers = await services.drawers
+          .watchDrawers(widget.cart.institutionId, widget.cart.id)
+          .first;
       for (final drawer in drawers) {
         final newDrawer = await services.drawers.createDrawer(
           widget.cart.institutionId,
           newCart.id,
-          CartDrawer(id: '', cartId: newCart.id, name: drawer.name, rows: drawer.rows, columns: drawer.columns),
+          CartDrawer(
+            id: '',
+            cartId: newCart.id,
+            name: drawer.name,
+            rows: drawer.rows,
+            columns: drawer.columns,
+          ),
         );
-        final slots = await services.drawers.watchSlots(widget.cart.institutionId, widget.cart.id, drawer.id).first;
+        final slots = await services.drawers
+            .watchSlots(widget.cart.institutionId, widget.cart.id, drawer.id)
+            .first;
         if (slots.isNotEmpty) {
-          await services.drawers.replaceSlots(widget.cart.institutionId, newCart.id, newDrawer.id, slots);
+          await services.drawers.replaceSlots(
+            widget.cart.institutionId,
+            newCart.id,
+            newDrawer.id,
+            slots,
+          );
         }
       }
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Carro duplicado como "${newCart.name}".')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Carro duplicado como "${newCart.name}".')),
+      );
       Navigator.of(context).pop();
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível duplicar o carro. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível duplicar o carro. Tente novamente.'),
+        ),
       );
     }
   }
@@ -128,7 +162,9 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             tooltip: 'Mostrar código QR',
             icon: const Icon(Icons.qr_code_2),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => CartQrCodeScreen(cart: widget.cart)),
+              MaterialPageRoute(
+                builder: (_) => CartQrCodeScreen(cart: widget.cart),
+              ),
             ),
           ),
           IconButton(
@@ -139,7 +175,10 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
               if (!context.mounted) return;
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => ProductSearchScreen(cart: widget.cart, canManage: _canManageDrawers(membership)),
+                  builder: (_) => ProductSearchScreen(
+                    cart: widget.cart,
+                    canManage: _canManageDrawers(membership),
+                  ),
                 ),
               );
             },
@@ -147,7 +186,9 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
-              if (!_canManageDrawers(snapshot.data)) return const SizedBox.shrink();
+              if (!_canManageDrawers(snapshot.data)) {
+                return const SizedBox.shrink();
+              }
               return PopupMenuButton<String>(
                 onSelected: (action) {
                   if (action == 'edit') _editCart(context);
@@ -155,7 +196,10 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                 },
                 itemBuilder: (context) => [
                   const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                  const PopupMenuItem(value: 'duplicate', child: Text('Duplicar')),
+                  const PopupMenuItem(
+                    value: 'duplicate',
+                    child: Text('Duplicar'),
+                  ),
                 ],
               );
             },
@@ -163,13 +207,18 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
-              if (!_canManageDrawers(snapshot.data)) return const SizedBox.shrink();
+              if (!_canManageDrawers(snapshot.data)) {
+                return const SizedBox.shrink();
+              }
               return IconButton(
                 tooltip: 'Responsáveis',
                 icon: const Icon(Icons.badge_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ResponsibleUsersScreen(institutionId: widget.cart.institutionId, cartId: widget.cart.id),
+                    builder: (_) => ResponsibleUsersScreen(
+                      institutionId: widget.cart.institutionId,
+                      cartId: widget.cart.id,
+                    ),
                   ),
                 ),
               );
@@ -180,12 +229,17 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           preferredSize: const Size.fromHeight(48),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Chip(label: Text(cartStatusLabel(widget.cart.status))),
+            child: Chip(
+              label: Text(cartStatusLabel(context, widget.cart.status)),
+            ),
           ),
         ),
       ),
       body: StreamBuilder<List<CartDrawer>>(
-        stream: services.drawers.watchDrawers(widget.cart.institutionId, widget.cart.id),
+        stream: services.drawers.watchDrawers(
+          widget.cart.institutionId,
+          widget.cart.id,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -194,7 +248,9 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar as gavetas: ${snapshot.error}'),
+                child: Text(
+                  'Não foi possível carregar as gavetas: ${snapshot.error}',
+                ),
               ),
             );
           }
@@ -203,7 +259,10 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Ainda não existem gavetas neste carro.', textAlign: TextAlign.center),
+                child: Text(
+                  'Ainda não existem gavetas neste carro.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -217,10 +276,15 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.grid_view_outlined),
                   title: Text(drawer.name),
-                  subtitle: Text('${drawer.rows} linhas × ${drawer.columns} colunas'),
+                  subtitle: Text(
+                    '${drawer.rows} linhas × ${drawer.columns} colunas',
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => SlotEditorScreen(cart: widget.cart, drawer: drawer)),
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          SlotEditorScreen(cart: widget.cart, drawer: drawer),
+                    ),
                   ),
                 ),
               );

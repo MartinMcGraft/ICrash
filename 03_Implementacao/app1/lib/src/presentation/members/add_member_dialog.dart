@@ -4,7 +4,11 @@ import '../../domain/entities/role.dart';
 import 'membership_labels.dart';
 
 class NewMemberInput {
-  const NewMemberInput({required this.email, required this.password, required this.role});
+  const NewMemberInput({
+    required this.email,
+    required this.password,
+    required this.role,
+  });
 
   final String email;
   final String password;
@@ -37,21 +41,30 @@ Future<NewMemberInput?> showAddMemberDialog(BuildContext context) {
                 autofocus: true,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'E-mail'),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Indique um e-mail' : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Indique um e-mail'
+                    : null,
               ),
               TextFormField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Palavra-passe temporária'),
-                validator: (value) =>
-                    (value == null || value.length < 6) ? 'Mínimo de 6 caracteres' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Palavra-passe temporária',
+                ),
+                validator: (value) => (value == null || value.length < 6)
+                    ? 'Mínimo de 6 caracteres'
+                    : null,
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<Role>(
                 initialValue: role,
                 decoration: const InputDecoration(labelText: 'Cargo'),
                 items: [
-                  for (final r in assignableRoles) DropdownMenuItem(value: r, child: Text(roleLabel(r))),
+                  for (final r in assignableRoles)
+                    DropdownMenuItem(
+                      value: r,
+                      child: Text(roleLabel(context, r)),
+                    ),
                 ],
                 onChanged: (value) => setState(() => role = value ?? role),
               ),
@@ -66,11 +79,13 @@ Future<NewMemberInput?> showAddMemberDialog(BuildContext context) {
           FilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(NewMemberInput(
-                  email: emailController.text.trim(),
-                  password: passwordController.text,
-                  role: role,
-                ));
+                Navigator.of(context).pop(
+                  NewMemberInput(
+                    email: emailController.text.trim(),
+                    password: passwordController.text,
+                    role: role,
+                  ),
+                );
               }
             },
             child: const Text('Criar'),

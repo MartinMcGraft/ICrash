@@ -34,13 +34,19 @@ Future<EditCartInput?> showEditCartDialog(BuildContext context, Cart cart) {
                 controller: nameController,
                 autofocus: true,
                 decoration: const InputDecoration(labelText: 'Nome do carro'),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Indique um nome' : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Indique um nome'
+                    : null,
               ),
               DropdownButtonFormField<CartStatus>(
                 initialValue: status,
                 decoration: const InputDecoration(labelText: 'Estado'),
                 items: [
-                  for (final value in CartStatus.values) DropdownMenuItem(value: value, child: Text(cartStatusLabel(value))),
+                  for (final value in CartStatus.values)
+                    DropdownMenuItem(
+                      value: value,
+                      child: Text(cartStatusLabel(context, value)),
+                    ),
                 ],
                 onChanged: (value) => setState(() => status = value ?? status),
               ),
@@ -48,11 +54,19 @@ Future<EditCartInput?> showEditCartDialog(BuildContext context, Cart cart) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(EditCartInput(name: nameController.text.trim(), status: status));
+                Navigator.of(context).pop(
+                  EditCartInput(
+                    name: nameController.text.trim(),
+                    status: status,
+                  ),
+                );
               }
             },
             child: const Text('Guardar'),

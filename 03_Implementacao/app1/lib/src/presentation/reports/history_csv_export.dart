@@ -26,7 +26,7 @@ String buildHistoryCsv(List<UsageEvent> events, List<Product> products) {
         event.serverTimestamp == null
             ? ''
             : _formatDateTime(event.serverTimestamp!),
-        usageEventTypeLabel(event.type),
+        usageEventTypeLabelPt(event.type),
         productName(event.productId),
         '${event.amount > 0 ? '+' : ''}${event.amount}',
       ].map(_csvCell).join(','),

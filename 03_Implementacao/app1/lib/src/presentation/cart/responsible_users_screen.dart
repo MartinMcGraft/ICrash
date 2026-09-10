@@ -12,7 +12,11 @@ import '../members/membership_labels.dart';
 /// Manager+ only; `firestore.rules` (`isManagerOrAbove` on
 /// `responsibleUsers` writes) is the real boundary.
 class ResponsibleUsersScreen extends StatelessWidget {
-  const ResponsibleUsersScreen({super.key, required this.institutionId, required this.cartId});
+  const ResponsibleUsersScreen({
+    super.key,
+    required this.institutionId,
+    required this.cartId,
+  });
 
   final String institutionId;
   final String cartId;
@@ -32,7 +36,9 @@ class ResponsibleUsersScreen extends StatelessWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar os membros: ${membersSnapshot.error}'),
+                child: Text(
+                  'Não foi possível carregar os membros: ${membersSnapshot.error}',
+                ),
               ),
             );
           }
@@ -41,7 +47,10 @@ class ResponsibleUsersScreen extends StatelessWidget {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Ainda não existem membros nesta instituição.', textAlign: TextAlign.center),
+                child: Text(
+                  'Ainda não existem membros nesta instituição.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -49,7 +58,10 @@ class ResponsibleUsersScreen extends StatelessWidget {
             stream: services.carts.watchResponsibleUsers(institutionId, cartId),
             builder: (context, responsibleSnapshot) {
               final responsibleIds = {
-                for (final r in responsibleSnapshot.data ?? const <CartResponsibleUser>[]) r.uid,
+                for (final r
+                    in responsibleSnapshot.data ??
+                        const <CartResponsibleUser>[])
+                  r.uid,
               };
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
@@ -62,13 +74,21 @@ class ResponsibleUsersScreen extends StatelessWidget {
                     child: CheckboxListTile(
                       value: isResponsible,
                       title: Text(member.uid, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(roleLabel(member.role)),
+                      subtitle: Text(roleLabel(context, member.role)),
                       onChanged: member.isActive
                           ? (checked) async {
                               if (checked ?? false) {
-                                await services.carts.assignResponsibleUser(institutionId, cartId, member.uid);
+                                await services.carts.assignResponsibleUser(
+                                  institutionId,
+                                  cartId,
+                                  member.uid,
+                                );
                               } else {
-                                await services.carts.removeResponsibleUser(institutionId, cartId, member.uid);
+                                await services.carts.removeResponsibleUser(
+                                  institutionId,
+                                  cartId,
+                                  member.uid,
+                                );
                               }
                             }
                           : null,

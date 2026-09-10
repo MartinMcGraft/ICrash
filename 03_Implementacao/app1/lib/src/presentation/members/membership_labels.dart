@@ -1,15 +1,20 @@
+import 'package:flutter/widgets.dart';
+
+import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/role.dart';
 
-String roleLabel(Role role) {
+/// Localized (spec section 13) display label for [Role].
+String roleLabel(BuildContext context, Role role) {
+  final l10n = AppLocalizations.of(context);
   switch (role) {
     case Role.platformSuperAdmin:
-      return 'Super administrador';
+      return l10n.roleSuperAdmin;
     case Role.institutionAdmin:
-      return 'Administrador da instituição';
+      return l10n.roleInstitutionAdmin;
     case Role.manager:
-      return 'Gestor';
+      return l10n.roleManager;
     case Role.user:
-      return 'Utilizador';
+      return l10n.roleUser;
   }
 }
 
@@ -18,13 +23,15 @@ String roleLabel(Role role) {
 /// see `platformAdmins` in docs/FIREBASE_MODEL.md), so it is excluded here.
 const assignableRoles = [Role.institutionAdmin, Role.manager, Role.user];
 
-String membershipStatusLabel(MembershipStatus status) {
+/// Localized (spec section 13) display label for [MembershipStatus].
+String membershipStatusLabel(BuildContext context, MembershipStatus status) {
+  final l10n = AppLocalizations.of(context);
   switch (status) {
     case MembershipStatus.active:
-      return 'Ativo';
+      return l10n.membershipStatusActive;
     case MembershipStatus.invited:
-      return 'Convidado';
+      return l10n.membershipStatusInvited;
     case MembershipStatus.disabled:
-      return 'Desativado';
+      return l10n.membershipStatusDisabled;
   }
 }

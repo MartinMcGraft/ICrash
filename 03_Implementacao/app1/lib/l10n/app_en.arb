@@ -1,0 +1,33 @@
+{
+  "@@locale": "en",
+  "appTitle": "I-Crash",
+  "actionCancel": "Cancel",
+  "actionClose": "Close",
+  "actionSave": "Save",
+  "actionConfirm": "Confirm",
+  "actionBack": "Back",
+
+  "assignmentStatusOk": "OK",
+  "assignmentStatusReplenishmentRequired": "Replenishment required",
+  "assignmentStatusExpiringSoon": "Expiring soon",
+  "assignmentStatusExpired": "Expired",
+
+  "usageEventConsumption": "Consumption",
+  "usageEventReplenishment": "Replenishment",
+  "usageEventCorrection": "Correction",
+  "usageEventAuditReconciliation": "Reconciliation",
+
+  "cartStatusOperational": "Operational",
+  "cartStatusReplenishmentRequired": "Replenishment required",
+  "cartStatusAuditRequired": "Audit required",
+  "cartStatusOutOfService": "Out of service",
+
+  "roleSuperAdmin": "Super administrator",
+  "roleInstitutionAdmin": "Institution administrator",
+  "roleManager": "Manager",
+  "roleUser": "User",
+
+  "membershipStatusActive": "Active",
+  "membershipStatusInvited": "Invited",
+  "membershipStatusDisabled": "Disabled"
+}

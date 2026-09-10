@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:icrash_app/src/common/l10n/app_localizations.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
@@ -19,23 +20,41 @@ const _institution = Institution(id: 'inst-a', name: 'Hospital A');
 Widget _wrap(AppServices services) {
   return AppServicesScope(
     services: services,
-    child: MaterialApp(home: const InstitutionHomeScreen(institution: _institution)),
+    child: MaterialApp(
+      locale: const Locale('pt', 'PT'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const InstitutionHomeScreen(institution: _institution),
+    ),
   );
 }
 
-Membership _membership(Role role) => Membership(uid: 'me', institutionId: _institution.id, role: role, status: MembershipStatus.active);
+Membership _membership(Role role) => Membership(
+  uid: 'me',
+  institutionId: _institution.id,
+  role: role,
+  status: MembershipStatus.active,
+);
 
 void main() {
-  testWidgets('shows an empty state when the institution has no carts', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository())));
+  testWidgets('shows an empty state when the institution has no carts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(buildTestServices(carts: FakeCartRepository())),
+    );
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Ainda não existem carros'), findsOneWidget);
   });
 
-  testWidgets('lists carts and opens the cart detail screen on tap', (tester) async {
+  testWidgets('lists carts and opens the cart detail screen on tap', (
+    tester,
+  ) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
-    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository(carts: [cart]))));
+    await tester.pumpWidget(
+      _wrap(buildTestServices(carts: FakeCartRepository(carts: [cart]))),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Carro 1'), findsOneWidget);
@@ -47,12 +66,20 @@ void main() {
     expect(find.byType(CartDetailScreen), findsOneWidget);
   });
 
-  testWidgets('shows "Novo carro" for a manager and creates a cart', (tester) async {
+  testWidgets('shows "Novo carro" for a manager and creates a cart', (
+    tester,
+  ) async {
     final carts = FakeCartRepository();
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
-      carts: carts,
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: carts,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Novo carro'), findsOneWidget);
@@ -68,37 +95,57 @@ void main() {
   });
 
   testWidgets('hides "Novo carro" for a normal user', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
-      carts: FakeCartRepository(),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.user),
+          ),
+          carts: FakeCartRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Novo carro'), findsNothing);
   });
 
   testWidgets('shows "Membros" for an institution admin', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.institutionAdmin)),
-      carts: FakeCartRepository(),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.institutionAdmin),
+          ),
+          carts: FakeCartRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Membros'), findsOneWidget);
   });
 
   testWidgets('hides "Membros" for a manager', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
-      carts: FakeCartRepository(),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: FakeCartRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Membros'), findsNothing);
   });
 
   testWidgets('can still open the legacy app', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository())));
+    await tester.pumpWidget(
+      _wrap(buildTestServices(carts: FakeCartRepository())),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Aplicação anterior (referência)'));
@@ -107,13 +154,22 @@ void main() {
     expect(find.text('Registration'), findsOneWidget);
   });
 
-  testWidgets('shows cart status counts in the dashboard summary', (tester) async {
+  testWidgets('shows cart status counts in the dashboard summary', (
+    tester,
+  ) async {
     const carts = [
       Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1'),
       Cart(id: 'cart-2', institutionId: 'inst-a', name: 'Carro 2'),
-      Cart(id: 'cart-3', institutionId: 'inst-a', name: 'Carro 3', status: CartStatus.auditRequired),
+      Cart(
+        id: 'cart-3',
+        institutionId: 'inst-a',
+        name: 'Carro 3',
+        status: CartStatus.auditRequired,
+      ),
     ];
-    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository(carts: carts))));
+    await tester.pumpWidget(
+      _wrap(buildTestServices(carts: FakeCartRepository(carts: carts))),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Operacional: 2'), findsOneWidget);
@@ -125,7 +181,9 @@ void main() {
       Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro Pediatria'),
       Cart(id: 'cart-2', institutionId: 'inst-a', name: 'Carro Adultos'),
     ];
-    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository(carts: carts))));
+    await tester.pumpWidget(
+      _wrap(buildTestServices(carts: FakeCartRepository(carts: carts))),
+    );
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'pedia');
@@ -136,10 +194,16 @@ void main() {
   });
 
   testWidgets('shows the history action for any user', (tester) async {
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
-      carts: FakeCartRepository(),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.user),
+          ),
+          carts: FakeCartRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Histórico'), findsOneWidget);
@@ -147,7 +211,11 @@ void main() {
 
   testWidgets('shows recent activity from usage events', (tester) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
-    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const product = Product(
+      id: 'p1',
+      institutionId: 'inst-a',
+      name: 'Adrenalina',
+    );
     const event = UsageEvent(
       id: 'e1',
       institutionId: 'inst-a',
@@ -158,24 +226,34 @@ void main() {
       type: UsageEventType.consumption,
       amount: -2,
     );
-    await tester.pumpWidget(_wrap(buildTestServices(
-      carts: FakeCartRepository(carts: [cart]),
-      products: FakeProductRepository(products: [product]),
-      usage: FakeUsageRepository(events: [event]),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          carts: FakeCartRepository(carts: [cart]),
+          products: FakeProductRepository(products: [product]),
+          usage: FakeUsageRepository(events: [event]),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Adrenalina'), findsOneWidget);
     expect(find.textContaining('(-2)'), findsOneWidget);
   });
 
-  testWidgets('scans a cart QR code and opens the resolved cart', (tester) async {
+  testWidgets('scans a cart QR code and opens the resolved cart', (
+    tester,
+  ) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
     final scanner = FakeInternalQrScannerService();
-    await tester.pumpWidget(_wrap(buildTestServices(
-      carts: FakeCartRepository(carts: [cart]),
-      createInternalQrScanner: () => scanner,
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          carts: FakeCartRepository(carts: [cart]),
+          createInternalQrScanner: () => scanner,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Ler código do carro'));
@@ -187,12 +265,18 @@ void main() {
     expect(find.byType(CartDetailScreen), findsOneWidget);
   });
 
-  testWidgets('shows an error when a scanned cart code cannot be resolved', (tester) async {
+  testWidgets('shows an error when a scanned cart code cannot be resolved', (
+    tester,
+  ) async {
     final scanner = FakeInternalQrScannerService();
-    await tester.pumpWidget(_wrap(buildTestServices(
-      carts: FakeCartRepository(),
-      createInternalQrScanner: () => scanner,
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          carts: FakeCartRepository(),
+          createInternalQrScanner: () => scanner,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Ler código do carro'));
@@ -202,12 +286,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CartDetailScreen), findsNothing);
-    expect(find.textContaining('Não foi possível abrir este carro'), findsOneWidget);
+    expect(
+      find.textContaining('Não foi possível abrir este carro'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows cross-cart alerts for a manager', (tester) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
-    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const product = Product(
+      id: 'p1',
+      institutionId: 'inst-a',
+      name: 'Adrenalina',
+    );
     final expiredAssignment = CartProductAssignment(
       id: 'a1',
       cartId: 'cart-1',
@@ -217,12 +308,18 @@ void main() {
       targetQuantity: 5,
       earliestKnownExpiry: DateTime.now().subtract(const Duration(days: 1)),
     );
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
-      carts: FakeCartRepository(carts: [cart]),
-      products: FakeProductRepository(products: [product]),
-      inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: FakeCartRepository(carts: [cart]),
+          products: FakeProductRepository(products: [product]),
+          inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Alertas'), findsOneWidget);
@@ -233,7 +330,11 @@ void main() {
 
   testWidgets('hides cross-cart alerts for a normal user', (tester) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
-    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const product = Product(
+      id: 'p1',
+      institutionId: 'inst-a',
+      name: 'Adrenalina',
+    );
     final expiredAssignment = CartProductAssignment(
       id: 'a1',
       cartId: 'cart-1',
@@ -243,20 +344,32 @@ void main() {
       targetQuantity: 5,
       earliestKnownExpiry: DateTime.now().subtract(const Duration(days: 1)),
     );
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
-      carts: FakeCartRepository(carts: [cart]),
-      products: FakeProductRepository(products: [product]),
-      inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.user),
+          ),
+          carts: FakeCartRepository(carts: [cart]),
+          products: FakeProductRepository(products: [product]),
+          inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Alertas'), findsNothing);
   });
 
-  testWidgets('shows nothing when no assignment needs attention', (tester) async {
+  testWidgets('shows nothing when no assignment needs attention', (
+    tester,
+  ) async {
     const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
-    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const product = Product(
+      id: 'p1',
+      institutionId: 'inst-a',
+      name: 'Adrenalina',
+    );
     const okAssignment = CartProductAssignment(
       id: 'a1',
       cartId: 'cart-1',
@@ -265,12 +378,18 @@ void main() {
       currentQuantity: 5,
       targetQuantity: 5,
     );
-    await tester.pumpWidget(_wrap(buildTestServices(
-      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
-      carts: FakeCartRepository(carts: [cart]),
-      products: FakeProductRepository(products: [product]),
-      inventory: FakeInventoryRepository(assignments: [okAssignment]),
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: FakeCartRepository(carts: [cart]),
+          products: FakeProductRepository(products: [product]),
+          inventory: FakeInventoryRepository(assignments: [okAssignment]),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Alertas'), findsNothing);

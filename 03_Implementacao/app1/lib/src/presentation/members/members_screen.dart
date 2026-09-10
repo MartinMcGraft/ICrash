@@ -36,11 +36,14 @@ class _MembersScreenState extends State<MembersScreen> {
     } on RepositoryFailure catch (error) {
       if (!context.mounted) return;
       final message = switch (error.reason) {
-        RepositoryFailureReason.conflict => 'Já existe uma conta com este e-mail.',
-        RepositoryFailureReason.invalidInput => 'E-mail ou palavra-passe inválidos.',
+        RepositoryFailureReason.conflict =>
+          'Já existe uma conta com este e-mail.',
+        RepositoryFailureReason.invalidInput =>
+          'E-mail ou palavra-passe inválidos.',
         _ => 'Não foi possível criar o membro. Tente novamente.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -54,31 +57,52 @@ class _MembersScreenState extends State<MembersScreen> {
           for (final r in assignableRoles)
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(r),
-              child: Text(roleLabel(r)),
+              child: Text(roleLabel(context, r)),
             ),
         ],
       ),
     );
-    if (selected == null || selected == membership.role || !context.mounted) return;
+    if (selected == null || selected == membership.role || !context.mounted) {
+      return;
+    }
     try {
-      await services.institutions.updateMemberRole(widget.institution.id, membership.uid, selected);
+      await services.institutions.updateMemberRole(
+        widget.institution.id,
+        membership.uid,
+        selected,
+      );
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível mudar o cargo. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível mudar o cargo. Tente novamente.'),
+        ),
       );
     }
   }
 
-  Future<void> _toggleStatus(BuildContext context, Membership membership) async {
+  Future<void> _toggleStatus(
+    BuildContext context,
+    Membership membership,
+  ) async {
     final services = AppServicesScope.of(context);
-    final next = membership.isActive ? MembershipStatus.disabled : MembershipStatus.active;
+    final next = membership.isActive
+        ? MembershipStatus.disabled
+        : MembershipStatus.active;
     try {
-      await services.institutions.setMembershipStatus(widget.institution.id, membership.uid, next);
+      await services.institutions.setMembershipStatus(
+        widget.institution.id,
+        membership.uid,
+        next,
+      );
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível alterar o estado do membro. Tente novamente.')),
+        const SnackBar(
+          content: Text(
+            'Não foi possível alterar o estado do membro. Tente novamente.',
+          ),
+        ),
       );
     }
   }
@@ -99,7 +123,9 @@ class _MembersScreenState extends State<MembersScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar os membros: ${snapshot.error}'),
+                child: Text(
+                  'Não foi possível carregar os membros: ${snapshot.error}',
+                ),
               ),
             );
           }
@@ -108,7 +134,10 @@ class _MembersScreenState extends State<MembersScreen> {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Ainda não existem membros nesta instituição.', textAlign: TextAlign.center),
+                child: Text(
+                  'Ainda não existem membros nesta instituição.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -123,23 +152,34 @@ class _MembersScreenState extends State<MembersScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.person_outline),
                   title: Text(member.uid, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(roleLabel(member.role)),
+                  subtitle: Text(roleLabel(context, member.role)),
                   trailing: Wrap(
                     spacing: 8,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Chip(label: Text(membershipStatusLabel(member.status))),
+                      Chip(
+                        label: Text(
+                          membershipStatusLabel(context, member.status),
+                        ),
+                      ),
                       if (!isSelf)
                         PopupMenuButton<String>(
                           onSelected: (action) {
                             if (action == 'role') _changeRole(context, member);
-                            if (action == 'status') _toggleStatus(context, member);
+                            if (action == 'status') {
+                              _toggleStatus(context, member);
+                            }
                           },
                           itemBuilder: (context) => [
-                            const PopupMenuItem(value: 'role', child: Text('Mudar cargo')),
+                            const PopupMenuItem(
+                              value: 'role',
+                              child: Text('Mudar cargo'),
+                            ),
                             PopupMenuItem(
                               value: 'status',
-                              child: Text(member.isActive ? 'Desativar' : 'Reativar'),
+                              child: Text(
+                                member.isActive ? 'Desativar' : 'Reativar',
+                              ),
                             ),
                           ],
                         ),

@@ -131,7 +131,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 for (final type in UsageEventType.values)
                   ChoiceChip(
-                    label: Text(usageEventTypeLabel(type)),
+                    label: Text(usageEventTypeLabel(context, type)),
                     selected: _typeFilter == type,
                     onSelected: (_) => setState(() => _typeFilter = type),
                   ),
@@ -234,7 +234,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         _productName(products, event.productId),
                                       ),
                                       subtitle: Text(
-                                        usageEventTypeLabel(event.type),
+                                        usageEventTypeLabel(
+                                          context,
+                                          event.type,
+                                        ),
                                       ),
                                       trailing: Text(
                                         '${event.amount > 0 ? '+' : ''}${event.amount}',

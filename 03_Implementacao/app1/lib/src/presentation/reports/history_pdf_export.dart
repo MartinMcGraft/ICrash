@@ -70,7 +70,7 @@ Future<Uint8List> buildHistoryPdf(
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(4),
-                    child: pw.Text(usageEventTypeLabel(event.type)),
+                    child: pw.Text(usageEventTypeLabelPt(event.type)),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(4),

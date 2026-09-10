@@ -43,8 +43,10 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   late final Future<Membership?> _myMembership = AppServicesScope.of(context)
       .institutions
       .getMyMembership(widget.institution.id);
-  late final Future<List<Product>> _products =
-      AppServicesScope.of(context).products.watchProducts(widget.institution.id).first;
+  late final Future<List<Product>> _products = AppServicesScope.of(context)
+      .products
+      .watchProducts(widget.institution.id)
+      .first;
 
   // Cached once rather than created inline in `build()`: the search field
   // and the type-ahead filter below both call `setState` on every keystroke,
@@ -52,16 +54,15 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   // would otherwise tear down and re-subscribe every Firestore listener on
   // this screen on every keystroke instead of just re-filtering already-
   // received data.
-  late final Stream<List<Cart>> _cartsStream = AppServicesScope.of(context).carts.watchAccessibleCarts(
-        widget.institution.id,
-      );
-  late final Stream<List<CartProductAssignment>> _allAssignmentsStream = AppServicesScope.of(context)
-      .inventory
-      .watchAllAssignments(widget.institution.id);
-  late final Stream<List<UsageEvent>> _recentEventsStream = AppServicesScope.of(context).usage.watchRecentEvents(
-        widget.institution.id,
-        limit: 5,
-      );
+  late final Stream<List<Cart>> _cartsStream = AppServicesScope.of(context)
+      .carts
+      .watchAccessibleCarts(widget.institution.id);
+  late final Stream<List<CartProductAssignment>> _allAssignmentsStream =
+      AppServicesScope.of(context).inventory
+          .watchAllAssignments(widget.institution.id);
+  late final Stream<List<UsageEvent>> _recentEventsStream = AppServicesScope.of(
+    context,
+  ).usage.watchRecentEvents(widget.institution.id, limit: 5);
 
   String _searchQuery = '';
 
@@ -74,7 +75,8 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
 
   bool _isInstitutionAdmin(Membership? membership) {
     if (membership == null || !membership.isActive) return false;
-    return membership.role == Role.institutionAdmin || membership.role == Role.platformSuperAdmin;
+    return membership.role == Role.institutionAdmin ||
+        membership.role == Role.platformSuperAdmin;
   }
 
   /// Spec section 33: scanning only resolves an id, it never grants access
@@ -83,10 +85,16 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   /// this user cannot access simply fails here instead of opening it.
   Future<void> _scanCartQr(BuildContext context) async {
     final services = AppServicesScope.of(context);
-    final target = await showCartQrScanScreen(context, createScanner: services.createInternalQrScanner);
+    final target = await showCartQrScanScreen(
+      context,
+      createScanner: services.createInternalQrScanner,
+    );
     if (target == null || !context.mounted) return;
     try {
-      final cart = await services.carts.getCart(target.institutionId, target.cartId);
+      final cart = await services.carts.getCart(
+        target.institutionId,
+        target.cartId,
+      );
       if (!context.mounted) return;
       if (cart == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +102,9 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
         );
         return;
       }
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => CartDetailScreen(cart: cart)));
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => CartDetailScreen(cart: cart)));
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -108,11 +118,16 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     if (name == null || !context.mounted) return;
     final services = AppServicesScope.of(context);
     try {
-      await services.carts.createCart(widget.institution.id, Cart(id: '', institutionId: widget.institution.id, name: name));
+      await services.carts.createCart(
+        widget.institution.id,
+        Cart(id: '', institutionId: widget.institution.id, name: name),
+      );
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível criar o carro. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível criar o carro. Tente novamente.'),
+        ),
       );
     }
   }
@@ -134,19 +149,27 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             tooltip: 'Histórico',
             icon: const Icon(Icons.receipt_long_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => HistoryScreen(institutionId: widget.institution.id)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    HistoryScreen(institutionId: widget.institution.id),
+              ),
             ),
           ),
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
-              if (!_canManageCarts(snapshot.data)) return const SizedBox.shrink();
+              if (!_canManageCarts(snapshot.data)) {
+                return const SizedBox.shrink();
+              }
               return IconButton(
                 tooltip: 'Produtos',
                 icon: const Icon(Icons.medication_outlined),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ProductsScreen(institutionId: widget.institution.id, canManage: true),
+                    builder: (_) => ProductsScreen(
+                      institutionId: widget.institution.id,
+                      canManage: true,
+                    ),
                   ),
                 ),
               );
@@ -155,12 +178,17 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
-              if (!_isInstitutionAdmin(snapshot.data)) return const SizedBox.shrink();
+              if (!_isInstitutionAdmin(snapshot.data)) {
+                return const SizedBox.shrink();
+              }
               return IconButton(
                 tooltip: 'Membros',
                 icon: const Icon(Icons.group_outlined),
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => MembersScreen(institution: widget.institution)),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        MembersScreen(institution: widget.institution),
+                  ),
                 ),
               );
             },
@@ -168,9 +196,9 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           IconButton(
             tooltip: 'Aplicação anterior (referência)',
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const HomeMenu()),
-            ),
+            onPressed: () =>
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const HomeMenu())),
           ),
           IconButton(
             tooltip: 'Terminar sessão',
@@ -189,7 +217,9 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Não foi possível carregar os carros: ${snapshot.error}'),
+                child: Text(
+                  'Não foi possível carregar os carros: ${snapshot.error}',
+                ),
               ),
             );
           }
@@ -206,7 +236,11 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
             );
           }
           final query = _searchQuery.trim().toLowerCase();
-          final filtered = query.isEmpty ? carts : carts.where((c) => c.name.toLowerCase().contains(query)).toList();
+          final filtered = query.isEmpty
+              ? carts
+              : carts
+                    .where((c) => c.name.toLowerCase().contains(query))
+                    .toList();
           return Column(
             children: [
               Padding(
@@ -216,7 +250,9 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               FutureBuilder<Membership?>(
                 future: _myMembership,
                 builder: (context, membershipSnapshot) {
-                  if (!_canManageCarts(membershipSnapshot.data)) return const SizedBox.shrink();
+                  if (!_canManageCarts(membershipSnapshot.data)) {
+                    return const SizedBox.shrink();
+                  }
                   return _CrossCartAlerts(
                     assignmentsStream: _allAssignmentsStream,
                     expiryWarningDays: widget.institution.expiryWarningDays,
@@ -225,7 +261,10 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                   );
                 },
               ),
-              _RecentActivity(eventsStream: _recentEventsStream, products: _products),
+              _RecentActivity(
+                eventsStream: _recentEventsStream,
+                products: _products,
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
@@ -243,7 +282,10 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                     ? const Center(
                         child: Padding(
                           padding: EdgeInsets.all(24),
-                          child: Text('Nenhum carro corresponde à pesquisa.', textAlign: TextAlign.center),
+                          child: Text(
+                            'Nenhum carro corresponde à pesquisa.',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       )
                     : ListView.separated(
@@ -254,12 +296,18 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
                           final cart = filtered[index];
                           return Card(
                             child: ListTile(
-                              leading: const Icon(Icons.medical_services_outlined),
+                              leading: const Icon(
+                                Icons.medical_services_outlined,
+                              ),
                               title: Text(cart.name),
-                              subtitle: Text(cartStatusLabel(cart.status)),
+                              subtitle: Text(
+                                cartStatusLabel(context, cart.status),
+                              ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => CartDetailScreen(cart: cart)),
+                                MaterialPageRoute(
+                                  builder: (_) => CartDetailScreen(cart: cart),
+                                ),
                               ),
                             ),
                           );
@@ -295,7 +343,9 @@ class _CartStatusSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counts = <CartStatus, int>{for (final status in CartStatus.values) status: 0};
+    final counts = <CartStatus, int>{
+      for (final status in CartStatus.values) status: 0,
+    };
     for (final cart in carts) {
       counts[cart.status] = (counts[cart.status] ?? 0) + 1;
     }
@@ -304,7 +354,12 @@ class _CartStatusSummary extends StatelessWidget {
       runSpacing: 8,
       children: [
         for (final status in CartStatus.values)
-          if (counts[status]! > 0) Chip(label: Text('${cartStatusLabel(status)}: ${counts[status]}')),
+          if (counts[status]! > 0)
+            Chip(
+              label: Text(
+                '${cartStatusLabel(context, status)}: ${counts[status]}',
+              ),
+            ),
       ],
     );
   }
@@ -350,11 +405,16 @@ class _CrossCartAlerts extends StatelessWidget {
     return StreamBuilder<List<CartProductAssignment>>(
       stream: assignmentsStream,
       builder: (context, assignmentsSnapshot) {
-        final assignments = assignmentsSnapshot.data ?? const <CartProductAssignment>[];
+        final assignments =
+            assignmentsSnapshot.data ?? const <CartProductAssignment>[];
         final now = DateTime.now();
         final alerts = <(CartProductAssignment, AssignmentAlert)>[
           for (final assignment in assignments)
-            if (InventoryRules.computeAlert(assignment, expiryWarningDays: expiryWarningDays, now: now)
+            if (InventoryRules.computeAlert(
+                  assignment,
+                  expiryWarningDays: expiryWarningDays,
+                  now: now,
+                )
                 case final alert?)
               (assignment, alert),
         ];
@@ -368,14 +428,19 @@ class _CrossCartAlerts extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Alertas', style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    'Alertas',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   for (final (assignment, alert) in alerts)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         '${_assignmentAlertLabel(alert)} · ${_productName(productList, assignment.productId)}'
                         ' · ${_cartName(assignment.cartId)}',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                 ],
@@ -389,10 +454,10 @@ class _CrossCartAlerts extends StatelessWidget {
 }
 
 String _assignmentAlertLabel(AssignmentAlert alert) => switch (alert) {
-      AssignmentAlert.expired => 'Expirado',
-      AssignmentAlert.expiringSoon => 'A expirar em breve',
-      AssignmentAlert.belowMinimum => 'Stock abaixo do mínimo',
-    };
+  AssignmentAlert.expired => 'Expirado',
+  AssignmentAlert.expiringSoon => 'A expirar em breve',
+  AssignmentAlert.belowMinimum => 'Stock abaixo do mínimo',
+};
 
 /// Institution-wide recent stock activity (spec section 49's "recent
 /// relevant activity"), one of the few dashboard signals that does not need
@@ -427,12 +492,15 @@ class _RecentActivity extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Atividade recente', style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    'Atividade recente',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   for (final event in events)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        '${usageEventTypeLabel(event.type)} · ${_productName(productList, event.productId)} '
+                        '${usageEventTypeLabel(context, event.type)} · ${_productName(productList, event.productId)} '
                         '(${event.amount > 0 ? '+' : ''}${event.amount})',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
