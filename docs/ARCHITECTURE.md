@@ -1,6 +1,6 @@
 # Architecture
 
-Status: login → institution selection → per-institution dashboard/cart list/creation/edit/duplicate → responsible-user management → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct, replenish now optionally scan-assisted via GS1 Data Matrix) → product search within a cart → institution-wide activity history, all live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases. All V2 workstreams from the specification's core scope are now implemented.
+Status: login → institution selection → per-institution dashboard (cart list/creation/edit/duplicate, cross-cart alerts, internal-QR cart navigation) → responsible-user management → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct, replenish now optionally scan-assisted via GS1 Data Matrix camera or HID barcode scanner) → product search within a cart → institution-wide activity history, all live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases. Every major workstream from the specification's core scope is now implemented; remaining work is workstream J (QA/hardening/release) and a handful of explicitly deferred enhancements — see "What is intentionally not built yet" below.
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -23,7 +23,9 @@ presentation/
   cart/assignment_dialog.dart                 per-slot: assign a product, replenish (optionally
                                                via GS1 scan), consume
   cart/assignment_status_label.dart
-  scanning/gs1_scan_screen.dart               full-screen GS1 Data Matrix scanner
+  scanning/gs1_scan_screen.dart               full-screen GS1 Data Matrix scanner (camera or HID)
+  scanning/cart_qr_code_screen.dart           shows a cart's own internal QR code
+  scanning/cart_qr_scan_screen.dart           full-screen internal-QR scanner
   members/members_screen.dart                 institution-admin-only: list/create/role/status
   members/add_member_dialog.dart, membership_labels.dart
   products/products_screen.dart               institution-wide product catalogue
@@ -34,20 +36,22 @@ domain/
   repositories/    abstract interfaces (AuthRepository, InstitutionRepository,
                    CartRepository, DrawerRepository, ProductRepository,
                    InventoryRepository, UsageRepository, AuditRepository)
-  inventory_rules.dart   pure functions for the conservative-expiry/no-FEFO
-                         rule, unit-tested without Firebase
+  inventory_rules.dart   pure functions: conservative-expiry/no-FEFO rule, and
+                         AssignmentAlert/computeAlert (cross-cart dashboard alerts) —
+                         all unit-tested without Firebase
         ↑
 data/firebase/     Firestore/Auth implementations of every repository interface,
                    Firestore path constants, timestamp codec, exception mapping,
                    emulator bootstrap
-services/          scanner_service.dart (InternalQrScannerService contract-only;
-                   Gs1DataMatrixScannerService, implemented), gs1_camera_scanner_service.dart
-                   (mobile_scanner-backed implementation), gs1_data_matrix_parser.dart (pure,
-                   camera-independent AI 01/10/17 parser), ReportService/NotificationService
-                   — still contracts only
+services/          scanner_platform_support.dart (shared camera-capability check);
+                   scanner_service.dart (InternalQrScannerService, Gs1DataMatrixScannerService
+                   contracts); gs1_camera_scanner_service.dart / gs1_hid_scanner_service.dart
+                   (camera and HID/keyboard-wedge implementations); gs1_data_matrix_parser.dart
+                   (pure, camera-independent AI 01/10/17 parser); internal_qr_camera_scanner_service.dart
+                   (camera implementation); internal_qr_payload.dart (pure payload encode/decode);
+                   ReportService/NotificationService — still contracts only
 common/            AppEnvironment (emulator vs cloud selection), AppServices
-                   (repository bundle + InheritedWidget + Gs1DataMatrixScannerService
-                   factory), RepositoryFailure
+                   (repository bundle + InheritedWidget + scanner factories), RepositoryFailure
 ```
 
 The domain layer imports nothing from `cloud_firestore`/`firebase_auth`/`firebase_core`. `lib/src/domain/inventory_rules.dart` is proof of this: it is exercised directly in `test/domain/inventory_rules_test.dart` with no emulator running.
@@ -83,11 +87,26 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 
 ### GS1 Data Matrix scanning (spec sections 29-32)
 
-- `Gs1DataMatrixScannerService` (`services/scanner_service.dart`) is the abstraction business logic depends on — never `MobileScanner` directly (spec section 32). `MobileScannerGs1Service` (`services/gs1_camera_scanner_service.dart`) is the camera-backed implementation, wrapping a `MobileScannerController` restricted to `BarcodeFormat.dataMatrix` and exposing its `barcodes` stream as raw payload strings. `InternalQrScannerService` (cart/drawer QR navigation, spec section 33) remains a contract only — a separate, later workstream (spec section 67), deliberately not built here since GS1 medicine scanning and internal-QR navigation are two intentionally distinct domains (spec section 29) with no shared implementation need.
+- `Gs1DataMatrixScannerService` (`services/scanner_service.dart`) is the abstraction business logic depends on — never `MobileScanner` directly (spec section 32). `MobileScannerGs1Service` (`services/gs1_camera_scanner_service.dart`) is the camera-backed implementation, wrapping a `MobileScannerController` restricted to `BarcodeFormat.dataMatrix` and exposing its `barcodes` stream as raw payload strings.
 - `services/gs1_data_matrix_parser.dart`'s `parseGs1DataMatrix` is a pure, camera-independent function (spec section 31's explicit testability requirement) extracting the three Application Identifiers this app needs: AI 01 (GTIN, 14 digits), AI 10 (batch/lot, variable length, terminated by an FNC1 separator when present or by the next recognized AI otherwise), and AI 17 (expiry, 6-digit YYMMDD, decoded per the GS1 general specification's year-window rule). Scanner recognition and GS1 parsing are kept as separate layers exactly as spec section 31 requires — the parser never touches `mobile_scanner` types.
 - `presentation/scanning/gs1_scan_screen.dart`'s `showGs1ScanScreen` pushes a full-screen scanner that listens to whatever `Gs1DataMatrixScannerService` it's given, parses every payload, and pops with the first result that yields at least one recognized field — or `null` if the user cancels. Scanning is always optional, retryable, and cancellable to manual entry (spec section 30); an unparseable payload shows an inline retry message and keeps listening rather than closing.
-- `AppServices` gained `createGs1Scanner` (a `Gs1DataMatrixScannerService Function()` factory, not a shared singleton — the service owns a camera resource, so a fresh instance is built and disposed per scan screen). The real constructor wires `MobileScannerGs1Service.new`; `buildTestServices` defaults to `FakeGs1DataMatrixScannerService.new`, which lets a widget test push canned payloads via `emit(...)` without touching a camera.
-- `assignment_dialog.dart`'s `_Mode.replenish` gained a "Digitalizar código GS1" button (hidden on platforms `mobile_scanner` doesn't support — Windows/Linux desktop, same `defaultTargetPlatform`/`kIsWeb` gate the legacy QR reader already uses). A successful scan pre-fills the lot/expiry fields (still freely editable — manual correction is never blocked, spec section 30) and, when the payload carried a GTIN, resolves it via `ProductRepository.findByGtin`: an unknown GTIN is never silently attached to any product (spec section 30's explicit requirement) — it only stays on the recorded `Batch.gtin`/`Batch.source`; a GTIN that resolves to a *different* product than the slot's own shows a warning but does not block submission, since spec section 72 leaves "should replenishment require confirming scanned-product-matches-slot-product" as an open decision — blocking would be the more conservative-sounding choice but was rejected here because it would make a valid manual-fallback replenishment (spec section 30's own requirement) impossible whenever the GTIN catalogue is incomplete, which is expected in this prototype.
+- `AppServices` gained `createGs1Scanner` (a `Gs1DataMatrixScannerService Function()` factory, not a shared singleton — the service owns a camera resource, so a fresh instance is built and disposed per scan screen). The real constructor picks the implementation based on `isCameraScanningSupported` (see "HID/keyboard-wedge scanning" below); `buildTestServices` defaults to `FakeGs1DataMatrixScannerService.new`, which lets a widget test push canned payloads via `emit(...)` without touching a camera.
+- `assignment_dialog.dart`'s `_Mode.replenish` has a "Digitalizar código GS1" button, always visible (no platform gate — see below). A successful scan pre-fills the lot/expiry fields (still freely editable — manual correction is never blocked, spec section 30) and, when the payload carried a GTIN, resolves it via `ProductRepository.findByGtin`: an unknown GTIN is never silently attached to any product (spec section 30's explicit requirement) — it only stays on the recorded `Batch.gtin`/`Batch.source`; a GTIN that resolves to a *different* product than the slot's own shows a warning but does not block submission, since spec section 72 leaves "should replenishment require confirming scanned-product-matches-slot-product" as an open decision — blocking would be the more conservative-sounding choice but was rejected here because it would make a valid manual-fallback replenishment (spec section 30's own requirement) impossible whenever the GTIN catalogue is incomplete, which is expected in this prototype.
+
+### HID/keyboard-wedge scanning, and internal-QR cart navigation (spec sections 29, 32-33, 67)
+
+- `services/scanner_platform_support.dart`'s `isCameraScanningSupported` (`kIsWeb` or Android/iOS/macOS) is the one platform check both scanning domains share, replacing what used to be a private copy inside `assignment_dialog.dart`. `mobile_scanner` has no Windows/Linux desktop support at all (spec section 32 calls this out explicitly for Windows).
+- `services/gs1_hid_scanner_service.dart`'s `HidGs1ScannerService` is a second `Gs1DataMatrixScannerService` implementation for exactly the platforms the camera one can't reach. A HID barcode scanner is, from the OS's point of view, a keyboard typing very fast and finishing with Enter — no driver integration is needed, only a focused text field to type into. `AppServices`'s real constructor now picks `MobileScannerGs1Service.new` when `isCameraScanningSupported`, `HidGs1ScannerService.new` otherwise, so `assignment_dialog.dart`'s scan button no longer needs to hide itself anywhere — it always opens `Gs1ScanScreen`, which itself branches on the concrete scanner type (`MobileScannerGs1Service` → camera preview; `HidGs1ScannerService` → a focused `_HidScanInput` text field whose `onSubmitted` is the entire "detection" step, re-focusing itself after every scan).
+- `services/internal_qr_payload.dart` encodes/decodes the internal I-Crash QR payload (spec section 33): `icrash://v1/cart/<institutionId>/<cartId>`, a pure function pair mirroring `gs1_data_matrix_parser.dart`'s separation of decoding from parsing. Scanning only resolves an id — it never grants access by itself; whoever reads the resolved cart still goes through `CartRepository.getCart`, gated by the exact same Rules as any other cart read.
+- `services/internal_qr_camera_scanner_service.dart`'s `MobileScannerInternalQrService` implements `InternalQrScannerService` (previously a contract only) the same way `MobileScannerGs1Service` implements the GS1 one, restricted to `BarcodeFormat.qrCode`. No HID counterpart was built for this domain — a keyboard-wedge scanner is a barcode/GS1 tool in practice, not something used to scan a printed internal navigation QR code, so Windows simply has no internal-QR entry point (the "Ler código do carro" icon is gated on `isCameraScanningSupported`).
+- `presentation/scanning/cart_qr_code_screen.dart`'s `CartQrCodeScreen` renders a cart's payload as a QR image via the `qr_flutter` package (pure Dart, no native platform code — works on every platform including Windows, since *displaying* a code needs no camera). Reachable from `CartDetailScreen`'s "Mostrar código QR" `AppBar` icon, visible to anyone who already has cart access.
+- `presentation/scanning/cart_qr_scan_screen.dart`'s `showCartQrScanScreen` mirrors `gs1_scan_screen.dart`'s structure for this domain. `InstitutionHomeScreen`'s "Ler código do carro" icon opens it, then resolves the decoded target via `CartRepository.getCart` and pushes `CartDetailScreen` on success, or shows an error `SnackBar` (not a silent no-op) if the cart doesn't exist or Rules deny the read.
+
+### Cross-cart dashboard alerts (spec section 49)
+
+- `InventoryRules.computeAlert` (`domain/inventory_rules.dart`) is a pure function computing an `AssignmentAlert?` (`expired` / `expiringSoon` / `belowMinimum`) from one assignment's `earliestKnownExpiry`/`currentQuantity`/`minimumQuantity` plus the institution's `expiryWarningDays` and the current time — deliberately computed at read-time, never stored, since an approaching expiry becomes true purely from the passage of time. It never flags "below target" alone (only an explicit, opt-in `minimumQuantity`), since whether target-alone should alert is one of the open clinical questions in `docs/OPEN_DECISIONS.md` this app does not answer.
+- `InventoryRepository.watchAllAssignments(institutionId)` backs this with a `collectionGroup('assignments').where('institutionId', isEqualTo: institutionId)` query. Every assignment document now carries denormalized `institutionId`/`cartId` fields, written once at `createAssignment` and enforced immutable afterward by Rules — see `docs/FIREBASE_MODEL.md`, "Why the cross-cart alerts query is manager+ only", for the empirical reason this query (and its authorizing Rule) can only safely check role, not per-cart `responsibleUsers` membership. **Consequence: this dashboard section is manager+ only** — a normal user still sees their own responsible carts' assignments in full through the ordinary per-cart `watchAssignments`.
+- `InstitutionHomeScreen`'s `_CrossCartAlerts` widget (manager+ gated, same `FutureBuilder<Membership?>` pattern as the rest of the screen) renders one line per assignment with a non-null alert, resolving product/cart names from data the screen already has (the one-shot `products` future, the `carts` stream the list below already uses) rather than fetching either again.
 
 ### responsibleUsers, cart edit/duplicate, product search, dashboard, history
 
@@ -116,12 +135,12 @@ Two spec gaps found by review rather than by a missing screen, both fixed at the
 
 ## What is intentionally not built yet
 
-- Internal QR-driven cart/drawer navigation (spec section 33): `InternalQrScannerService` remains a contract only. A separate workstream from GS1 medicine scanning (now implemented), deliberately not built alongside it (spec section 67).
 - Reporting export (PDF/CSV) and per-product/per-cart/per-period aggregate reports (the rest of spec section 51, beyond the read-only history view already built).
-- Cross-cart per-slot expiry/replenishment alerts on the dashboard (needs an institution-wide `assignments` collectionGroup query + Rules change — deferred, see above).
+- Cross-cart alerts are manager+ only (see "Cross-cart dashboard alerts" above) — a normal user does not get an aggregate view of expiry/stock issues outside carts they're responsible for.
 - No dependency injection / service locator beyond `AppServicesScope`.
-- `ScannerService`/`ReportService`/`NotificationService` are contracts only.
+- `ReportService`/`NotificationService` are contracts only.
 - Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.
 - Localization: screens currently hard-code PT-PT strings; `flutter_localizations`/`.arb` scaffolding is deferred to spec item 8.
+- Workstream J (QA/hardening/releases): accessibility review, performance review, offline/reconnection validation, release signing/environment separation are all still open — see spec section 68.
 
 See `ICRASH_V2_SPECIFICATION.md` for authoritative scope and dependency order, and `docs/FIREBASE_MODEL.md` for the Firestore collection layout and the conservative-expiry rule those repositories implement.

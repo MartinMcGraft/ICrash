@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/gs1_camera_scanner_service.dart';
 import '../../services/gs1_data_matrix_parser.dart';
+import '../../services/gs1_hid_scanner_service.dart';
 import '../../services/scanner_service.dart';
 
 /// Pushes a full-screen GS1 Data Matrix scanner (spec sections 29-32) and
@@ -62,21 +63,26 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
   @override
   Widget build(BuildContext context) {
     final scanner = _scanner;
+    final isHid = scanner is HidGs1ScannerService;
     return Scaffold(
       appBar: AppBar(title: const Text('Digitalizar código GS1')),
       body: Column(
         children: [
           Expanded(
-            child: scanner is MobileScannerGs1Service
-                ? MobileScanner(controller: scanner.controller)
-                : const _ScannerPreviewPlaceholder(),
+            child: switch (scanner) {
+              MobileScannerGs1Service() => MobileScanner(controller: scanner.controller),
+              HidGs1ScannerService() => _HidScanInput(scanner: scanner),
+              _ => const _ScannerPreviewPlaceholder(),
+            },
           ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                const Text(
-                  'Aponte a câmara ao código GS1 Data Matrix da embalagem.',
+                Text(
+                  isHid
+                      ? 'Digitalize o código com o leitor de códigos de barras ligado a este computador.'
+                      : 'Aponte a câmara ao código GS1 Data Matrix da embalagem.',
                   textAlign: TextAlign.center,
                 ),
                 if (_lastError != null) ...[
@@ -92,6 +98,64 @@ class _Gs1ScanScreenState extends State<Gs1ScanScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A HID barcode scanner emulates a keyboard, so a plain focused text field
+/// already receives its input — the field's own `onSubmitted` (triggered by
+/// the Enter the scanner sends after the code) is the entire "detection"
+/// step. Re-focuses itself after every scan so the next one doesn't need a
+/// manual click back into the field.
+class _HidScanInput extends StatefulWidget {
+  const _HidScanInput({required this.scanner});
+
+  final HidGs1ScannerService scanner;
+
+  @override
+  State<_HidScanInput> createState() => _HidScanInputState();
+}
+
+class _HidScanInputState extends State<_HidScanInput> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSubmitted(String value) {
+    widget.scanner.feedLine(value.trim());
+    _controller.clear();
+    _focusNode.requestFocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.keyboard_outlined, size: 48),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Aguardando leitura...', border: OutlineInputBorder()),
+                onSubmitted: _onSubmitted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

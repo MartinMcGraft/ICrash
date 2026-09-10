@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
@@ -10,15 +9,6 @@ import '../../domain/entities/slot.dart';
 import '../../domain/entities/usage_event.dart';
 import '../scanning/gs1_scan_screen.dart';
 import 'assignment_status_label.dart';
-
-/// `mobile_scanner` has no Windows/Linux desktop support (spec section 32
-/// calls this out explicitly); the scan button is hidden there and manual
-/// entry remains the only path, matching the legacy QR reader's own gating.
-bool get _gs1ScanSupported =>
-    kIsWeb ||
-    defaultTargetPlatform == TargetPlatform.android ||
-    defaultTargetPlatform == TargetPlatform.iOS ||
-    defaultTargetPlatform == TargetPlatform.macOS;
 
 enum _Mode { view, assign, consume, replenish, reconcile, correct }
 
@@ -413,15 +403,13 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                     keyboardType: TextInputType.number,
                     validator: _validatePositiveInt,
                   ),
-                  if (_gs1ScanSupported) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => _startGs1Scan(setDialogState),
-                      icon: const Icon(Icons.qr_code_scanner),
-                      label: const Text('Digitalizar código GS1'),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _startGs1Scan(setDialogState),
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Digitalizar código GS1'),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _lotController,
                     decoration: const InputDecoration(labelText: 'Número de lote'),

@@ -80,6 +80,7 @@ async function seedBaseline() {
       uid: USER_UID,
     });
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
+      institutionId: INST_A, cartId: CART_ID,
       slotId: 'slot-1', productId: 'product-1', currentQuantity: 5, targetQuantity: 10, status: 'ok',
     });
   });
@@ -273,6 +274,78 @@ describe('cross-institution membership index (spec section 16)', () => {
     const db = testEnv.authenticatedContext(USER_UID).firestore();
     await assertFails(setDoc(doc(db, `institutions/${INST_A}/memberIndex/${USER_UID}`), {
       uid: USER_UID, status: 'active',
+    }));
+  });
+});
+
+describe('cross-cart assignment alerts (spec section 49)', () => {
+  const CART2_ID = 'cart-2';
+  const ASSIGNMENT2_ID = 'assign-2';
+
+  // A second cart in institution A with its own assignment, deliberately
+  // with no responsibleUsers entry for USER_UID — they are only assigned
+  // to CART_ID, not this one.
+  async function seedSecondCart() {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, `institutions/${INST_A}/carts/${CART2_ID}`), {
+        name: 'Cart 2', status: 'operational', layoutVersion: 1,
+      });
+      await setDoc(doc(db, `institutions/${INST_A}/carts/${CART2_ID}/assignments/${ASSIGNMENT2_ID}`), {
+        institutionId: INST_A, cartId: CART2_ID,
+        slotId: 'slot-1', productId: 'product-2', currentQuantity: 1, targetQuantity: 5, status: 'ok',
+      });
+    });
+  }
+
+  test('a manager can list every assignment across every cart in their institution', async () => {
+    await seedBaseline();
+    await seedSecondCart();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
+    const snapshot = await assertSucceeds(getDocs(q));
+    assert.equal(snapshot.size, 2);
+  });
+
+  // Manager+ only, deliberately: a list/collection-group rule can only
+  // safely reference fields the query itself filters on (confirmed
+  // empirically — see the matching comment in firestore.rules and
+  // docs/FIREBASE_MODEL.md). The query only filters on `institutionId`, so
+  // checking `isAssignedToCart` (which needs `cartId`, not part of the
+  // filter) throws instead of just excluding the denied document. A normal
+  // user still reads their own responsible carts' assignments in full via
+  // the ordinary per-cart nested rule (see "daily consumption write scope"
+  // above); they just don't get this cross-cart aggregate view.
+  test('a normal user cannot use the cross-cart assignments query at all', async () => {
+    await seedBaseline();
+    await seedSecondCart();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
+    await assertFails(getDocs(q));
+  });
+
+  test('a member of a different institution cannot use it either, even filtering by institution A\'s id', async () => {
+    await seedBaseline();
+    await seedSecondCart();
+    const db = testEnv.authenticatedContext(OTHER_INST_UID).firestore();
+    const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
+    await assertFails(getDocs(q));
+  });
+
+  test('a manager cannot create an assignment whose institutionId/cartId do not match its own path', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/bad-1`), {
+      institutionId: INST_B, cartId: CART_ID,
+      slotId: 'slot-2', productId: 'product-3', currentQuantity: 0, targetQuantity: 1, status: 'ok',
+    }));
+  });
+
+  test('institutionId/cartId can never be changed after creation, even by a manager', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
+      institutionId: INST_B,
     }));
   });
 });

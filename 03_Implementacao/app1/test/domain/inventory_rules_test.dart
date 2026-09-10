@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/domain/entities/batch.dart';
+import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/inventory_rules.dart';
 
 void main() {
@@ -102,4 +103,107 @@ void main() {
       expect(InventoryRules.earliestExpiryFromConfirmedBatches(batches), october);
     });
   });
+
+  group('InventoryRules.computeAlert (spec section 49)', () {
+    const base = CartProductAssignment(
+      id: 'a1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 5,
+      targetQuantity: 10,
+    );
+    final now = DateTime(2026, 9, 10);
+
+    test('returns null when nothing needs attention', () {
+      final assignment = base.copyWithExpiry(now.add(const Duration(days: 90)));
+      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
+    });
+
+    test('flags an assignment whose earliestKnownExpiry has already passed', () {
+      final assignment = base.copyWithExpiry(now.subtract(const Duration(days: 1)));
+      expect(
+        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
+        AssignmentAlert.expired,
+      );
+    });
+
+    test('treats an expiry of exactly today as expired', () {
+      final assignment = base.copyWithExpiry(now);
+      expect(
+        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
+        AssignmentAlert.expired,
+      );
+    });
+
+    test('flags an assignment expiring within the warning horizon', () {
+      final assignment = base.copyWithExpiry(now.add(const Duration(days: 10)));
+      expect(
+        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
+        AssignmentAlert.expiringSoon,
+      );
+    });
+
+    test('does not flag an assignment expiring just beyond the warning horizon', () {
+      final assignment = base.copyWithExpiry(now.add(const Duration(days: 31)));
+      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
+    });
+
+    test('flags stock at or below its explicit minimum quantity', () {
+      const assignment = CartProductAssignment(
+        id: 'a1',
+        cartId: 'cart-1',
+        slotId: 'r0c0',
+        productId: 'p1',
+        currentQuantity: 2,
+        targetQuantity: 10,
+        minimumQuantity: 2,
+      );
+      expect(
+        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
+        AssignmentAlert.belowMinimum,
+      );
+    });
+
+    test('never flags being below target alone when no minimum is set', () {
+      const assignment = CartProductAssignment(
+        id: 'a1',
+        cartId: 'cart-1',
+        slotId: 'r0c0',
+        productId: 'p1',
+        currentQuantity: 1,
+        targetQuantity: 10,
+      );
+      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
+    });
+
+    test('expiry takes priority over a simultaneous below-minimum condition', () {
+      final assignment = CartProductAssignment(
+        id: 'a1',
+        cartId: 'cart-1',
+        slotId: 'r0c0',
+        productId: 'p1',
+        currentQuantity: 1,
+        targetQuantity: 10,
+        minimumQuantity: 2,
+        earliestKnownExpiry: now.subtract(const Duration(days: 1)),
+      );
+      expect(
+        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
+        AssignmentAlert.expired,
+      );
+    });
+  });
+}
+
+extension on CartProductAssignment {
+  CartProductAssignment copyWithExpiry(DateTime expiry) => CartProductAssignment(
+        id: id,
+        cartId: cartId,
+        slotId: slotId,
+        productId: productId,
+        currentQuantity: currentQuantity,
+        targetQuantity: targetQuantity,
+        earliestKnownExpiry: expiry,
+      );
 }

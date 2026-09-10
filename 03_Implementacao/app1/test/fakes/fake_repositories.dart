@@ -320,6 +320,12 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
   }
 
   @override
+  Stream<List<CartProductAssignment>> watchAllAssignments(String institutionId) {
+    scheduleMicrotask(_emit);
+    return _controller.stream;
+  }
+
+  @override
   Future<CartProductAssignment?> getAssignment(String institutionId, String cartId, String assignmentId) async {
     for (final assignment in assignments) {
       if (assignment.id == assignmentId) return assignment;
@@ -501,6 +507,25 @@ class FakeGs1DataMatrixScannerService implements Gs1DataMatrixScannerService {
   }
 }
 
+/// Lets a widget test drive the internal-QR scan flow without a camera: push
+/// a raw payload string through [emit], mirroring
+/// [FakeGs1DataMatrixScannerService] for the other scanning domain.
+class FakeInternalQrScannerService implements InternalQrScannerService {
+  final _controller = StreamController<String>.broadcast();
+  bool disposed = false;
+
+  void emit(String rawPayload) => _controller.add(rawPayload);
+
+  @override
+  Stream<String> scanPayloads() => _controller.stream;
+
+  @override
+  void dispose() {
+    disposed = true;
+    _controller.close();
+  }
+}
+
 /// Builds an [AppServices] for widget tests: pass fakes for whatever the
 /// screen under test actually uses, everything else defaults to a filler
 /// fake that throws if it is ever called.
@@ -514,6 +539,7 @@ AppServices buildTestServices({
   UsageRepository? usage,
   AuditRepository? audit,
   Gs1DataMatrixScannerService Function()? createGs1Scanner,
+  InternalQrScannerService Function()? createInternalQrScanner,
 }) {
   return AppServices.withRepositories(
     auth: auth ?? FakeAuthRepository(),
@@ -525,5 +551,6 @@ AppServices buildTestServices({
     usage: usage ?? FakeUsageRepository(),
     audit: audit ?? FakeAuditRepository(),
     createGs1Scanner: createGs1Scanner ?? FakeGs1DataMatrixScannerService.new,
+    createInternalQrScanner: createInternalQrScanner ?? FakeInternalQrScannerService.new,
   );
 }

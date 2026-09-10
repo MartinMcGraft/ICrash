@@ -15,6 +15,13 @@
         { "fieldPath": "assignmentId", "order": "ASCENDING" },
         { "fieldPath": "serverTimestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

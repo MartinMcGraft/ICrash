@@ -37,6 +37,23 @@ class FirestoreInventoryRepository implements InventoryRepository {
   }
 
   @override
+  Stream<List<CartProductAssignment>> watchAllAssignments(String institutionId) {
+    return _firestore
+        .collectionGroup(FirestorePaths.assignmentsCollectionGroup)
+        .where('institutionId', isEqualTo: institutionId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final cartId = doc.reference.parent.parent!.id;
+              return CartProductAssignment.fromMap(
+                doc.id,
+                cartId,
+                normalizeTimestamps(doc.data(), _assignmentTimestampFields),
+              );
+            }).toList())
+        .handleError((Object error) => throw mapFirebaseException(error));
+  }
+
+  @override
   Future<CartProductAssignment?> getAssignment(String institutionId, String cartId, String assignmentId) async {
     try {
       final doc = await _assignmentRef(institutionId, cartId, assignmentId).get();
@@ -67,6 +84,14 @@ class FirestoreInventoryRepository implements InventoryRepository {
       final ref = _firestore.collection(FirestorePaths.assignments(institutionId, cartId)).doc();
       await ref.set({
         ...assignment.toMap(),
+        // Denormalized purely so `watchAllAssignments` can query across
+        // every cart with `.where('institutionId', ...)`, and so the
+        // matching `firestore.rules` `list` rule can read them back without
+        // relying on `path[]` (see the rule's own comment for why). Never
+        // read back into the domain entity; cartId/institutionId are always
+        // reconstructed from the document's own path/reference when reading.
+        'institutionId': institutionId,
+        'cartId': cartId,
         'earliestKnownExpiry': null,
         'updatedAt': FieldValue.serverTimestamp(),
       });

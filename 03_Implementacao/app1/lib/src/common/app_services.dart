@@ -19,6 +19,9 @@ import '../domain/repositories/inventory_repository.dart';
 import '../domain/repositories/product_repository.dart';
 import '../domain/repositories/usage_repository.dart';
 import '../services/gs1_camera_scanner_service.dart';
+import '../services/gs1_hid_scanner_service.dart';
+import '../services/internal_qr_camera_scanner_service.dart';
+import '../services/scanner_platform_support.dart';
 import '../services/scanner_service.dart';
 
 /// Bundles every repository the V2 presentation layer needs, constructed
@@ -40,7 +43,8 @@ class AppServices {
           inventory: FirestoreInventoryRepository(firestore),
           usage: FirestoreUsageRepository(firestore),
           audit: FirestoreAuditRepository(firestore),
-          createGs1Scanner: MobileScannerGs1Service.new,
+          createGs1Scanner: isCameraScanningSupported ? MobileScannerGs1Service.new : HidGs1ScannerService.new,
+          createInternalQrScanner: MobileScannerInternalQrService.new,
         );
 
   /// Lets widget tests supply fakes for every repository instead of the
@@ -55,6 +59,7 @@ class AppServices {
     required this.usage,
     required this.audit,
     required this.createGs1Scanner,
+    required this.createInternalQrScanner,
   });
 
   final AuthRepository auth;
@@ -70,6 +75,10 @@ class AppServices {
   /// (e.g. one per scan screen, disposed when that screen closes) rather
   /// than sharing one long-lived instance, since it owns a camera resource.
   final Gs1DataMatrixScannerService Function() createGs1Scanner;
+
+  /// Same per-call-fresh-instance rationale as [createGs1Scanner], for the
+  /// other scanning domain (internal cart/drawer QR — spec section 29).
+  final InternalQrScannerService Function() createInternalQrScanner;
 }
 
 class AppServicesScope extends InheritedWidget {

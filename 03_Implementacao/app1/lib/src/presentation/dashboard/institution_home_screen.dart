@@ -4,12 +4,15 @@ import 'package:icrash_app/home_menu.dart';
 import '../../common/app_services.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
+import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/cart_status.dart';
 import '../../domain/entities/institution.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/entities/usage_event.dart';
+import '../../domain/inventory_rules.dart';
+import '../../services/scanner_platform_support.dart';
 import '../cart/assignment_status_label.dart';
 import '../cart/cart_detail_screen.dart';
 import '../cart/cart_status_label.dart';
@@ -17,14 +20,14 @@ import '../cart/create_cart_dialog.dart';
 import '../members/members_screen.dart';
 import '../products/products_screen.dart';
 import '../reports/history_screen.dart';
+import '../scanning/cart_qr_scan_screen.dart';
 
 /// Per-institution home (spec section 49): a small dashboard — cart-status
-/// counts and recent activity — above the accessible-cart list, with a
-/// name filter for fast access when there are many carts. Per-slot
-/// alerts (expiring/expired products across every cart) would need an
-/// institution-wide `assignments` collectionGroup query and a matching
-/// Rules change, deliberately deferred — see docs/AI_HANDOFF.md. Keeps the
-/// legacy `HomeMenu` reachable via a button, per the "preserve existing
+/// counts, cross-cart alerts (manager+ only, see
+/// `docs/FIREBASE_MODEL.md`'s "Why the cross-cart alerts query is manager+
+/// only") and recent activity — above the accessible-cart list, with a name
+/// filter for fast access when there are many carts. Keeps the legacy
+/// `HomeMenu` reachable via a button, per the "preserve existing
 /// functionality" rule, without wiring any new code to the obsolete Django
 /// `RequestHandler`.
 class InstitutionHomeScreen extends StatefulWidget {
@@ -57,6 +60,32 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
     return membership.role == Role.institutionAdmin || membership.role == Role.platformSuperAdmin;
   }
 
+  /// Spec section 33: scanning only resolves an id, it never grants access
+  /// by itself — `CartRepository.getCart` still goes through the same
+  /// Firestore Rules as any other cart read, so a scanned code for a cart
+  /// this user cannot access simply fails here instead of opening it.
+  Future<void> _scanCartQr(BuildContext context) async {
+    final services = AppServicesScope.of(context);
+    final target = await showCartQrScanScreen(context, createScanner: services.createInternalQrScanner);
+    if (target == null || !context.mounted) return;
+    try {
+      final cart = await services.carts.getCart(target.institutionId, target.cartId);
+      if (!context.mounted) return;
+      if (cart == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível abrir este carro.')),
+        );
+        return;
+      }
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => CartDetailScreen(cart: cart)));
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir este carro.')),
+      );
+    }
+  }
+
   Future<void> _createCart(BuildContext context) async {
     final name = await showCreateCartDialog(context);
     if (name == null || !context.mounted) return;
@@ -78,6 +107,12 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       appBar: AppBar(
         title: Text(widget.institution.name),
         actions: [
+          if (isCameraScanningSupported)
+            IconButton(
+              tooltip: 'Ler código do carro',
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: () => _scanCartQr(context),
+            ),
           IconButton(
             tooltip: 'Histórico',
             icon: const Icon(Icons.receipt_long_outlined),
@@ -160,6 +195,18 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: _CartStatusSummary(carts: carts),
+              ),
+              FutureBuilder<Membership?>(
+                future: _myMembership,
+                builder: (context, membershipSnapshot) {
+                  if (!_canManageCarts(membershipSnapshot.data)) return const SizedBox.shrink();
+                  return _CrossCartAlerts(
+                    institutionId: widget.institution.id,
+                    expiryWarningDays: widget.institution.expiryWarningDays,
+                    carts: carts,
+                    products: _products,
+                  );
+                },
               ),
               _RecentActivity(institutionId: widget.institution.id, products: _products),
               Padding(
@@ -245,6 +292,91 @@ class _CartStatusSummary extends StatelessWidget {
     );
   }
 }
+
+/// Cross-cart dashboard alerts (spec section 49): expiring/expired products
+/// and stock below its minimum, across every cart in the institution at
+/// once — manager+ only, since the underlying `collectionGroup('assignments')`
+/// Rules can only safely check role, not per-cart responsibility (see
+/// `docs/FIREBASE_MODEL.md`). Cart/product names are resolved from data the
+/// screen already has (the same `carts` stream the list below uses, and the
+/// same one-shot `products` future `_RecentActivity` uses) rather than
+/// fetched again.
+class _CrossCartAlerts extends StatelessWidget {
+  const _CrossCartAlerts({
+    required this.institutionId,
+    required this.expiryWarningDays,
+    required this.carts,
+    required this.products,
+  });
+
+  final String institutionId;
+  final int expiryWarningDays;
+  final List<Cart> carts;
+  final Future<List<Product>> products;
+
+  String _cartName(String cartId) {
+    for (final cart in carts) {
+      if (cart.id == cartId) return cart.name;
+    }
+    return 'Carro removido';
+  }
+
+  String _productName(List<Product> products, String productId) {
+    for (final product in products) {
+      if (product.id == productId) return product.name;
+    }
+    return 'Produto removido';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final services = AppServicesScope.of(context);
+    return StreamBuilder<List<CartProductAssignment>>(
+      stream: services.inventory.watchAllAssignments(institutionId),
+      builder: (context, assignmentsSnapshot) {
+        final assignments = assignmentsSnapshot.data ?? const <CartProductAssignment>[];
+        final now = DateTime.now();
+        final alerts = <(CartProductAssignment, AssignmentAlert)>[
+          for (final assignment in assignments)
+            if (InventoryRules.computeAlert(assignment, expiryWarningDays: expiryWarningDays, now: now)
+                case final alert?)
+              (assignment, alert),
+        ];
+        if (alerts.isEmpty) return const SizedBox.shrink();
+        return FutureBuilder<List<Product>>(
+          future: products,
+          builder: (context, productsSnapshot) {
+            final productList = productsSnapshot.data ?? const <Product>[];
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Alertas', style: Theme.of(context).textTheme.labelLarge),
+                  for (final (assignment, alert) in alerts)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '${_assignmentAlertLabel(alert)} · ${_productName(productList, assignment.productId)}'
+                        ' · ${_cartName(assignment.cartId)}',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+String _assignmentAlertLabel(AssignmentAlert alert) => switch (alert) {
+      AssignmentAlert.expired => 'Expirado',
+      AssignmentAlert.expiringSoon => 'A expirar em breve',
+      AssignmentAlert.belowMinimum => 'Stock abaixo do mínimo',
+    };
 
 /// Institution-wide recent stock activity (spec section 49's "recent
 /// relevant activity"), one of the few dashboard signals that does not need

@@ -8,6 +8,7 @@ import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/presentation/cart/cart_detail_screen.dart';
 import 'package:icrash_app/src/presentation/cart/slot_editor_screen.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../fakes/fake_repositories.dart';
 
@@ -177,5 +178,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Pesquisar produto'), findsOneWidget);
+  });
+
+  testWidgets('shows this cart\'s QR code for any user', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Mostrar código QR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carro 1'), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
   });
 }

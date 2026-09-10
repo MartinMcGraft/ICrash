@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
+import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
@@ -166,5 +167,112 @@ void main() {
 
     expect(find.textContaining('Adrenalina'), findsOneWidget);
     expect(find.textContaining('(-2)'), findsOneWidget);
+  });
+
+  testWidgets('scans a cart QR code and opens the resolved cart', (tester) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    final scanner = FakeInternalQrScannerService();
+    await tester.pumpWidget(_wrap(buildTestServices(
+      carts: FakeCartRepository(carts: [cart]),
+      createInternalQrScanner: () => scanner,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ler código do carro'));
+    await tester.pumpAndSettle();
+
+    scanner.emit('icrash://v1/cart/inst-a/cart-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CartDetailScreen), findsOneWidget);
+  });
+
+  testWidgets('shows an error when a scanned cart code cannot be resolved', (tester) async {
+    final scanner = FakeInternalQrScannerService();
+    await tester.pumpWidget(_wrap(buildTestServices(
+      carts: FakeCartRepository(),
+      createInternalQrScanner: () => scanner,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ler código do carro'));
+    await tester.pumpAndSettle();
+
+    scanner.emit('icrash://v1/cart/inst-a/does-not-exist');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CartDetailScreen), findsNothing);
+    expect(find.textContaining('Não foi possível abrir este carro'), findsOneWidget);
+  });
+
+  testWidgets('shows cross-cart alerts for a manager', (tester) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final expiredAssignment = CartProductAssignment(
+      id: 'a1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 5,
+      earliestKnownExpiry: DateTime.now().subtract(const Duration(days: 1)),
+    );
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: FakeCartRepository(carts: [cart]),
+      products: FakeProductRepository(products: [product]),
+      inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alertas'), findsOneWidget);
+    expect(find.textContaining('Expirado'), findsOneWidget);
+    expect(find.textContaining('Adrenalina'), findsOneWidget);
+    expect(find.textContaining('Carro 1'), findsWidgets);
+  });
+
+  testWidgets('hides cross-cart alerts for a normal user', (tester) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final expiredAssignment = CartProductAssignment(
+      id: 'a1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 3,
+      targetQuantity: 5,
+      earliestKnownExpiry: DateTime.now().subtract(const Duration(days: 1)),
+    );
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      carts: FakeCartRepository(carts: [cart]),
+      products: FakeProductRepository(products: [product]),
+      inventory: FakeInventoryRepository(assignments: [expiredAssignment]),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alertas'), findsNothing);
+  });
+
+  testWidgets('shows nothing when no assignment needs attention', (tester) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const okAssignment = CartProductAssignment(
+      id: 'a1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 5,
+      targetQuantity: 5,
+    );
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: FakeCartRepository(carts: [cart]),
+      products: FakeProductRepository(products: [product]),
+      inventory: FakeInventoryRepository(assignments: [okAssignment]),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alertas'), findsNothing);
   });
 }

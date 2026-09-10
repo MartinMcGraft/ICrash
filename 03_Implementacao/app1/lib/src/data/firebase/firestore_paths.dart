@@ -31,6 +31,14 @@ class FirestorePaths {
   static String assignments(String institutionId, String cartId) =>
       'institutions/$institutionId/carts/$cartId/assignments';
 
+  /// Collection-group name for `InventoryRepository.watchAllAssignments`
+  /// (spec section 49: cross-cart dashboard alerts). Every assignment
+  /// document also stores a denormalized `institutionId` field so this can
+  /// be queried with `.where('institutionId', isEqualTo: ...)` instead of
+  /// scanning every institution's assignments — the same reason
+  /// [memberIndex] exists; see the matching rule in `firestore.rules`.
+  static const String assignmentsCollectionGroup = 'assignments';
+
   static String batches(String institutionId, String cartId, String assignmentId) =>
       'institutions/$institutionId/carts/$cartId/assignments/$assignmentId/batches';
 

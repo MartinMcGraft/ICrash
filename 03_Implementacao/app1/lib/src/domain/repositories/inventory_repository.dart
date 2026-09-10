@@ -11,6 +11,14 @@ import '../entities/cart_product_assignment.dart';
 abstract class InventoryRepository {
   Stream<List<CartProductAssignment>> watchAssignments(String institutionId, String cartId);
 
+  /// Every assignment across every cart in [institutionId] the current user
+  /// can access (spec section 49: cross-cart dashboard alerts — expiring/
+  /// expired products and stock below its minimum, computed at read-time
+  /// via `InventoryRules.computeAlert` rather than stored). Rules gate each
+  /// cart exactly as [watchAssignments] does per-cart, so a normal user only
+  /// ever sees assignments in carts they're responsible for.
+  Stream<List<CartProductAssignment>> watchAllAssignments(String institutionId);
+
   Future<CartProductAssignment?> getAssignment(String institutionId, String cartId, String assignmentId);
 
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment);

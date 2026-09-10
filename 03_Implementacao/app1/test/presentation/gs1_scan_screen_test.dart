@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/presentation/scanning/gs1_scan_screen.dart';
 import 'package:icrash_app/src/services/gs1_data_matrix_parser.dart';
+import 'package:icrash_app/src/services/gs1_hid_scanner_service.dart';
+import 'package:icrash_app/src/services/scanner_service.dart';
 
 import '../fakes/fake_repositories.dart';
 
 class _HostScreen extends StatelessWidget {
   const _HostScreen({required this.scanner, required this.onResult});
 
-  final FakeGs1DataMatrixScannerService scanner;
+  final Gs1DataMatrixScannerService scanner;
   final void Function(Object? result) onResult;
 
   @override
@@ -71,5 +73,22 @@ void main() {
 
     expect(result, isNull);
     expect(scanner.disposed, isTrue);
+  });
+
+  testWidgets('HID mode: typing a code into the focused field and pressing Enter parses and pops', (tester) async {
+    final scanner = HidGs1ScannerService();
+    Object? result = 'unset';
+    await tester.pumpWidget(MaterialApp(home: _HostScreen(scanner: scanner, onResult: (r) => result = r)));
+
+    await tester.tap(find.text('Abrir scanner'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.keyboard_outlined), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '0105412345678900');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(result, isA<Gs1ParsedData>());
+    expect((result as Gs1ParsedData).gtin, '05412345678900');
   });
 }

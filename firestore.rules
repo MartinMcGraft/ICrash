@@ -99,6 +99,28 @@ service cloud.firestore {
       allow update, delete: if isInstitutionAdmin(path[1]);
     }
 
+    // Enables `collectionGroup('assignments')` for the cross-cart dashboard
+    // alerts (spec section 49 — expiring/expired products and stock below
+    // its minimum, across every cart in an institution at once). Manager+
+    // only, deliberately narrower than the nested per-cart rule below: a
+    // `list`/collection-group rule can only safely reference fields the
+    // query itself filters on (confirmed empirically — see
+    // `docs/FIREBASE_MODEL.md`, "Why the cross-cart alerts query is
+    // manager+ only"). The query filters solely on `institutionId`
+    // (a denormalized field every assignment doc carries, written once at
+    // creation — see `FirestoreInventoryRepository.createAssignment`), so
+    // this rule touches only that field too; it deliberately does NOT also
+    // check `isAssignedToCart`, which needs `cartId` — a field the query
+    // does not filter on — because doing so throws "Property cartId is
+    // undefined on object" for any denied candidate document instead of
+    // just excluding it, failing the whole query. A normal (non-manager)
+    // user already sees their own responsible carts' assignments in full
+    // via the ordinary per-cart `watchAssignments` reads below; they simply
+    // don't get the cross-cart aggregate view.
+    match /{path=**}/assignments/{assignmentId} {
+      allow read: if isManagerOrAbove(resource.data.institutionId);
+    }
+
     match /institutions/{institutionId} {
       allow read: if isMember(institutionId);
       // Only a platform super admin creates institutions (spec section 16).
@@ -144,13 +166,24 @@ service cloud.firestore {
 
         match /assignments/{assignmentId} {
           allow read: if canAccessCart(institutionId, cartId);
-          allow create, delete: if isManagerOrAbove(institutionId);
+          // The denormalized `institutionId`/`cartId` fields (see
+          // `FirestorePaths.assignmentsCollectionGroup`) must always match
+          // this document's own path and can never be changed afterward by
+          // anyone — otherwise a manager of one institution could make an
+          // assignment readable to a different institution's `list` query
+          // via the collection-group rule above, which trusts these fields.
+          allow create: if isManagerOrAbove(institutionId) &&
+            request.resource.data.institutionId == institutionId &&
+            request.resource.data.cartId == cartId;
+          allow delete: if isManagerOrAbove(institutionId);
           // A normal assigned user may only ever move currentQuantity during
           // daily consumption; every structural field stays manager+ only
           // (spec sections 22-24, 43).
-          allow update: if isManagerOrAbove(institutionId) ||
-            (canAccessCart(institutionId, cartId) &&
-              onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy']));
+          allow update: if (isManagerOrAbove(institutionId) ||
+              (canAccessCart(institutionId, cartId) &&
+                onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy']))) &&
+            request.resource.data.institutionId == resource.data.institutionId &&
+            request.resource.data.cartId == resource.data.cartId;
 
           match /batches/{batchId} {
             allow read: if canAccessCart(institutionId, cartId);

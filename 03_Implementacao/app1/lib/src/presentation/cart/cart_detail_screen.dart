@@ -8,6 +8,7 @@ import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
 import 'bump_layout_version.dart';
 import 'cart_status_label.dart';
+import '../scanning/cart_qr_code_screen.dart';
 import 'create_drawer_dialog.dart';
 import 'duplicate_cart_dialog.dart';
 import 'edit_cart_dialog.dart';
@@ -123,6 +124,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       appBar: AppBar(
         title: Text(widget.cart.name),
         actions: [
+          IconButton(
+            tooltip: 'Mostrar código QR',
+            icon: const Icon(Icons.qr_code_2),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => CartQrCodeScreen(cart: widget.cart)),
+            ),
+          ),
           IconButton(
             tooltip: 'Pesquisar produto',
             icon: const Icon(Icons.search),
