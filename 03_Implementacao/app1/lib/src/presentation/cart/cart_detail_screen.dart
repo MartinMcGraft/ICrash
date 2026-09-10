@@ -9,6 +9,8 @@ import '../../domain/entities/role.dart';
 import 'bump_layout_version.dart';
 import 'cart_status_label.dart';
 import 'create_drawer_dialog.dart';
+import 'duplicate_cart_dialog.dart';
+import 'edit_cart_dialog.dart';
 import 'responsible_users_screen.dart';
 import 'slot_editor_screen.dart';
 
@@ -54,6 +56,65 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     }
   }
 
+  Future<void> _editCart(BuildContext context) async {
+    final input = await showEditCartDialog(context, widget.cart);
+    if (input == null || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      await services.carts.updateCart(
+        widget.cart.institutionId,
+        Cart(
+          id: widget.cart.id,
+          institutionId: widget.cart.institutionId,
+          name: input.name,
+          status: input.status,
+          layoutVersion: widget.cart.layoutVersion,
+          templateId: widget.cart.templateId,
+        ),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Carro atualizado.')));
+      Navigator.of(context).pop();
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível atualizar o carro. Tente novamente.')),
+      );
+    }
+  }
+
+  Future<void> _duplicateCart(BuildContext context) async {
+    final newName = await showDuplicateCartDialog(context, defaultName: '${widget.cart.name} (cópia)');
+    if (newName == null || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      final newCart = await services.carts.createCart(
+        widget.cart.institutionId,
+        Cart(id: '', institutionId: widget.cart.institutionId, name: newName),
+      );
+      final drawers = await services.drawers.watchDrawers(widget.cart.institutionId, widget.cart.id).first;
+      for (final drawer in drawers) {
+        final newDrawer = await services.drawers.createDrawer(
+          widget.cart.institutionId,
+          newCart.id,
+          CartDrawer(id: '', cartId: newCart.id, name: drawer.name, rows: drawer.rows, columns: drawer.columns),
+        );
+        final slots = await services.drawers.watchSlots(widget.cart.institutionId, widget.cart.id, drawer.id).first;
+        if (slots.isNotEmpty) {
+          await services.drawers.replaceSlots(widget.cart.institutionId, newCart.id, newDrawer.id, slots);
+        }
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Carro duplicado como "${newCart.name}".')));
+      Navigator.of(context).pop();
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível duplicar o carro. Tente novamente.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
@@ -61,6 +122,22 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       appBar: AppBar(
         title: Text(widget.cart.name),
         actions: [
+          FutureBuilder<Membership?>(
+            future: _myMembership,
+            builder: (context, snapshot) {
+              if (!_canManageDrawers(snapshot.data)) return const SizedBox.shrink();
+              return PopupMenuButton<String>(
+                onSelected: (action) {
+                  if (action == 'edit') _editCart(context);
+                  if (action == 'duplicate') _duplicateCart(context);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                  const PopupMenuItem(value: 'duplicate', child: Text('Duplicar')),
+                ],
+              );
+            },
+          ),
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {

@@ -5,6 +5,7 @@ import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/presentation/cart/cart_detail_screen.dart';
 import 'package:icrash_app/src/presentation/cart/slot_editor_screen.dart';
 
@@ -109,5 +110,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Responsáveis'), findsNothing);
+  });
+
+  testWidgets('edits a cart name and status for a manager', (tester) async {
+    final carts = FakeCartRepository(carts: [_cart]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: carts,
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField), 'Carro Renomeado');
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(carts.carts.single.name, 'Carro Renomeado');
+  });
+
+  testWidgets('duplicates a cart with its drawers and slots but not stock', (tester) async {
+    const drawer = CartDrawer(id: 'drawer-1', cartId: 'cart-1', name: 'Gaveta 1', rows: 2, columns: 2);
+    final drawers = FakeDrawerRepository(drawers: [drawer]);
+    drawers.slotsByDrawer['drawer-1'] = [
+      const Slot(id: 'r0c0', drawerId: 'drawer-1', row: 0, column: 0),
+    ];
+    final carts = FakeCartRepository(carts: [_cart]);
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      carts: carts,
+      drawers: drawers,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplicar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Duplicar'));
+    await tester.pumpAndSettle();
+
+    expect(carts.lastCreated?.name, 'Carro 1 (cópia)');
+    expect(drawers.lastCreatedDrawer?.cartId, carts.lastCreated?.id);
+    expect(drawers.lastSavedSlots, hasLength(1));
+  });
+
+  testWidgets('hides the edit/duplicate menu for a normal user', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
   });
 }
