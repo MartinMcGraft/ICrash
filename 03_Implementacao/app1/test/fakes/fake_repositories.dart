@@ -21,6 +21,7 @@ import 'package:icrash_app/src/domain/repositories/institution_repository.dart';
 import 'package:icrash_app/src/domain/repositories/inventory_repository.dart';
 import 'package:icrash_app/src/domain/repositories/product_repository.dart';
 import 'package:icrash_app/src/domain/repositories/usage_repository.dart';
+import 'package:icrash_app/src/services/scanner_service.dart';
 
 /// Throws on any call that isn't explicitly overridden by a subclass.
 /// Lets each fake below implement only the handful of methods a given
@@ -481,6 +482,25 @@ class FakeUsageRepository extends UnimplementedFake implements UsageRepository {
 
 class FakeAuditRepository extends UnimplementedFake implements AuditRepository {}
 
+/// Lets a widget test drive the scan flow without a camera: push a raw GS1
+/// payload string through [emit] and it reaches whatever is listening to
+/// [scanRawPayloads], exactly like a real decoded barcode would.
+class FakeGs1DataMatrixScannerService implements Gs1DataMatrixScannerService {
+  final _controller = StreamController<String>.broadcast();
+  bool disposed = false;
+
+  void emit(String rawPayload) => _controller.add(rawPayload);
+
+  @override
+  Stream<String> scanRawPayloads() => _controller.stream;
+
+  @override
+  void dispose() {
+    disposed = true;
+    _controller.close();
+  }
+}
+
 /// Builds an [AppServices] for widget tests: pass fakes for whatever the
 /// screen under test actually uses, everything else defaults to a filler
 /// fake that throws if it is ever called.
@@ -493,6 +513,7 @@ AppServices buildTestServices({
   InventoryRepository? inventory,
   UsageRepository? usage,
   AuditRepository? audit,
+  Gs1DataMatrixScannerService Function()? createGs1Scanner,
 }) {
   return AppServices.withRepositories(
     auth: auth ?? FakeAuthRepository(),
@@ -503,5 +524,6 @@ AppServices buildTestServices({
     inventory: inventory ?? FakeInventoryRepository(),
     usage: usage ?? FakeUsageRepository(),
     audit: audit ?? FakeAuditRepository(),
+    createGs1Scanner: createGs1Scanner ?? FakeGs1DataMatrixScannerService.new,
   );
 }

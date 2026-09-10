@@ -185,6 +185,55 @@ void main() {
     expect(inventory.assignments.single.currentQuantity, 3);
   });
 
+  testWidgets('replenishes stock by scanning a GS1 code, pre-filling lot/expiry and warning on unknown GTIN',
+      (tester) async {
+    const assignment = CartProductAssignment(
+      id: 'assignment-1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 0,
+      targetQuantity: 10,
+    );
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final inventory = FakeInventoryRepository(assignments: [assignment]);
+    final scanner = FakeGs1DataMatrixScannerService();
+    await tester.pumpWidget(_wrap(buildTestServices(
+      auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'me')),
+      institutions: FakeInstitutionRepository(myMembership: _manager()),
+      products: FakeProductRepository(products: [product]),
+      inventory: inventory,
+      createGs1Scanner: () => scanner,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Adrenalina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Repor stock'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, '5');
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Digitalizar código GS1'));
+    await tester.pumpAndSettle();
+
+    // AI 01 (GTIN, unknown to the catalogue) + AI 17 (expiry 2026-06-30) + AI 10 (lot, no separator).
+    scanner.emit('01054123456789001726063010LOTE99');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('GTIN não reconhecido no catálogo'), findsOneWidget);
+    expect(find.text('Validade: 30/06/2026'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(inventory.assignments.single.currentQuantity, 5);
+    final batch = inventory.batchesByAssignment['assignment-1']!.single;
+    expect(batch.lotNumber, 'LOTE99');
+    expect(batch.gtin, '05412345678900');
+    expect(batch.source, BatchSource.gs1DataMatrix);
+    expect(batch.expiryDate, DateTime(2026, 6, 30));
+  });
+
   testWidgets('corrects a usage event on an assigned slot', (tester) async {
     const assignment = CartProductAssignment(
       id: 'assignment-1',

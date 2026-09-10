@@ -18,6 +18,8 @@ import '../domain/repositories/institution_repository.dart';
 import '../domain/repositories/inventory_repository.dart';
 import '../domain/repositories/product_repository.dart';
 import '../domain/repositories/usage_repository.dart';
+import '../services/gs1_camera_scanner_service.dart';
+import '../services/scanner_service.dart';
 
 /// Bundles every repository the V2 presentation layer needs, constructed
 /// once at app startup. Deliberately a plain object handed down via
@@ -38,6 +40,7 @@ class AppServices {
           inventory: FirestoreInventoryRepository(firestore),
           usage: FirestoreUsageRepository(firestore),
           audit: FirestoreAuditRepository(firestore),
+          createGs1Scanner: MobileScannerGs1Service.new,
         );
 
   /// Lets widget tests supply fakes for every repository instead of the
@@ -51,6 +54,7 @@ class AppServices {
     required this.inventory,
     required this.usage,
     required this.audit,
+    required this.createGs1Scanner,
   });
 
   final AuthRepository auth;
@@ -61,6 +65,11 @@ class AppServices {
   final InventoryRepository inventory;
   final UsageRepository usage;
   final AuditRepository audit;
+
+  /// Builds a fresh [Gs1DataMatrixScannerService] each time it's called
+  /// (e.g. one per scan screen, disposed when that screen closes) rather
+  /// than sharing one long-lived instance, since it owns a camera resource.
+  final Gs1DataMatrixScannerService Function() createGs1Scanner;
 }
 
 class AppServicesScope extends InheritedWidget {

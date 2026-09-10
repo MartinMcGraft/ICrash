@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../common/app_services.dart';
@@ -7,7 +8,17 @@ import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/slot.dart';
 import '../../domain/entities/usage_event.dart';
+import '../scanning/gs1_scan_screen.dart';
 import 'assignment_status_label.dart';
+
+/// `mobile_scanner` has no Windows/Linux desktop support (spec section 32
+/// calls this out explicitly); the scan button is hidden there and manual
+/// entry remains the only path, matching the legacy QR reader's own gating.
+bool get _gs1ScanSupported =>
+    kIsWeb ||
+    defaultTargetPlatform == TargetPlatform.android ||
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.macOS;
 
 enum _Mode { view, assign, consume, replenish, reconcile, correct }
 
@@ -72,6 +83,7 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
   final _amountController = TextEditingController();
   final _lotController = TextEditingController();
   DateTime? _expiryDate;
+  String? _scannedGtin;
 
   List<Batch>? _batches;
   Set<String> _confirmedBatchIds = {};
@@ -176,7 +188,14 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
         cartId: widget.cartId,
         assignmentId: assignment.id,
         amount: amount,
-        batch: Batch(id: '', assignmentId: assignment.id, lotNumber: _lotController.text.trim(), expiryDate: _expiryDate!),
+        batch: Batch(
+          id: '',
+          assignmentId: assignment.id,
+          lotNumber: _lotController.text.trim(),
+          expiryDate: _expiryDate!,
+          gtin: _scannedGtin,
+          source: _scannedGtin == null ? BatchSource.manual : BatchSource.gs1DataMatrix,
+        ),
         actorUid: services.auth.currentUser!.uid,
       );
       if (mounted) Navigator.of(context).pop();
@@ -188,6 +207,38 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// Spec section 30's replenishment flow: scan is optional and retryable
+  /// (the scan screen itself keeps listening until it parses something or
+  /// the user cancels), pre-fills lot/expiry but never replaces manual entry
+  /// as the fallback, and an unknown GTIN is never silently attached to the
+  /// slot's product (spec section 30) — it only prefills the batch's own
+  /// `gtin`/`source` fields.
+  Future<void> _startGs1Scan(void Function(void Function()) setDialogState) async {
+    final services = AppServicesScope.of(context);
+    final result = await showGs1ScanScreen(context, createScanner: services.createGs1Scanner);
+    if (result == null || !mounted) return;
+
+    if (result.gtin != null) {
+      final match = await services.products.findByGtin(widget.institutionId, result.gtin!);
+      if (!mounted) return;
+      if (match == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('GTIN não reconhecido no catálogo — não foi associado a nenhum produto.')),
+        );
+      } else if (match.id != widget.assignment!.productId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Atenção: este código corresponde a "${match.name}", não ao produto deste slot.')),
+        );
+      }
+    }
+
+    setDialogState(() {
+      _scannedGtin = result.gtin;
+      if (result.lotNumber != null) _lotController.text = result.lotNumber!;
+      if (result.expiryDate != null) _expiryDate = result.expiryDate;
+    });
   }
 
   Future<void> _enterReconcileMode() async {
@@ -362,6 +413,15 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
                     keyboardType: TextInputType.number,
                     validator: _validatePositiveInt,
                   ),
+                  if (_gs1ScanSupported) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _startGs1Scan(setDialogState),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Digitalizar código GS1'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   TextFormField(
                     controller: _lotController,
                     decoration: const InputDecoration(labelText: 'Número de lote'),
