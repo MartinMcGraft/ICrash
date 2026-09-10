@@ -9,6 +9,7 @@ import '../../domain/entities/role.dart';
 import 'bump_layout_version.dart';
 import 'cart_status_label.dart';
 import 'create_drawer_dialog.dart';
+import 'responsible_users_screen.dart';
 import 'slot_editor_screen.dart';
 
 /// Cart detail: status plus its drawers (spec section 36). Slot layout for
@@ -59,6 +60,23 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.cart.name),
+        actions: [
+          FutureBuilder<Membership?>(
+            future: _myMembership,
+            builder: (context, snapshot) {
+              if (!_canManageDrawers(snapshot.data)) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'Responsáveis',
+                icon: const Icon(Icons.badge_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ResponsibleUsersScreen(institutionId: widget.cart.institutionId, cartId: widget.cart.id),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Padding(

@@ -90,4 +90,24 @@ void main() {
 
     expect(find.text('Nova gaveta'), findsNothing);
   });
+
+  testWidgets('shows "Responsáveis" for a manager', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.manager)),
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Responsáveis'), findsOneWidget);
+  });
+
+  testWidgets('hides "Responsáveis" for a normal user', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Responsáveis'), findsNothing);
+  });
 }
