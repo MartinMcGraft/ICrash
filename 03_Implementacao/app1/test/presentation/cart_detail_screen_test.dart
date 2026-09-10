@@ -168,4 +168,14 @@ void main() {
 
     expect(find.byType(PopupMenuButton<String>), findsNothing);
   });
+
+  testWidgets('shows the product search action for any user', (tester) async {
+    await tester.pumpWidget(_wrap(buildTestServices(
+      institutions: FakeInstitutionRepository(myMembership: _membership(Role.user)),
+      drawers: FakeDrawerRepository(),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Pesquisar produto'), findsOneWidget);
+  });
 }

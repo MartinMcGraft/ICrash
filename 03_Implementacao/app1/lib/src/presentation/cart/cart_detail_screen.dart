@@ -11,6 +11,7 @@ import 'cart_status_label.dart';
 import 'create_drawer_dialog.dart';
 import 'duplicate_cart_dialog.dart';
 import 'edit_cart_dialog.dart';
+import 'product_search_screen.dart';
 import 'responsible_users_screen.dart';
 import 'slot_editor_screen.dart';
 
@@ -122,6 +123,19 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       appBar: AppBar(
         title: Text(widget.cart.name),
         actions: [
+          IconButton(
+            tooltip: 'Pesquisar produto',
+            icon: const Icon(Icons.search),
+            onPressed: () async {
+              final membership = await _myMembership;
+              if (!context.mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProductSearchScreen(cart: widget.cart, canManage: _canManageDrawers(membership)),
+                ),
+              );
+            },
+          ),
           FutureBuilder<Membership?>(
             future: _myMembership,
             builder: (context, snapshot) {
