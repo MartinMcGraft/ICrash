@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
+import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
+import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/entities/usage_event.dart';
 import 'package:icrash_app/src/presentation/cart/cart_detail_screen.dart';
 import 'package:icrash_app/src/presentation/dashboard/institution_home_screen.dart';
 
@@ -101,5 +104,57 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Registration'), findsOneWidget);
+  });
+
+  testWidgets('shows cart status counts in the dashboard summary', (tester) async {
+    const carts = [
+      Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1'),
+      Cart(id: 'cart-2', institutionId: 'inst-a', name: 'Carro 2'),
+      Cart(id: 'cart-3', institutionId: 'inst-a', name: 'Carro 3', status: CartStatus.auditRequired),
+    ];
+    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository(carts: carts))));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Operacional: 2'), findsOneWidget);
+    expect(find.text('Auditoria necessária: 1'), findsOneWidget);
+  });
+
+  testWidgets('filters the cart list by name', (tester) async {
+    const carts = [
+      Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro Pediatria'),
+      Cart(id: 'cart-2', institutionId: 'inst-a', name: 'Carro Adultos'),
+    ];
+    await tester.pumpWidget(_wrap(buildTestServices(carts: FakeCartRepository(carts: carts))));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'pedia');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carro Pediatria'), findsOneWidget);
+    expect(find.text('Carro Adultos'), findsNothing);
+  });
+
+  testWidgets('shows recent activity from usage events', (tester) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    const event = UsageEvent(
+      id: 'e1',
+      institutionId: 'inst-a',
+      actorUid: 'me',
+      cartId: 'cart-1',
+      assignmentId: 'a1',
+      productId: 'p1',
+      type: UsageEventType.consumption,
+      amount: -2,
+    );
+    await tester.pumpWidget(_wrap(buildTestServices(
+      carts: FakeCartRepository(carts: [cart]),
+      products: FakeProductRepository(products: [product]),
+      usage: FakeUsageRepository(events: [event]),
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Adrenalina'), findsOneWidget);
+    expect(find.textContaining('(-2)'), findsOneWidget);
   });
 }
