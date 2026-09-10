@@ -1,21 +1,35 @@
 # AI handoff
 
-Updated: 2026-09-09
+Updated: 2026-09-10
 
 - Repository: `C:\Users\Pedro Jorge\Documents\projeto icrash\ICrash-git`
 - Remote: `https://github.com/MartinMcGraft/ICrash.git`
 - Current branch: `DEV-Pedro`
 - Base commit: `8e0e619` (`origin/main`)
-- Last published commit before this continuation: `73b7a39` (`docs: record product catalogue/slot assignment status, live test results and handoff`)
+- Last published commit before this continuation: `f9e3019` (`feat: add institution-wide activity history screen`)
 - Flutter application: `03_Implementacao/app1`
 - Firestore Rules tests + emulator seed script: `firestore-tests/` (Node project, separate from the Flutter app)
 - Preserved backup: `C:\Users\Pedro Jorge\Documents\projeto icrash\backup-before-update-20260907`
 
 ## Completed work
 
-Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This session added six V2 presentation slices** — (1) login, institution selection, dashboard placeholder, (2) turning that placeholder into a real per-institution cart list with creation, (3) institution-admin membership management (create/role-change/enable-disable), (4) a per-cart drawer list with a merge/split slot editor, (5) a product catalogue with per-slot assign/replenish/consume, and (6) audit reconciliation and event correction — all validated live end-to-end on the Android emulator. Along the way it fixed four real bugs (one pre-existing since Phase 1, three new) that only a live run could catch, plus a dependency-security fix to the legacy Django manifest, and deployed `firestore.rules`/`firestore.indexes.json` to the cloud project for the first time (see "Firebase configuration status" below).
+Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and published. Phase 2's architecture foundation (layered domain/data/repositories, Firestore model, security Rules with tests) is complete. **This continuation session added a seventh round of V2 work** on top of the six presentation slices from the prior session — two correctness fixes (product uniqueness per cart, layout versioning) plus five more presentation slices: (1) `responsibleUsers` management, (2) cart edit/duplicate, (3) product search within a cart, (4) a real institution dashboard (status counts + recent activity + search), and (5) an institution-wide activity history screen — all validated live end-to-end on the Android emulator, with zero new app bugs found. `flutter test` is now 69/69. The only major workstream left is GS1 Data Matrix scanning (spec sections 29-32) — the next task per explicit user instruction.
 
-### Audit reconciliation and event correction sub-phase (most recent)
+### Correctness fixes / responsibleUsers / cart edit-duplicate / product search / dashboard / history sub-phase (most recent)
+
+- **Fix (spec section 20)**: `FirestoreInventoryRepository.createAssignment` now checks for an existing assignment with the same `productId` in the cart before creating, throwing `RepositoryFailure(RepositoryFailureReason.conflict)` if found; `assignment_dialog.dart` shows a specific PT-PT message for this case instead of the generic one.
+- **Fix (spec section 38)**: new `bump_layout_version.dart`'s `bumpCartLayoutVersion(services, cart)` re-reads the cart and increments `layoutVersion`, called after `CartDetailScreen._createDrawer` and `SlotEditorScreen._save` — previously `layoutVersion` was never incremented anywhere despite the field existing.
+- New `lib/src/presentation/cart/responsible_users_screen.dart` (spec section 17): manager+ screen, `CheckboxListTile` per institution member (via `InstitutionRepository.watchMembers`) reflecting/toggling `CartRepository.watchResponsibleUsers`/`assignResponsibleUser`/`removeResponsibleUser` — those repository methods already existed fully implemented from the architecture-foundation phase, only the screen was missing. New "Responsáveis" `AppBar` icon on `CartDetailScreen`.
+- `CartDetailScreen` gained a manager+-gated overflow menu: "Editar" (`edit_cart_dialog.dart`, calls `CartRepository.updateCart`) and "Duplicar" (`duplicate_cart_dialog.dart`, creates a new cart and copies every drawer/slot via `createDrawer`/`replaceSlots` — never assignments/stock/history, spec sections 39-40). No "template gallery" concept was built; any cart can be a duplication source.
+- New `lib/src/presentation/cart/product_search_screen.dart` (spec section 41): filters `InventoryRepository.watchAssignments` by product name, opens the same `showAssignmentDialog` the drawer grid uses. New "Pesquisar produto" `AppBar` icon on `CartDetailScreen`.
+- `InstitutionHomeScreen` rewritten (spec section 49, scoped down): `_CartStatusSummary` (counts per `CartStatus`) and `_RecentActivity` (last 5 events via the already-institution-scoped `UsageRepository.watchRecentEvents`) above the existing cart list, plus a cart-name search field. Cross-cart per-slot expiry alerts deliberately deferred — needs an institution-wide `assignments` collectionGroup query + Rules change.
+- New `lib/src/presentation/reports/history_screen.dart` (spec section 51, scoped to its read-only half): `ChoiceChip`-filterable list over `watchRecentEvents`. New "Histórico" `AppBar` icon on `InstitutionHomeScreen`, any user.
+- No repository, Firestore, or Rules changes were needed beyond the `createAssignment` uniqueness check — every other method used here already existed.
+- `FakeInventoryRepository`/`FakeCartRepository` extended: uniqueness-conflict check, `getCart`/`updateCart`, full `responsibleUsers` behavior with a stream controller.
+- New/extended tests, 21 added this round (48 → 69 total): `responsible_users_screen_test.dart` (3), `product_search_screen_test.dart` (3), `history_screen_test.dart` (3), `cart_detail_screen_test.dart` (+7), `institution_home_screen_test.dart` (+4), `slot_editor_screen_test.dart` (+1). `flutter analyze --no-pub` clean.
+- Live-validated on Android (continuing the same seeded institution/cart from prior sessions): dashboard showed real status counts ("Operacional: 1") and 4 real historical usage events with correct labels; History screen's "Consumo" filter narrowed the list correctly; product search found "Adrenalina" by partial name and opened its assignment dialog in view mode; "Editar" opened pre-filled with the current name/status; "Duplicar" created a second cart with the same drawer/slot structure and no stock/history, updating the dashboard's status count to "Operacional: 2" live; "Responsáveis" listed real members, correctly disabled an inactive membership's checkbox, and a toggle on an active member persisted through the Firestore emulator. No fatal exceptions in logcat. See `docs/TEST_STATUS.md`.
+
+### Audit reconciliation and event correction sub-phase
 
 - `assignment_dialog.dart` gained `_Mode.reconcile` (manager+: batch checkboxes + confirmed-quantity field, calls `InventoryRepository.reconcileAfterAudit`) and `_Mode.correct` (anyone with cart access: pick a usage event via `UsageRepository.watchEventsForAssignment`, pre-filled "undo" adjustment, calls `recordCorrection`). No repository, Firestore, or Rules changes needed — this closes out `InventoryRepository`'s entire surface in the UI.
 - `FakeInventoryRepository` gained `reconcileAfterAudit`/`recordCorrection`; `FakeUsageRepository` upgraded from an unimplemented stub to real in-memory behavior.
@@ -56,7 +70,24 @@ Phase 0 (Git/modernization) and Phase 1 (Firebase foundation) are complete and p
 
 ## Exact files changed this session
 
-Audit reconciliation and event correction (this sub-phase, most recent):
+Correctness fixes / responsibleUsers / cart edit-duplicate / product search / dashboard / history (this sub-phase, most recent):
+- `03_Implementacao/app1/lib/src/data/firebase/firestore_inventory_repository.dart` — `createAssignment` now checks for an existing assignment with the same `productId` in the cart, throws `RepositoryFailure(RepositoryFailureReason.conflict)` if found.
+- `03_Implementacao/app1/lib/src/presentation/cart/assignment_dialog.dart` — specific conflict message for the uniqueness check.
+- `03_Implementacao/app1/lib/src/presentation/cart/bump_layout_version.dart` — new; shared `bumpCartLayoutVersion(services, cart)` helper.
+- `03_Implementacao/app1/lib/src/presentation/cart/slot_editor_screen.dart` — `_save()` now calls `bumpCartLayoutVersion` after `replaceSlots`.
+- `03_Implementacao/app1/lib/src/presentation/cart/cart_detail_screen.dart` — `_createDrawer` calls `bumpCartLayoutVersion`; added `_editCart`/`_duplicateCart`; `AppBar` gained "Pesquisar produto" icon, overflow menu ("Editar"/"Duplicar", manager+ gated), "Responsáveis" icon (manager+ gated).
+- `03_Implementacao/app1/lib/src/presentation/cart/edit_cart_dialog.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/cart/duplicate_cart_dialog.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/cart/responsible_users_screen.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/cart/product_search_screen.dart` — new.
+- `03_Implementacao/app1/lib/src/presentation/dashboard/institution_home_screen.dart` — rewritten: `_CartStatusSummary`, `_RecentActivity`, cart-name search field, "Histórico" `AppBar` icon.
+- `03_Implementacao/app1/lib/src/presentation/reports/history_screen.dart` — new.
+- `03_Implementacao/app1/test/fakes/fake_repositories.dart` — `FakeInventoryRepository` gained the uniqueness-conflict check; `FakeCartRepository` gained `getCart`/`updateCart` and full `responsibleUsers` behavior.
+- `03_Implementacao/app1/test/presentation/responsible_users_screen_test.dart`, `product_search_screen_test.dart`, `history_screen_test.dart` — new (3 tests each). `cart_detail_screen_test.dart` (+7), `institution_home_screen_test.dart` (+4), `slot_editor_screen_test.dart` (+1).
+- No repository interface, Firestore Rules, or Rules-test changes were needed.
+- `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/TEST_STATUS.md` — updated.
+
+Audit reconciliation and event correction (prior sub-phase):
 - `03_Implementacao/app1/lib/src/presentation/cart/assignment_dialog.dart` — added `_Mode.reconcile`/`_Mode.correct`, their loader/submit methods, and the two new UI branches; added "Corrigir"/"Reconciliar" buttons to the view mode.
 - `03_Implementacao/app1/lib/src/presentation/cart/assignment_status_label.dart` — added `usageEventTypeLabel`.
 - `03_Implementacao/app1/test/fakes/fake_repositories.dart` — `FakeInventoryRepository` gained `reconcileAfterAudit`/`recordCorrection` (and a proper per-batch id generator in `recordReplenishment`, needed so reconciliation's per-batch checkboxes have distinct keys); `FakeUsageRepository` gained real behavior.
@@ -169,7 +200,7 @@ None.
 
 ## Tests already run
 
-`flutter analyze` clean. `flutter test`: 48/48. `flutter build apk --debug`: passed. Firestore Rules tests: 22/22. Six full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, drawer/slot editor, product catalogue/slot assignments, then audit reconciliation/correction — see `docs/TEST_STATUS.md` for detail and the bugs they caught.
+`flutter analyze` clean. `flutter test`: 69/69 (up from 48). `flutter build apk --debug`: passed. Firestore Rules tests: 22/22 (unchanged this round — no Rules changes). Seven full live Android walkthroughs: login/institution-selection, cart list/creation, membership management, drawer/slot editor, product catalogue/slot assignments, audit reconciliation/correction, then this round's correctness-fixes/responsibleUsers/cart-edit-duplicate/product-search/dashboard/history — see `docs/TEST_STATUS.md` for detail and the bugs they caught (zero new bugs this round).
 
 ## Android emulator tests already performed
 
@@ -181,6 +212,7 @@ This session, on `ICrash_API_36`, across six builds:
 4. Drawer/slot editor slice (same running app session, no restart needed): opened "Carro de Emergência 1" → detail screen showed the empty-drawers state → created "GavetaPrincipal" (3×2) → opened it → slot editor rendered 6 unit cells → selected two and merged them into one wide slot → split it back to units → merged again and saved ("Gaveta guardada." snackbar) → left and reopened the drawer, confirming the merged layout reloaded correctly from Firestore.
 5. Product catalogue/slot assignments slice (same session): "Produtos" icon → created "Adrenalina" → back to the drawer → long-pressed the merged slot → "Atribuir produto" with quantities 0/1 → cell showed "Adrenalina 0/1" live → long-pressed again → "Repor stock" with quantity 5, lot "LOTE123", expiry 16/09/2026 → cell showed "5/1" → "Registar consumo" with quantity 2 → cell showed "3/1".
 6. Audit reconciliation/correction slice (same session, continuing from "3/1"): "Reconciliar" showed the "LOTE123" batch pre-checked and confirmed-quantity pre-filled with 3; unchecked the batch, set confirmed quantity to 2, confirmed → cell showed "2/1". "Corrigir" listed the reconciliation event pre-selected with adjustment pre-filled to +1 (undo); confirmed → cell showed "3/1" again.
+7. Correctness-fixes/responsibleUsers/cart-edit-duplicate/product-search/dashboard/history slice (new session, same seeded institution/cart): institution home showed "Operacional: 1" and 4 real historical usage events with correct labels ("Correção · Adrenalina (+1)", "Reconciliação · Adrenalina (-1)", "Consumo · Adrenalina (-2)", "Reposição · Adrenalina (+5)"); "Histórico" icon opened the full event list, "Consumo" filter narrowed it correctly; "Pesquisar produto" found "Adrenalina" typing "Adren" and opened its assignment dialog directly in view mode; the cart's overflow menu showed "Editar"/"Duplicar" — "Editar" opened pre-filled with name/status, cancelled without changes; "Duplicar" opened pre-filled with "Carro de Emergência 1 (cópia)" and explicit no-stock/no-history copy text, confirming created the second cart with the same "GavetaPrincipal" 3×2 drawer and updated the dashboard to "Operacional: 2" immediately; "Responsáveis" listed both institution members by uid, correctly disabled the inactive manager membership's checkbox, and toggling the active institution-admin's checkbox on then off both persisted through the Firestore emulator live.
 
 No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken at each step during the session (not committed to the repo — they lived in `%TEMP%`).
 
@@ -190,7 +222,7 @@ No fatal `pt.icrash.app` exceptions in logcat in any run. Screenshots were taken
 
 ## Known bugs
 
-None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management, drawer/slot-editor, product/assignment, or reconcile/correct sub-phases (the stylus-handwriting overlay quirk and the TextFormField tap-target overlap noted above are AVD/OS/Material-theme behavior, not app bugs — see `docs/TEST_STATUS.md`).
+None known to remain. The four found in the cart-list sub-phase (MainActivity package, cleartext blocking, project-id mismatch, FAB/legacy-button overlap) are fixed and verified live. No new app bugs were found in the membership-management, drawer/slot-editor, product/assignment, reconcile/correct, or this round's correctness-fixes/responsibleUsers/cart-edit-duplicate/product-search/dashboard/history sub-phases (the stylus-handwriting overlay quirk and the TextFormField tap-target overlap noted above are AVD/OS/Material-theme behavior, not app bugs — see `docs/TEST_STATUS.md`).
 
 ## Known platform limitations
 
@@ -228,14 +260,16 @@ then, in another terminal: `npm --prefix firestore-tests run seed` (creates `enf
 
 ## Exact next implementation task
 
-Login, institution selection, cart list/creation, membership management, the drawer/slot editor, product catalogue/slot assignments, and audit reconciliation/correction are all done. `InventoryRepository`'s entire surface is now reachable from the UI. Sensible next slice, in order:
+Login, institution selection, cart list/creation/edit/duplicate, membership management, `responsibleUsers` management, the drawer/slot editor, product catalogue/slot assignments, audit reconciliation/correction, product search, the dashboard, and the activity history screen are all done. `InventoryRepository`'s entire surface is reachable from the UI, and both correctness gaps found in spec review (product uniqueness, layout versioning) are fixed. **The one remaining major workstream, explicitly the highest priority per the user's own instruction, is:**
 
-1. `responsibleUsers` management (spec section 17) — assigning a normal user to a specific cart so they can see it without being a manager; no UI exists yet, `CartResponsibleUser` entity and the Rules already do. This is the last piece of the access-control model without a screen.
-2. Cart edit (rename, change status)/duplicate/template — `CartRepository.updateCart` already exists; only `createCart` is used so far.
-3. GS1 Data Matrix/QR-driven product lookup — `ProductRepository.findByGtin` exists and is unused; wiring it to the legacy `ScannerService`/camera code (untouched so far) would let replenishment pre-fill from a scanned batch instead of manual entry.
-4. The real dashboard (spec section 49: alerts/expiry/audit summary) — everything it would summarize (assignments, `earliestKnownExpiry`, `AssignmentStatus`) now exists; `InstitutionHomeScreen` still only shows a plain cart list.
+**GS1 Data Matrix scanning integration (spec sections 29-32).** `ProductRepository.findByGtin` exists and is unused; `ScannerService` (`lib/src/services/`) is a contract-only interface with no implementation. The legacy QR/Data Matrix reader code exists under the untouched legacy `lib/` tree (`qr_code_reader/`, `data_matrix_analyser/` or similarly named — re-locate and re-read it, it has not been re-examined since Phase 0) but is not wired to the new domain model at all. Suggested approach:
 
-Whichever is picked, follow the same pattern established here: repository already exists (check `lib/src/domain/repositories/` first), fakes go in `test/fakes/fake_repositories.dart`, screen goes in `lib/src/presentation/<area>/`, and — per the spec's own mandatory rule — validate live on the Android emulator before calling it done, not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap (FAB vs. bottom bars, etc.) since widget tests don't catch that — see the cart-list sub-phase's bug above.
+1. Re-read spec sections 29-32 in full for the exact GS1 Data Matrix field/terminology requirements before designing anything.
+2. Design and implement a concrete `ScannerService` (camera integration — likely reusing/adapting the legacy camera plumbing rather than rewriting it from scratch, but returning data through the new domain types, not the legacy ones).
+3. Wire the scan result to `ProductRepository.findByGtin`, most likely pre-filling `assignment_dialog.dart`'s `_Mode.replenish` form (GTIN/lot/expiry) from a scanned code instead of requiring manual entry — check whether `_Mode.assign` should also benefit from a scan-to-find-product path.
+4. Test (`flutter analyze`/`flutter test`, new fakes for `ScannerService` in `test/fakes/`) and, per the spec's mandatory rule, validate live on the Android emulator (the AVD's virtual camera cannot produce a real scannable code — see the Phase 0 walkthrough — so validate what can be validated live and document clearly what could not be, e.g. manual-entry fallback paths, UI state before/after a scan).
+
+Follow the same pattern established throughout: check `lib/src/domain/repositories/`/`lib/src/services/` first for what already exists, fakes go in `test/fakes/`, screens go in `lib/src/presentation/<area>/`, and validate live before calling it done — not just `flutter analyze`/`flutter test`. Also visually re-check for control overlap since widget tests don't catch that — see the cart-list sub-phase's bug above.
 
 ## Temporary workarounds
 

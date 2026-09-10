@@ -1,6 +1,6 @@
 # Architecture
 
-Status: login → institution selection → per-institution cart list/creation → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct) live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases.
+Status: login → institution selection → per-institution dashboard/cart list/creation/edit/duplicate → responsible-user management → member management → drawer/slot editor → product catalogue/slot assignments (assign/replenish/consume/reconcile/correct) → product search within a cart → institution-wide activity history, all live and validated on the Android emulator; legacy app still reachable from there. Everything else in the legacy app (grids, registration, request handler) is untouched and still compiles; it will be replaced flow by flow in later phases. The only major workstream left is GS1 Data Matrix scanning (spec sections 29-32).
 
 Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old Django endpoint remain in place under `lib/` (`grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`). `HomeMenu` is no longer the app's entry point, but it is still reachable — see "Presentation" below.
 
@@ -10,9 +10,15 @@ Existing app: legacy Flutter screens and HTTP `RequestHandler` targeting the old
 presentation/
   auth/login_screen.dart
   institution/institution_selection_screen.dart
-  dashboard/institution_home_screen.dart      per-institution home: cart list + creation
-  cart/cart_detail_screen.dart                cart's drawer list + creation
+  dashboard/institution_home_screen.dart      per-institution home: status counts, recent
+                                               activity, cart list/search + creation
+  reports/history_screen.dart                 institution-wide filterable usage-event history
+  cart/cart_detail_screen.dart                cart's drawer list + creation/edit/duplicate
   cart/cart_status_label.dart, create_cart_dialog.dart, create_drawer_dialog.dart
+  cart/edit_cart_dialog.dart, duplicate_cart_dialog.dart
+  cart/responsible_users_screen.dart          manager+: grant/revoke per-cart access
+  cart/product_search_screen.dart             find an assigned product by name within a cart
+  cart/bump_layout_version.dart               shared helper: increments Cart.layoutVersion
   cart/slot_editor_screen.dart                merge/split grid editor for one drawer's slots
   cart/assignment_dialog.dart                 per-slot: assign a product, replenish, consume
   cart/assignment_status_label.dart
@@ -63,6 +69,21 @@ Long-pressing any slot (tap is reserved for merge-selection) opens `assignment_d
 
 `ProductsScreen`, reachable via a "Produtos" `AppBar` icon on `InstitutionHomeScreen` (manager+ gated the same way as the cart FAB), is the institution-wide catalogue those assignments draw from. As everywhere else in this app, the Rules are the real boundary; the dialog's mode-gating only avoids showing a control that would fail. This is `InventoryRepository`'s entire surface — every method is now reachable from the UI.
 
+### Correctness fixes: product uniqueness and layout versioning
+
+Two spec gaps found by review rather than by a missing screen, both fixed at the data/domain layer rather than only in the UI (per the "Rules/repository are the real boundary" rule used everywhere else):
+
+- **Product uniqueness per cart (spec section 20)**: `FirestoreInventoryRepository.createAssignment` now checks for an existing assignment with the same `productId` anywhere in the cart before creating a new one, throwing `RepositoryFailure(RepositoryFailureReason.conflict)` if found. `assignment_dialog.dart` shows a specific PT-PT message for this case ("Este produto já está atribuído a outro slot deste carro.") rather than the generic failure message.
+- **Layout versioning (spec section 38)**: `bump_layout_version.dart`'s `bumpCartLayoutVersion(services, cart)` re-reads the cart, increments `layoutVersion`, and writes it back via `CartRepository.updateCart`. Called after every structural change to a cart's drawers/slots — `CartDetailScreen._createDrawer` and `SlotEditorScreen._save` (merge/split/save) — so the version increments regardless of which screen triggered the change, rather than duplicating the read-increment-update logic at each call site.
+
+### responsibleUsers, cart edit/duplicate, product search, dashboard, history
+
+- `ResponsibleUsersScreen` (spec section 17: institution membership alone does not grant cart access) lists every institution member via `InstitutionRepository.watchMembers`, with a `CheckboxListTile` per member reflecting `CartRepository.watchResponsibleUsers` and calling `assignResponsibleUser`/`removeResponsibleUser` on toggle; disabled for an inactive membership. Reachable from `CartDetailScreen`'s "Responsáveis" `AppBar` icon, manager+ gated. The repository methods already existed fully implemented in `FirestoreCartRepository` from the architecture-foundation phase — only the presentation layer was missing.
+- `CartDetailScreen`'s overflow menu (manager+ gated, same check as the rest of the screen) adds "Editar" (`edit_cart_dialog.dart`: name + `CartStatus` dropdown, calls `CartRepository.updateCart`) and "Duplicar" (`duplicate_cart_dialog.dart`: confirms a name, then creates a new cart and copies every drawer and its slots via `createDrawer`/`replaceSlots` — deliberately **never** copies assignments, stock, or history, per spec section 39). There is no separate "template gallery" concept; any existing cart can serve as a duplication source.
+- `ProductSearchScreen` (spec section 41's "search/list" requirement, alongside the existing "virtual drawer" visual navigation) filters a cart's `InventoryRepository.watchAssignments` by product name and opens the same `showAssignmentDialog` the drawer grid uses — built entirely on repositories that already existed.
+- `InstitutionHomeScreen` (spec section 49, scoped down) gained a `_CartStatusSummary` (counts per `CartStatus`, derived from the same `watchAccessibleCarts` stream the list already used) and `_RecentActivity` (last 5 events from `UsageRepository.watchRecentEvents`, an institution-scoped query that already existed), plus a cart-name search field. Cross-cart per-slot expiry alerts are deliberately **not** included — they would need an institution-wide `assignments` collectionGroup query and a matching Rules change, which given the `memberIndex` collectionGroup/Rules quirks already documented above, is deferred as its own future slice.
+- `HistoryScreen` (spec section 51, scoped down to its read-only "detailed view" half) is a `ChoiceChip`-filterable list over the same `watchRecentEvents` stream, reachable from `InstitutionHomeScreen`'s new "Histórico" `AppBar` icon (any user). PDF/CSV export and per-product/per-cart/per-period aggregate reports are explicitly deferred.
+
 ## Environment selection
 
 `lib/src/common/app_environment.dart` decides Auth/Firestore emulator vs cloud:
@@ -82,7 +103,9 @@ Long-pressing any slot (tap is reserved for merge-selection) opens `assignment_d
 
 ## What is intentionally not built yet
 
-- Everything in workstreams A-D beyond login/institution-selection/cart list+creation/member management/drawer+slot editing/product catalogue+assignments (including reconcile/correct): no GS1-driven product lookup (`ProductRepository.findByGtin` exists, unused), no cart edit/duplicate/template, no `responsibleUsers` management UI.
+- GS1 Data Matrix/QR-driven product lookup: `ProductRepository.findByGtin` exists and is unused; `ScannerService` is a contract only, with no implementation wired to the new domain model (the legacy QR/Data Matrix reader code under `lib/` is untouched and unrelated). This is the one remaining major workstream.
+- Reporting export (PDF/CSV) and per-product/per-cart/per-period aggregate reports (the rest of spec section 51, beyond the read-only history view already built).
+- Cross-cart per-slot expiry/replenishment alerts on the dashboard (needs an institution-wide `assignments` collectionGroup query + Rules change — deferred, see above).
 - No dependency injection / service locator beyond `AppServicesScope`.
 - `ScannerService`/`ReportService`/`NotificationService` are contracts only.
 - Offline-state UI (synced/pending/failed) is not built; Firestore's own offline cache is unconfigured beyond its native platform default.
