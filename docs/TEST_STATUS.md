@@ -1,6 +1,98 @@
 # Test status
 
-Updated: 2026-09-10
+Updated: 2026-09-11
+
+## Full functional QA test run (2026-09-11)
+
+User-directed, 63-section manual QA pass on `ICrash_API_36` (Android emulator, debug build) against the local Firestore/Auth emulators, covering app startup through a final walkthrough. Methodology per section: launch the real flow, navigate the real UI, interact with the feature, validate visible results, validate persistence via direct Firestore REST reads (bypassing Rules with the emulator's `Authorization: Bearer owner`) where a business rule needed backend-level proof rather than just a UI glance, validate permissions by switching accounts/roles, probe edge/error cases, and check `adb logcat` for fatal exceptions.
+
+**Hard constraint honored throughout**: none of the ten business rules the user listed as intentional (daily consumption never selects a lot and only decreases the aggregate quantity; earliest-known-expiry stays conservative and only a physical audit may advance it — except a *new, later-discovered* batch may still push it earlier at replenishment time, which is the same conservative principle, not an exception; lot state is reconciled only during physical audit; concurrent emergencies never require separate sessions; medicine scanning uses GS1 Data Matrix; internal identification uses QR; scanning never bypasses permissions; a product may exist in many carts but only once per individual cart; no identifiable patient data belongs in I-Crash) were altered. Where observed behavior matched one of these rules exactly as specified, it is recorded as WORKING, not "fixed."
+
+New deterministic seed fixture for this run: `firestore-tests/seed_qa_run.mjs` (not part of the automated suite — a one-off `node firestore-tests/seed_qa_run.mjs` against a running emulator). Creates 4 Auth users across every role (`enfermeira.teste@icrash.pt`/institutionAdmin, `gestor.teste@icrash.pt`/manager, `utilizador.teste@icrash.pt`/user, `super.teste@icrash.pt`/platform-super-admin-only-no-membership; all password `icrash-teste-123`), two institutions (one with two carts and deliberately-crafted expiry/lot/minimum-quantity edge cases, one bare — for isolation testing).
+
+### Critical bug found and fixed: a normal ("user"-role) member could never list their own carts
+
+| | |
+|---|---|
+| **Feature** | Cart list loading for a non-manager member (spec section 17) |
+| **Status** | BUG FOUND → FIXED, retested live |
+| **Test performed** | Logged in as `utilizador.teste@icrash.pt` (role `user`, an explicit `responsibleUsers` entry on one of two carts in the institution) and opened the institution dashboard, for the first time in this project's history that a plain non-manager account's cart list was exercised live (every prior live-testing session across this whole project used an admin or manager account, which bypasses the broken code path entirely). |
+| **Expected behavior** | Per `CartRepository.watchAccessibleCarts`'s own doc comment and `firestore.rules`' design notes: "every cart for managers/admins, only assigned carts for a normal user." |
+| **Actual behavior (before fix)** | The dashboard showed a raw error instead of any cart: `Não foi possível carregar os carros: RepositoryFailure(permissionDenied, cause: [cloud_firestore/permission-denied] PERMISSION_DENIED: Null value error. for 'list' @ L148, ...)`. A normal user could not use the app at all beyond logging in. |
+| **Root cause** | `firestore.rules`' `carts/{cartId}` rule used one `allow read` condition (`canAccessCart`) for both `get` and `list`. `canAccessCart`'s non-manager branch (`isAssignedToCart`) needs an `exists()` check keyed on this same document's own identity (`cartId`). Confirmed empirically with a throwaway Node probe script directly against the emulator: for a `list` request specifically (not `get`), this Firestore emulator version (firebase-tools 15.29.0) cannot resolve *any* reference to the current document's own identity during rule evaluation — not the `cartId` path wildcard, not `resource.id`, not `resource.data.<anything>`, even a field that genuinely exists on every candidate document — all throw the same "Null value"/"Property ... is undefined" error. A manager's query never hit this because `isManagerOrAbove` is resource-independent and (confirmed by the same probe) the `||` genuinely short-circuits during `list`-rule validation when its first operand is staticaly true, even for an unfiltered query. This is the same class of Firestore Rules/emulator limitation already documented in this codebase for `memberIndex` and the cross-cart `assignments` collection-group query — just manifesting on a plain (non-collection-group) nested collection this time. |
+| **Fix applied** | Split the rule into `allow get` (unchanged, keeps the richer `canAccessCart`/`responsibleUsers`-subcollection check) and `allow list` (manager+ gets an unfiltered query — the only branch that never touches `resource`; a normal user's query must instead filter by `responsibleUserIds array-contains <their uid>`, a new denormalized array field on the cart doc). `FirestoreCartRepository.watchAccessibleCarts` now looks up the caller's role once (a plain `memberships` doc read) and picks the matching query shape; `assignResponsibleUser`/`removeResponsibleUser` keep the new field in sync with the `responsibleUsers` subcollection via `arrayUnion`/`arrayRemove` in the same batched write, mirroring the existing `memberships`/`memberIndex` pattern. `createCart` seeds `responsibleUserIds: []`. Both seed scripts updated to seed the new field. |
+| **Retest result** | Rebuilt (`flutter build apk --debug`) and reinstalled. Logged in fresh as `utilizador.teste@icrash.pt`: dashboard now correctly loads "Operacional: 1" and exactly "Carro de Emergência 1" (the cart they're assigned to) — the second cart, which they are *not* assigned to, is correctly excluded, confirming cart-level isolation is intact, not just "no more crash." Opened the cart: AppBar correctly shows only QR/search icons (no Editar/Duplicar/Responsáveis/Nova gaveta — all manager+ gated); long-pressing a slot correctly showed only "Fechar"/"Corrigir"/"Registar consumo" with "Repor stock"/"Reconciliar" (manager+ only) correctly absent — privilege escalation via this role is not possible. Logged back in as the admin: both carts still load unfiltered, cross-cart "Alertas" section still renders — no regression on the manager+ path. 4 new Rules tests added (`firestore-tests/rules.test.mjs`, "cart access" describe block) covering the `list` path specifically, since every pre-existing test in that file only ever called `getDoc`. `firestore-tests` 27→31/31 passing. `flutter test` 132/132 unchanged. `flutter analyze --no-pub` clean. |
+| **Relevant files changed** | `firestore.rules`, `03_Implementacao/app1/lib/src/data/firebase/firestore_cart_repository.dart`, `firestore-tests/rules.test.mjs`, `firestore-tests/seed_emulator.mjs`, `firestore-tests/seed_qa_run.mjs` (new). Committed: `b94e554`. |
+| **Remaining limitation** | None known. The fix is scoped to `carts`; other collections with an analogous `list` + non-manager-resource-check pattern (there are none currently — every other per-cart-scoped collection's `list` usage in this codebase already goes through a cart that was itself already fetched, or is manager+-gated outright) should be checked against this same failure mode if one is added later. |
+
+### Business-rule verification (Section 62's protected list), live + Firestore-backed
+
+| Rule | Status | Evidence |
+|---|---|---|
+| Daily consumption never selects a lot, only decreases the aggregate quantity | WORKING | Consumed Atropina/Adrenalina/Seringa via "Registar consumo" live; cross-checked via Firestore REST that `batches` documents were untouched (`updateTime`/`createTime` unchanged) while only the assignment's `currentQuantity` and a new `usageEvents` doc (`type: consumption`) changed. |
+| Earliest-known-expiry stays conservative; only physical audit may advance it, except a newly-discovered earlier batch at replenishment may still lower it | WORKING | Replenished Atropina with a *later* expiry (2027-03-01) than its current earliest (2026-09-25) — `earliestKnownExpiry` correctly stayed at 2026-09-25 (verified via Firestore REST). Replenished Adrenalina with an *earlier* expiry (2026-09-20) than its current earliest (2026-10-15) — `earliestKnownExpiry` correctly advanced to 2026-09-20 (verified via Firestore REST), matching the conservative-minimum principle in both directions, not just "never changes." |
+| Lot state is reconciled only during physical audit | WORKING (pre-existing coverage) | `_Mode.reconcile` is the only write path that can replace the batch set; confirmed manager+-only in this session's privilege-escalation check. |
+| Corrections never mutate history; they append a compensating event | WORKING | Corrected an Atropina "Consumo: -1" event via "Corrigir" (pre-filled +1 undo). Verified via Firestore REST: the original event (`type: consumption`, `amount: -1`) is byte-for-byte unmutated (`createTime == updateTime`); a new event (`type: correction`, `amount: +1`, `correctsEventId: <original event id>`) was created. Cell quantity correctly returned 1→2. |
+| Medicine scanning uses GS1 Data Matrix; internal identification uses QR | WORKING (pre-existing coverage, this session re-confirmed the button/screen still render correctly post-fix) | See prior sessions' GS1/internal-QR entries below; not re-exercised end-to-end this session since the underlying code was untouched. |
+| Scanning never bypasses permissions | WORKING | The GS1 scan button only ever appears inside the manager+-gated "Repor stock" flow; the "user" role in this session never saw that flow at all (button absent along with the whole replenish mode), so scanning cannot be used to reach a write path the role wouldn't otherwise have. |
+| A product may exist in many carts but only once per individual cart | WORKING (pre-existing coverage) | `FirestoreInventoryRepository.createAssignment`'s per-cart product-uniqueness check, unchanged this session. |
+| No identifiable patient data belongs in I-Crash | WORKING (structural) | No patient-identifying field exists anywhere in the domain model (`Cart`, `CartProductAssignment`, `Batch`, `UsageEvent`, `AuditEvent`) — confirmed by inspection, not something a live click-through could otherwise surface. |
+| Multiple consecutive emergencies do not require separate sessions | WORKING (structural) | Consumption/replenishment/correction are all independent, stateless per-call operations against `currentQuantity` — nothing in the UI or repository layer requires closing and reopening a "session" between uses. |
+
+### Cross-institution security and roles
+
+| | |
+|---|---|
+| **Feature** | Cross-institution isolation and role-based UI/permission gating |
+| **Status** | WORKING |
+| **Test performed** | Logged in as `utilizador.teste@icrash.pt`, a member of only one of the two seeded institutions. Compared the institution-selection list and in-cart action set against the admin account's. |
+| **Expected behavior** | A member of institution A never sees institution B in their institution list, regardless of role; within their own institution, a plain `user` sees only carts they're explicitly assigned to and only the consumption/correction actions, never structural or stock-reordering actions. |
+| **Actual behavior** | Confirmed exactly as expected: "Hospital Teste B" never appeared in the `user` account's institution list (only "Hospital de Teste" did) even though the admin account, a member of both, saw both. Within the cart, manager-only actions (Repor stock, Reconciliar, Editar, Duplicar, Responsáveis, Nova gaveta) were all correctly absent from the UI for the `user` role — not just visually hidden but backed by the underlying `firestore.rules` write-scope rules already in place (`assignments` update rule restricts a non-manager to `currentQuantity` only; `carts`/`drawers`/`responsibleUsers` writes are manager+-only). |
+| **Bugs found** | None (beyond the cart-list bug above, which blocked this role from reaching any of these screens at all until fixed). |
+| **Fix applied** | N/A |
+| **Retest result** | N/A |
+| **Relevant files changed** | None beyond the cart-list fix above. |
+| **Remaining limitation** | Privilege-escalation testing this session was UI/role-switching based (confirming the client hides and the server-side Rules independently block the same actions); a dedicated adversarial attempt to call a write directly (bypassing the UI) was not repeated this session — the existing `firestore-tests/rules.test.mjs` suite already covers exactly this at the Rules level for every write path (assignment field-scoping, self-escalation, audit immutability), and passes 31/31. |
+
+### Features confirmed NOT IMPLEMENTED (re-confirmed by code search this session; no live UI exists to test)
+
+| Feature (spec section) | Status | Evidence |
+|---|---|---|
+| Periodic/monthly audit workflow (start audit, every-drawer-required, reconciliation summary, expiry-advance-on-audit as a guided flow) | NOT IMPLEMENTED | No screen, route, or service beyond the existing per-slot "Reconciliar" action (which reconciles one assignment at a time, not a guided multi-drawer audit session). `grep -rli "periodic\|checklist\|monthly"` across `lib/src/presentation` returns nothing matching this concept. |
+| Daily checklist | NOT IMPLEMENTED | No corresponding entity, repository, or screen exists anywhere in the codebase. |
+| Audit log UI (spec sections 18, 45, 60) | NOT IMPLEMENTED (data layer only) | `AuditRepository`/`AuditEvent`/`FirestoreAuditRepository`-equivalent and the `auditEvents` Firestore collection (with its Rules) are fully built and covered by Rules tests, but `grep -rn "services.audit\|AuditRepository"` across `lib/src/presentation` returns zero matches — nothing in the app ever writes or reads an `auditEvents` document. All administrative/structural actions in this codebase currently go through `usageEvents` instead (which *is* wired end-to-end and immutable), so nothing is silently un-audited, but the separate, more-privileged `auditEvents` trail the schema was built for sits completely unused. |
+| Cart/drawer templates (spec sections 38-39) | NOT IMPLEMENTED as a distinct feature | `Cart.templateId` exists as a field and is passed through unchanged on create/duplicate, but there is no template gallery, no "save as template" action, and no UI distinction between a template and an ordinary cart — "Duplicar" (full copy of drawer/slot structure, never stock/history) is the only template-adjacent feature that actually exists. |
+
+### Known, previously-documented, non-blocking finding (not fixed, per Section 62 — not a bug in the strict sense)
+
+`InventoryRules.computeAlert` returns a single nullable `AssignmentAlert` with early-return priority (expiry checked before stock), so an assignment that is simultaneously both expiring-soon/expired *and* below its minimum quantity can only ever surface one alert type at a time on the dashboard, never both. Re-observed this session (Atropina, `currentQuantity: 2 == minimumQuantity: 2`, did not trigger this specific case since it sits exactly at the threshold rather than below it, but the underlying code path is unchanged from when this was first found). Reported here as a UX/completeness limitation, not altered, since expiry-vs-stock alert priority is exactly the kind of judgment call Section 62 reserves for the user.
+
+### Expiry warnings and dashboard alerts
+
+| | |
+|---|---|
+| **Feature** | Cross-cart expiry/stock alerts on the institution dashboard (spec sections 29-30, 49) |
+| **Status** | WORKING |
+| **Test performed** | Viewed the institution dashboard as the admin with the QA fixture's deliberately-crafted data: Atropina's only batch expiring in 14 days (within the institution's 30-day `expiryWarningDays`), "Produto Expirado Teste" already expired. |
+| **Expected behavior** | Both categories (expiring-soon, expired) should surface, each naming the product and cart. |
+| **Actual behavior** | Dashboard's "Alertas" section correctly showed both: "A expirar em breve · Atropina · Carro de Emergência 1" and "Expirado · Produto Expirado Teste · Carro de Emergência 1". Adrenalina (earliest known expiry 2026-10-15, outside the 30-day window after the fixture reset) correctly did not appear. |
+| **Bugs found** | None. |
+| **Relevant files changed** | None. |
+| **Remaining limitation** | See the `computeAlert` single-alert-type finding above. |
+
+## Summary of this QA test run
+
+**PASS** — working exactly as specified, live-verified this session: daily consumption (no-lot-assumption, aggregate-only decrement), consumption correction (immutable original + compensating event), replenishment expiry ordering (both later-expiry-ignored and earlier-expiry-advances-conservatively directions), cross-institution isolation, role-based UI/permission gating for a plain user, expiry/stock dashboard alerts (both categories), no-patient-data structural guarantee, multi-institution membership listing for a user belonging to more than one institution (admin account).
+
+**BUGS FOUND — FIXED THIS SESSION**: the cart-list `Null value error` bug above (a normal user could not use the app beyond logging in) — root-caused, fixed, covered by 4 new automated Rules tests, retested live for both the affected role and the unaffected (manager) role to confirm no regression.
+
+**NOT IMPLEMENTED** (confirmed, no code path exists — not a bug, scope was never built): periodic/monthly guided audit workflow, daily checklist, audit-log UI (data layer exists, unused), cart/drawer templates as a distinct feature beyond simple duplication.
+
+**KNOWN NON-BLOCKING LIMITATION** (not altered, per Section 62): `computeAlert`'s single-alert-type-per-assignment early-return priority.
+
+**Carried over from prior sessions, unchanged and not re-exercised this session** (see the sections below this one for their original live-validation detail): GS1 Data Matrix scanning, internal-QR cart navigation, HID scanning, PT-PT/English localization, CSV/PDF export, reporting aggregates, offline/reconnection banner, accessibility/performance passes, Web/Windows build validation. None of this session's changes touched any of that code, and the automated suites covering it (`flutter test` 132/132, `firestore-tests` 31/31) remained green throughout.
+
+**NOT TESTABLE from this environment**: physical-camera GS1/QR scanning (the Android Virtual Device's virtual camera cannot produce a real scannable code — validated instead via fake-scanner widget tests per spec section 5's own prescribed strategy), iOS/macOS (no Mac access), release-signed builds (no upload keystore).
 
 ## Phase 2, reporting/orphan-cleanup/touch-target + full localization — Android emulator live validation, Web/Windows rebuild
 
