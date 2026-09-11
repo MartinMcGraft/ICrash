@@ -80,6 +80,19 @@ New deterministic seed fixture for this run: `firestore-tests/seed_qa_run.mjs` (
 | **Relevant files changed** | None. |
 | **Remaining limitation** | See the `computeAlert` single-alert-type finding above. |
 
+### App-restart persistence
+
+| | |
+|---|---|
+| **Feature** | Session/data persistence across a full app restart (spec section 56) |
+| **Status** | WORKING |
+| **Test performed** | `adb shell am force-stop pt.icrash.app` followed by a fresh `am start`, signed in as the admin. |
+| **Expected behavior** | Firebase Auth session persists locally; the user lands back on the institution list without needing to log in again. |
+| **Actual behavior** | Confirmed: relaunch went straight to "Escolher instituição" showing both institutions correctly, no re-login prompt. No fatal exceptions in `adb logcat` across the restart. |
+| **Bugs found** | None. |
+| **Relevant files changed** | None. |
+| **Remaining limitation** | None known. |
+
 ## Summary of this QA test run
 
 **PASS** — working exactly as specified, live-verified this session: daily consumption (no-lot-assumption, aggregate-only decrement), consumption correction (immutable original + compensating event), replenishment expiry ordering (both later-expiry-ignored and earlier-expiry-advances-conservatively directions), cross-institution isolation, role-based UI/permission gating for a plain user, expiry/stock dashboard alerts (both categories), no-patient-data structural guarantee, multi-institution membership listing for a user belonging to more than one institution (admin account).
