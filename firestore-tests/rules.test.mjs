@@ -75,6 +75,7 @@ async function seedBaseline() {
 
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`), {
       name: 'Cart 1', status: 'operational', layoutVersion: 1,
+      responsibleUserIds: [USER_UID],
     });
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/responsibleUsers/${USER_UID}`), {
       uid: USER_UID,
@@ -118,6 +119,42 @@ describe('cart access (spec section 17)', () => {
     await seedBaseline();
     const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
     await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`)));
+  });
+
+  // Regression coverage for a real bug found via live QA testing (not just
+  // getDoc): `watchAccessibleCarts` uses a `list` query, which has a
+  // stricter Firestore Rules-evaluation model than `get` -- see the long
+  // comment on this collection's rule in firestore.rules. These tests
+  // exercise `getDocs`/`list`, not `getDoc`/`get`, specifically because the
+  // bug only manifested on `list` and every pre-existing test here only
+  // ever called `getDoc`.
+  test('a manager can list every cart in the institution unfiltered', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const snapshot = await assertSucceeds(getDocs(collection(db, `institutions/${INST_A}/carts`)));
+    assert.equal(snapshot.size, 1);
+  });
+
+  test('the assigned user can list carts by filtering on responsibleUserIds array-contains their uid', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    const q = query(collection(db, `institutions/${INST_A}/carts`), where('responsibleUserIds', 'array-contains', USER_UID));
+    const snapshot = await assertSucceeds(getDocs(q));
+    assert.deepEqual(snapshot.docs.map((d) => d.id), [CART_ID]);
+  });
+
+  test('the assigned user cannot list carts with an unfiltered query -- must use the array-contains query shape', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertFails(getDocs(collection(db, `institutions/${INST_A}/carts`)));
+  });
+
+  test('a member with no cart assignment gets no results from the filtered list query', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER2_UID).firestore();
+    const q = query(collection(db, `institutions/${INST_A}/carts`), where('responsibleUserIds', 'array-contains', USER2_UID));
+    const snapshot = await assertSucceeds(getDocs(q));
+    assert.equal(snapshot.size, 0);
   });
 });
 

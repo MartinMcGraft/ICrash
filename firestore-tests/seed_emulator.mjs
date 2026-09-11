@@ -87,6 +87,9 @@ async function seedFirestore(uid) {
       name: 'Carro de Emergência 1',
       status: 'operational',
       layoutVersion: 1,
+      // Denormalized, kept in sync with responsibleUsers below -- see
+      // firestore.rules' carts/{cartId} `allow list` for why this exists.
+      responsibleUserIds: [uid],
     });
 
     await setDoc(doc(db, `institutions/${INSTITUTION_ID}/carts/${CART_ID}/responsibleUsers/${uid}`), {
