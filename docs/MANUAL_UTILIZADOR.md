@@ -18,25 +18,15 @@ adicional — basta abrir a app e iniciar sessão.
 
 ### Contas com permissões máximas
 
-Foram criadas duas contas de acesso com o nível de permissão mais alto da
-aplicação (administrador de plataforma **e** administrador da instituição
-principal, para poderem gerir tudo a partir do primeiro ecrã):
+Os administradores iniciais são criados no Firebase Authentication e recebem
+o nível máximo de acesso na aplicação: administrador de plataforma **e**
+administrador da instituição principal. Os endereços e palavras-passe nunca
+são guardados neste repositório, manual ou aplicação.
 
-| E-mail | Palavra-passe | Nível |
-|---|---|---|
-| `pajorge01@gmail.com` | `password` | Platform Super Admin + Institution Admin |
-| `martimalves@gmail.com` | `password` | Platform Super Admin + Institution Admin |
-
-> Estas não são contas Gmail reais — são apenas credenciais de acesso à
-> aplicação (Firebase Authentication por e-mail/palavra-passe), tal como
-> qualquer outra conta de utilizador da app. Já foram criadas no projeto de
-> produção; falta apenas atribuir-lhes os documentos de permissão no
-> Firestore (ver instruções à parte que foram dadas nesta sessão) — assim que
-> isso for feito, ambas passam a ver a instituição principal e todos os
-> carros, produtos e membros, com acesso total.
-
-Recomenda-se mudar a palavra-passe destas contas dentro da aplicação (ou via
-consola Firebase) antes de uma utilização real/pública.
+Cada administrador deve iniciar sessão com as credenciais que lhe foram
+entregues de forma privada e alterar a palavra-passe antes de qualquer
+utilização pública. Uma conta que não consiga entrar deve usar a reposição de
+palavra-passe do Firebase, administrada pela equipa responsável.
 
 ### Modelo de papéis (roles)
 

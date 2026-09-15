@@ -1,0 +1,13 @@
+{
+  "name": "icrash-cloud-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "One-off operator scripts that target the REAL cloud project via the Admin SDK. Deliberately separate from firestore-tests/, which must never touch the cloud project.",
+  "type": "module",
+  "scripts": {
+    "provision-admins": "node provision_cloud_admins.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
