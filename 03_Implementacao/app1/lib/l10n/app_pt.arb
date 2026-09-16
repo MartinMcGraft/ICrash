@@ -225,7 +225,19 @@
   "dashboardNoCartMatches": "Nenhum carro corresponde à pesquisa.",
   "dashboardAlertsTitle": "Alertas",
   "alertBelowMinimum": "Stock abaixo do mínimo",
+  "dashboardLoadAlertsError": "Não foi possível carregar os alertas: {error}",
+  "@dashboardLoadAlertsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
   "dashboardRecentActivityTitle": "Atividade recente",
+  "dashboardLoadActivityError": "Não foi possível carregar a atividade recente: {error}",
+  "@dashboardLoadActivityError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
 
   "assignConflictError": "Este produto já está atribuído a outro slot deste carro.",
   "assignGenericError": "Não foi possível atribuir o produto. Tente novamente.",

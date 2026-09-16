@@ -6,6 +6,23 @@ import '../../common/repository_failure.dart';
 /// nothing above the data layer needs to know about `FirebaseException` or
 /// `FirebaseAuthException`.
 RepositoryFailure mapFirebaseException(Object error) {
+  // FirebaseAuthException extends FirebaseException, so this check MUST come
+  // first -- an `is FirebaseException` check alone matches auth errors too
+  // and their specific codes (wrong-password, email-already-in-use, ...)
+  // would never be reached, collapsing every auth failure to `unknown`.
+  if (error is FirebaseAuthException) {
+    switch (error.code) {
+      case 'email-already-in-use':
+        return RepositoryFailure(RepositoryFailureReason.conflict, cause: error);
+      case 'invalid-email':
+      case 'weak-password':
+        return RepositoryFailure(RepositoryFailureReason.invalidInput, cause: error);
+      case 'network-request-failed':
+        return RepositoryFailure(RepositoryFailureReason.offline, cause: error);
+      default:
+        return RepositoryFailure(RepositoryFailureReason.unauthenticated, cause: error);
+    }
+  }
   if (error is FirebaseException) {
     switch (error.code) {
       case 'permission-denied':
@@ -22,17 +39,6 @@ RepositoryFailure mapFirebaseException(Object error) {
         return RepositoryFailure(RepositoryFailureReason.conflict, cause: error);
       default:
         return RepositoryFailure(RepositoryFailureReason.unknown, cause: error);
-    }
-  }
-  if (error is FirebaseAuthException) {
-    switch (error.code) {
-      case 'email-already-in-use':
-        return RepositoryFailure(RepositoryFailureReason.conflict, cause: error);
-      case 'invalid-email':
-      case 'weak-password':
-        return RepositoryFailure(RepositoryFailureReason.invalidInput, cause: error);
-      default:
-        return RepositoryFailure(RepositoryFailureReason.unauthenticated, cause: error);
     }
   }
   return RepositoryFailure(RepositoryFailureReason.unknown, cause: error);

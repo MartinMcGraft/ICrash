@@ -932,11 +932,23 @@ abstract class AppLocalizations {
   /// **'Stock abaixo do mínimo'**
   String get alertBelowMinimum;
 
+  /// No description provided for @dashboardLoadAlertsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar os alertas: {error}'**
+  String dashboardLoadAlertsError(Object error);
+
   /// No description provided for @dashboardRecentActivityTitle.
   ///
   /// In pt, this message translates to:
   /// **'Atividade recente'**
   String get dashboardRecentActivityTitle;
+
+  /// No description provided for @dashboardLoadActivityError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar a atividade recente: {error}'**
+  String dashboardLoadActivityError(Object error);
 
   /// No description provided for @assignConflictError.
   ///

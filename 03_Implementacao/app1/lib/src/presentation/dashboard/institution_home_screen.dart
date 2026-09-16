@@ -417,6 +417,15 @@ class _CrossCartAlerts extends StatelessWidget {
     return StreamBuilder<List<CartProductAssignment>>(
       stream: assignmentsStream,
       builder: (context, assignmentsSnapshot) {
+        if (assignmentsSnapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              l10n.dashboardLoadAlertsError(assignmentsSnapshot.error!),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          );
+        }
         final assignments =
             assignmentsSnapshot.data ?? const <CartProductAssignment>[];
         final now = DateTime.now();
@@ -494,6 +503,15 @@ class _RecentActivity extends StatelessWidget {
     return StreamBuilder<List<UsageEvent>>(
       stream: eventsStream,
       builder: (context, eventsSnapshot) {
+        if (eventsSnapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              l10n.dashboardLoadActivityError(eventsSnapshot.error!),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          );
+        }
         final events = eventsSnapshot.data ?? const <UsageEvent>[];
         if (events.isEmpty) return const SizedBox.shrink();
         return FutureBuilder<List<Product>>(

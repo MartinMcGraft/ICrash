@@ -475,7 +475,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get alertBelowMinimum => 'Stock abaixo do mínimo';
 
   @override
+  String dashboardLoadAlertsError(Object error) {
+    return 'Não foi possível carregar os alertas: $error';
+  }
+
+  @override
   String get dashboardRecentActivityTitle => 'Atividade recente';
+
+  @override
+  String dashboardLoadActivityError(Object error) {
+    return 'Não foi possível carregar a atividade recente: $error';
+  }
 
   @override
   String get assignConflictError =>

@@ -225,7 +225,19 @@
   "dashboardNoCartMatches": "No cart matches the search.",
   "dashboardAlertsTitle": "Alerts",
   "alertBelowMinimum": "Stock below minimum",
+  "dashboardLoadAlertsError": "Couldn't load alerts: {error}",
+  "@dashboardLoadAlertsError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
   "dashboardRecentActivityTitle": "Recent activity",
+  "dashboardLoadActivityError": "Couldn't load recent activity: {error}",
+  "@dashboardLoadActivityError": {
+    "placeholders": {
+      "error": {"type": "Object"}
+    }
+  },
 
   "assignConflictError": "This product is already assigned to another slot in this cart.",
   "assignGenericError": "Couldn't assign the product. Try again.",
