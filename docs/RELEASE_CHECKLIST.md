@@ -31,17 +31,30 @@ started 2026-09-10 (see `docs/AI_HANDOFF.md`).
   explicit user confirmation before redeploying — this was already true and
   doesn't change for a release.
 
-## Android release signing — not yet done
+## Android release signing — code wiring done, keystore still needed
 
-**Currently**: `android/app/build.gradle`'s `release` build type signs with
-`signingConfigs.debug` — a build tagged `release` today is not actually
-suitable for distribution; it's signed with the same throwaway debug key
-every Flutter project ships with, and Google Play will reject an upload
-signed that way (and even if it didn't, anyone could re-sign a malicious
-update with the same public debug key).
+**Update (2026-09-16)**: `android/app/build.gradle` now reads
+`android/key.properties` (`storePassword`, `keyPassword`, `keyAlias`,
+`storeFile`) if it exists and signs release builds with it automatically —
+this is step 3 below, already done ahead of time so nothing else needs
+touching once a real keystore exists. **Until `key.properties` exists,
+nothing changes**: release builds keep silently falling back to the debug
+key, exactly as before, so this is safe to have merged early.
 
-**Required before shipping to Google Play or handing out a real release
-APK**, in order:
+Also fixed in the same pass: this project's *very first* successful
+`flutter build apk --release` (never attempted before this session) failed
+at the R8 minification step with "Missing class
+com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions" (and the
+same for Devanagari/Japanese/Korean) — `google_mlkit_text_recognition` (used
+only by the legacy `lib/teste/` prototype screens) references optional
+per-script recognizer classes this app never depends on. Fixed with the
+`-dontwarn` rules Android Gradle Plugin's own error message recommended, in
+the new `android/app/proguard-rules.pro` (wired via `proguardFiles` in the
+`release` build type). **A release APK now builds successfully** — verified
+with `flutter build apk --release --dart-define=ICRASH_BACKEND=cloud`.
+
+**Still required before shipping to Google Play or handing out a real
+release APK**, in order:
 
 1. **Human action required**: generate an upload keystore
    (`keytool -genkey -v -keystore <path>.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`)
@@ -49,15 +62,12 @@ APK**, in order:
    losing it means losing the ability to publish updates to an existing Play
    Store listing under the same app identity.
 2. **Human action required**: create `android/key.properties` (already
-   `.gitignore`d by the standard Flutter template — verify this before
-   creating it) with `storePassword`, `keyPassword`, `keyAlias`, `storeFile`.
-   Never commit this file or the `.jks` itself.
-3. Once both exist, `android/app/build.gradle` needs a `signingConfigs.release`
-   block reading from `key.properties`, and the `release` build type's
-   `signingConfig` changed from `signingConfigs.debug` to
-   `signingConfigs.release` — this is a small, mechanical code change an
-   assistant *can* make once the keystore/properties file exist, but there is
-   nothing to wire up until step 1-2 are done by a human.
+   `.gitignore`d — confirmed in `android/.gitignore`) with `storePassword`,
+   `keyPassword`, `keyAlias`, `storeFile`. Never commit this file or the
+   `.jks` itself. Nothing else to do afterward — `build.gradle` already picks
+   it up automatically (see above).
+3. ~~`android/app/build.gradle` needs a `signingConfigs.release` block...~~
+   **Done** — see the 2026-09-16 update above.
 4. Google Play uses **Play App Signing** by default for new apps (Google
    holds the final signing key; the upload keystore from step 1 only signs
    the upload artifact) — decide whether to opt in when creating the Play

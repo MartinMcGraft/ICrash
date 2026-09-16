@@ -6,6 +6,21 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'dev.flutter.flutter-gradle-plugin'
 }
+
+// Real upload-key signing, wired defensively: this file does not exist in
+// this repository (android/.gitignore already excludes it) and nothing
+// changes until it does. Create it with `storePassword`, `keyPassword`,
+// `keyAlias`, `storeFile` (see docs/RELEASE_CHECKLIST.md) once you have
+// generated a real upload keystore -- release builds then automatically sign
+// with it, no further code change needed. Until then, release builds keep
+// signing with the debug key, exactly as before.
+def keystorePropertiesFile = rootProject.file('key.properties')
+def keystoreProperties = new Properties()
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'pt.icrash.app'
     compileSdk flutter.compileSdkVersion
@@ -21,10 +36,22 @@ android {
         versionCode flutter.versionCode
         versionName flutter.versionName
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
     buildTypes {
         release {
-            // Development only. Configure the commercial signing key before distribution.
-            signingConfig signingConfigs.debug
+            // Falls back to the debug key until key.properties exists --
+            // see docs/RELEASE_CHECKLIST.md before shipping a real build.
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
