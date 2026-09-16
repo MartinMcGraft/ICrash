@@ -2,6 +2,42 @@
 
 Updated: 2026-09-16
 
+## Live "go live" rehearsal against the real cloud project (2026-09-16)
+
+A full manual, hands-on run of a **release** build (`flutter build apk --release
+--dart-define=ICRASH_BACKEND=cloud`, debug-signed since no upload keystore exists
+yet — see `docs/RELEASE_CHECKLIST.md`) was driven end-to-end on an emulator exactly
+as a real user would use it on a phone: login, institution selection, dashboard,
+creating a product, a cart, a drawer, assigning a product to a slot, replenishing
+stock with a lot number and expiry date, registering consumption, checking the
+history log and CSV/PDF export buttons, switching the UI language, and logging out
+and back in as the second admin account. Every write and read went through the real
+Firestore Rules against `i-crash-pt-2026`, not the emulator.
+
+**One real bug found and fixed**: tapping "Terminar sessão" (sign out) from any
+screen pushed on top of the institution/dashboard route (i.e. anywhere except the
+very first screen after login) called `services.auth.signOut()` with no
+navigation. The only widget listening to `authStateChanges()` is `_AuthGate`, the
+root (`home:`) widget of the app's `MaterialApp` — but screens pushed via
+`Navigator.push` sit on top of it, so signing out silently invalidated the
+session while the still-visible screen's Firestore stream immediately failed with
+`permission-denied`. The user saw a raw error message and stayed stuck there;
+only manually pressing the OS back button (popping the stack) revealed the
+already-updated login screen underneath. **Fixed** in both
+`institution_selection_screen.dart` and `institution_home_screen.dart`: the
+sign-out button now calls `Navigator.of(context).popUntil((route) =>
+route.isFirst)` before `signOut()`, so it always returns to `_AuthGate`
+immediately regardless of how deep the user had navigated. Rebuilt and
+re-verified live on the emulator: sign-out now goes straight to the login screen.
+
+Everything else worked exactly as documented in `docs/MANUAL_UTILIZADOR.md`:
+role-based AppBar icons, the "expiring soon" / "recent activity" dashboard panels
+(the fix from the audit below, seen working live with real data), the GS1/lot/
+expiry replenishment form's required-expiry-when-lot-given validation, the
+history log's Consumo/Reposição entries, and both provisioned admin accounts
+(`pajorge01@gmail.com`, `martimalves@gmail.com`) reaching identical
+`institutionAdmin` access. No fatal exceptions appeared in logcat at any point.
+
 ## Production-readiness audit against the real cloud project (2026-09-16)
 
 Following the first-ever deploy of `firestore.rules`/`firestore.indexes.json` to the

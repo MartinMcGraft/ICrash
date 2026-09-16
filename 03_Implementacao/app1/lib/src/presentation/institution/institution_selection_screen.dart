@@ -23,7 +23,15 @@ class InstitutionSelectionScreen extends StatelessWidget {
           IconButton(
             tooltip: l10n.actionSignOut,
             icon: const Icon(Icons.logout),
-            onPressed: () => services.auth.signOut(),
+            onPressed: () {
+              // Pop back to `_AuthGate` (the root route) first: it is the
+              // only widget listening to authStateChanges(), so any screen
+              // still pushed on top of it would otherwise keep showing its
+              // now-unauthenticated Firestore stream's permission-denied
+              // error instead of the login screen.
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              services.auth.signOut();
+            },
           ),
         ],
       ),

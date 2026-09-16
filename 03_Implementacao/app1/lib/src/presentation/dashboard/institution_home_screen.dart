@@ -219,7 +219,16 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
           IconButton(
             tooltip: l10n.actionSignOut,
             icon: const Icon(Icons.logout),
-            onPressed: () => services.auth.signOut(),
+            onPressed: () {
+              // Pop back to `_AuthGate` (the root route) first: it is the
+              // only widget listening to authStateChanges(), so any screen
+              // still pushed on top of it (this one, or a cart/drawer pushed
+              // above it) would otherwise keep showing its now-unauthenticated
+              // Firestore stream's permission-denied error instead of
+              // redirecting to the login screen.
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              services.auth.signOut();
+            },
           ),
         ],
       ),
