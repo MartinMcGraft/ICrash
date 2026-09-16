@@ -145,7 +145,31 @@ service cloud.firestore {
       }
 
       match /carts/{cartId} {
-        allow read: if canAccessCart(institutionId, cartId);
+        // Split get/list, confirmed empirically necessary (firebase-tools
+        // 15.29.0's Firestore emulator): a `list` query on this collection
+        // cannot reference this document's own identity at all -- neither
+        // the `cartId` path wildcard nor `resource.data`/`resource.id` --
+        // without throwing "Null value error"/"Property ... is undefined
+        // on object" for every candidate document, even for a caller whose
+        // first `||` branch (`isManagerOrAbove`) is staticaly true and
+        // never itself touches `resource`. `get` (single-document reads,
+        // used by `getCart`) has no such limitation and keeps using the
+        // richer `responsibleUsers`-subcollection check via
+        // `canAccessCart`. `list` (used by `watchAccessibleCarts`) instead
+        // needs the caller to shape its query to match this rule exactly:
+        // manager+ lists the collection unfiltered (this branch never
+        // touches `resource`, so it is safe); a normal user must filter by
+        // `responsibleUserIds array-contains <their uid>`, matching the
+        // denormalized array field `FirestoreCartRepository.assignResponsibleUser`/
+        // `removeResponsibleUser` keep in sync on the cart doc itself. See
+        // docs/FIREBASE_MODEL.md for the full empirical story -- this is
+        // the same class of bug already documented there for `memberIndex`
+        // and the cross-cart `assignments` collection-group query, just
+        // manifesting on a plain (non-collection-group) nested collection
+        // this time.
+        allow get: if canAccessCart(institutionId, cartId);
+        allow list: if isManagerOrAbove(institutionId) ||
+          (isMember(institutionId) && request.auth.uid in resource.data.responsibleUserIds);
         allow create, update: if isManagerOrAbove(institutionId);
         allow delete: if false;
 

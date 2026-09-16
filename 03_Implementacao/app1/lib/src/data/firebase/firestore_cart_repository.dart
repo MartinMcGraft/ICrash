@@ -18,16 +18,30 @@ class FirestoreCartRepository implements CartRepository {
 
   @override
   Stream<List<Cart>> watchAccessibleCarts(String institutionId) {
-    // Security rules already restrict a non-manager to carts they are
-    // assigned to; this listens to the full collection and lets the rules
-    // decide what is actually returned.
-    return _firestore
-        .collection(FirestorePaths.carts(institutionId))
-        .snapshots()
-        .map((snapshot) => snapshot.docs
+    // The `list` security rule on `carts` cannot safely be a single
+    // unconditional "let the rules decide" read for every role -- see the
+    // long comment on this collection's rule in firestore.rules for the
+    // empirical reason why. A manager+ query must stay fully unfiltered
+    // (matching the rule's resource-independent `isManagerOrAbove` branch);
+    // a normal user's query must filter by `responsibleUserIds
+    // array-contains <their uid>` (matching the rule's other branch, kept
+    // in sync by assignResponsibleUser/removeResponsibleUser below). Which
+    // query to run is decided once per call from the caller's own
+    // membership, then the chosen query is watched reactively.
+    final collectionRef = _firestore.collection(FirestorePaths.carts(institutionId));
+    return Stream.fromFuture(_isManagerOrAbove(institutionId)).asyncExpand((managerOrAbove) {
+      final query = managerOrAbove ? collectionRef : collectionRef.where('responsibleUserIds', arrayContains: _uid);
+      return query.snapshots();
+    }).map((snapshot) => snapshot.docs
             .map((doc) => Cart.fromMap(doc.id, institutionId, normalizeTimestamps(doc.data(), const ['createdAt', 'updatedAt'])))
             .toList())
         .handleError((Object error) => throw mapFirebaseException(error));
+  }
+
+  Future<bool> _isManagerOrAbove(String institutionId) async {
+    final doc = await _firestore.collection(FirestorePaths.memberships(institutionId)).doc(_uid).get();
+    final role = doc.data()?['role'] as String?;
+    return role == 'institutionAdmin' || role == 'manager';
   }
 
   @override
@@ -48,6 +62,10 @@ class FirestoreCartRepository implements CartRepository {
       final ref = _firestore.collection(FirestorePaths.carts(institutionId)).doc();
       await ref.set({
         ...cart.toMap(),
+        // Denormalized for the `list` rule -- see watchAccessibleCarts.
+        // Starts empty; assignResponsibleUser fills it in as normal users
+        // are granted access to this specific cart.
+        'responsibleUserIds': <String>[],
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -82,11 +100,20 @@ class FirestoreCartRepository implements CartRepository {
   @override
   Future<void> assignResponsibleUser(String institutionId, String cartId, String uid) async {
     try {
-      await _firestore.collection(FirestorePaths.responsibleUsers(institutionId, cartId)).doc(uid).set({
+      final batch = _firestore.batch();
+      batch.set(_firestore.collection(FirestorePaths.responsibleUsers(institutionId, cartId)).doc(uid), {
         'uid': uid,
         'assignedBy': _uid,
         'assignedAt': FieldValue.serverTimestamp(),
       });
+      // Kept in sync with the responsibleUsers subcollection above -- the
+      // `carts` list rule reads this denormalized field instead (see
+      // watchAccessibleCarts/firestore.rules); never write one without the
+      // other, same pattern as memberships/memberIndex.
+      batch.update(_firestore.collection(FirestorePaths.carts(institutionId)).doc(cartId), {
+        'responsibleUserIds': FieldValue.arrayUnion([uid]),
+      });
+      await batch.commit();
     } catch (error) {
       throw mapFirebaseException(error);
     }
@@ -95,7 +122,12 @@ class FirestoreCartRepository implements CartRepository {
   @override
   Future<void> removeResponsibleUser(String institutionId, String cartId, String uid) async {
     try {
-      await _firestore.collection(FirestorePaths.responsibleUsers(institutionId, cartId)).doc(uid).delete();
+      final batch = _firestore.batch();
+      batch.delete(_firestore.collection(FirestorePaths.responsibleUsers(institutionId, cartId)).doc(uid));
+      batch.update(_firestore.collection(FirestorePaths.carts(institutionId)).doc(cartId), {
+        'responsibleUserIds': FieldValue.arrayRemove([uid]),
+      });
+      await batch.commit();
     } catch (error) {
       throw mapFirebaseException(error);
     }

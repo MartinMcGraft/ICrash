@@ -11,3 +11,7 @@ emulator-data/
 *.pem
 *.key
 *service-account*.json
+*serviceAccount*.json
+# Default filename Firebase Console gives a generated Admin SDK private key
+*firebase-adminsdk*.json
+node_modules/
