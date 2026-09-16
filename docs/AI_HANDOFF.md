@@ -1,6 +1,60 @@
 # AI handoff
 
-Updated: 2026-09-11
+Updated: 2026-09-16
+
+## Checkpoint: production rollout in progress, blocked on one human action (2026-09-16)
+
+**What's done**: `firestore.rules`/`firestore.indexes.json` deployed to the real cloud
+project `i-crash-pt-2026` (commit `f8db6df` fixed an index-format rejection the
+emulator never caught — see `docs/TEST_STATUS.md`'s "Index deploy divergence"). Two
+real Firebase Auth accounts were created directly in that project via the public
+Identity Toolkit `signUp` REST endpoint (no admin credentials needed for this part) and
+confirmed able to sign in. A full production-readiness audit then ran against the real
+project (`docs/TEST_STATUS.md`'s "Production-readiness audit" section is the
+authoritative record): found and fixed two real bugs (`firestore_exception_mapper.dart`
+auth-error dead code; the dashboard's alerts/activity panels silently swallowing stream
+errors), investigated and dismissed two false-alarm claims (a Rules `get()`-budget
+concern and a supposed remaining `list`-rule bug), and fact-checked/corrected 13
+inaccuracies in `docs/MANUAL_UTILIZADOR.md`. `flutter analyze` clean, `flutter test`
+132/132, Firestore Rules tests 31/31 (all pre-existing, no Rules changed this round).
+
+**Blocked on**: giving the two accounts their Firestore permission documents (the
+`platformAdmins` + `institutions/icrash-hq` + `memberships` + `memberIndex` trio+).
+Firestore Rules deliberately make this unwritable by any client (`platformAdmins`
+`allow write: if false`; `institutions` create requires an existing `platformAdmins`
+entry) — a documented, intentional bootstrap chicken-and-egg, not a bug. The write
+requires the Firebase Admin SDK, which needs a service-account key only a project
+owner can generate from the console. `tools/provision_cloud_admins.mjs` is written,
+installed (`tools/package.json`, `firebase-admin` already in `node_modules`), and
+independently validated by the audit above (every path/field/type checked against the
+actual Dart parsers and the two emulator seed scripts — zero errors found). It refuses
+to run against any project other than `i-crash-pt-2026` and reads back everything it
+wrote to prove success or fail loudly.
+
+**Exact next step**: get a service-account key for `i-crash-pt-2026` (Firebase Console
+→ ⚙ Project settings → Service accounts tab → "Generate new private key"), then run:
+
+```
+node tools/provision_cloud_admins.mjs "<path-to-the-downloaded-key.json>"
+```
+
+with `ICRASH_ADMIN_EMAILS` set to a comma-separated list of the accounts to promote
+(the user changed the script to read this from an environment variable rather than a
+hardcoded list, so no real e-mail address needs to live in this repository — see commit
+`7065666`). The script prints a verification read-back at the end; if any line says
+`MISSING` instead of the expected value, the batch write did not fully succeed and
+should not be treated as done. After that, test the actual login on a real device or
+`flutter run --dart-define=ICRASH_BACKEND=cloud` (a plain debug run defaults to the
+emulator and would look like the provisioning had no effect) — see
+`docs/TEST_STATUS.md` for the full list of pre-login checks (index status in the
+console, etc.).
+
+Once that's done, everything from the original 63-section QA plan that was already
+exercised against the emulator (see the "Full functional QA test run" section below)
+is a reasonable candidate for a lighter confirmation pass against the real project, but
+that has not been started and is not blocking anything — the app is expected to behave
+identically, since the audit above found no other emulator-vs-production divergence
+beyond what's already listed as fixed/dismissed.
 
 ## Checkpoint: full functional QA test run, in progress (2026-09-11)
 

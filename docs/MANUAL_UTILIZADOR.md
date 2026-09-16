@@ -33,11 +33,17 @@ palavra-passe do Firebase, administrada pela equipa responsável.
 Cada utilizador tem um papel por instituição (não é global, exceto o
 "Platform Super Admin"):
 
-- **Platform Super Admin** — acima de qualquer instituição; vê e gere tudo em
-  todas as instituições. Concedido apenas manualmente (não existe ecrã para
-  isto, por desenho).
+- **Platform Super Admin** — o nível mais alto ao nível das regras do
+  Firestore (marcador `platformAdmins`, concedido apenas manualmente, sem
+  ecrã para isto por desenho). **Na aplicação em si, este marcador sozinho
+  não abre nenhum ecrã**: a app decide o que mostrar olhando só para o papel
+  guardado na associação (`membership`) de cada instituição, e nunca consulta
+  o marcador `platformAdmins`. Por isso, para uma conta poder efetivamente
+  usar a aplicação com acesso total, precisa também de uma associação
+  `institutionAdmin` numa instituição concreta — não basta o marcador.
 - **Institution Admin** (administrador da instituição) — gere tudo dentro da
-  sua instituição: membros, carros, produtos, gavetas, compartimentos.
+  sua instituição: membros, carros, produtos, gavetas, compartimentos. É este
+  o papel que dá acesso total e funcional dentro da app.
 - **Manager** (gestor) — as mesmas capacidades de gestão de carros/produtos
   que o admin, mas não gere membros da instituição.
 - **User** (utilizador comum) — só vê os carros aos quais foi explicitamente
@@ -101,8 +107,8 @@ também o ecrã de retorno depois de sair da maioria dos outros ecrãs.
    platform super admin. Abre o ecrã de **Membros**.
 5. **App legada** (ícone de histórico/relógio) — sempre visível. Abre o
    protótipo antigo (pré-arquitetura V2), mantido só por continuidade
-   histórica: tem três botões próprios ("Registo", "Leitor QR Code",
-   "Teste Data Matrix") que não estão ligados ao backend atual.
+   histórica: tem três botões próprios, em inglês e sem tradução ("Registration",
+   "QR Code Reader", "Data matrix scan") que não estão ligados ao backend atual.
 6. **Idioma** (ícone de globo) — menu com "Português" / "English"; muda o
    idioma de toda a app de imediato e guarda a escolha para a próxima vez que
    abrir a app.
@@ -113,9 +119,16 @@ também o ecrã de retorno depois de sair da maioria dos outros ecrãs.
 - **Resumo de estado dos carros** — badges com a contagem de carros por
   estado (Operacional, Reposição necessária, Auditoria necessária, Fora de
   serviço). Apenas informativo, não clicável.
-- **Alertas entre carros** — só visível para gestor+. Lista todos os produtos,
-  em qualquer carro da instituição, que estejam expirados, a expirar em breve
-  ou abaixo da quantidade mínima. Apenas informativo.
+- **Alertas** (título mostrado no ecrã) — só visível para gestor+. Lista todos
+  os produtos, em qualquer carro da instituição, que estejam expirados ou a
+  expirar dentro do horizonte configurado da instituição (30 dias por
+  omissão). Apenas informativo. Se a consulta falhar (por exemplo por um
+  índice do Firestore ainda em criação), aparece uma mensagem de erro em vez
+  do painel — antes desta correção, uma falha aqui era indistinguível de "sem
+  alertas".
+  > *Nota: o código também suporta um alerta de "stock abaixo do mínimo", mas
+  > nunca é acionado nesta versão, porque nenhum ecrã permite definir uma
+  > quantidade mínima ao atribuir um produto.*
 - **Atividade recente** — visível para todos; mostra os últimos 5 eventos
   (consumo/reposição/correção) de toda a instituição.
 - **Campo de pesquisa** — filtra a lista de carros pelo nome, em tempo real.
@@ -137,8 +150,9 @@ Um único campo **Nome** (obrigatório). Botões **Cancelar** / **Criar**.
 
 ## 6. Detalhe do carro
 
-**Como se chega aqui:** ao tocar num carro na lista do painel, ao ler o QR de
-um carro, ou a partir de um resultado da pesquisa de produtos.
+**Como se chega aqui:** ao tocar num carro na lista do painel, ou ao ler o QR
+de um carro (a pesquisa de produto faz o caminho inverso: abre-se a partir
+deste ecrã, nunca chega aqui).
 
 Mostra o nome do carro e um badge com o estado atual.
 
@@ -160,8 +174,8 @@ Mostra o nome do carro e um badge com o estado atual.
 
 ### Corpo
 
-Lista de gavetas do carro (nome + dimensão, ex. "5 × 7"); tocar abre o
-**Editor de compartimentos** dessa gaveta.
+Lista de gavetas do carro (nome + dimensão, ex. "5 linhas × 7 colunas"); tocar
+abre o **Editor de compartimentos** dessa gaveta.
 
 ### Botão flutuante
 
@@ -173,9 +187,13 @@ Lista de gavetas do carro (nome + dimensão, ex. "5 × 7"); tocar abre o
 ## 7. Diálogo: Editar carro
 
 Campo **Nome** e menu suspenso **Estado** (Operacional / Reposição
-necessária / Auditoria necessária / Fora de serviço — escolha manual, já que
-o estado é normalmente calculado automaticamente). Botões **Cancelar** /
+necessária / Auditoria necessária / Fora de serviço). Botões **Cancelar** /
 **Guardar**.
+
+> **O estado do carro é sempre definido manualmente aqui — nesta versão nunca
+> é recalculado automaticamente a partir do stock ou das validades.** Os
+> contadores de estado no painel principal refletem só o que foi escolhido
+> manualmente.
 
 ## 8. Diálogo: Duplicar carro
 
@@ -207,12 +225,16 @@ que já não existe (por exemplo depois de uma junção/divisão anterior). Para
 cada um:
 - **Reatribuir** — escolhe um compartimento vazio da gaveta atual para onde
   mover o produto.
-- **Remover** — apaga a atribuição órfã (sem pedido de confirmação).
+- **Remover** — pede confirmação num diálogo e, ao confirmar, apaga a
+  atribuição órfã **e todos os lotes registados nesse produto** (a operação
+  não é reversível).
 
 ### Barra de junção/divisão (só gestor+)
 
-- **Juntar** — ativo com 2+ compartimentos selecionados que formem um
-  retângulo completo; junta-os num só compartimento maior.
+- **Juntar** — fica ativo assim que houver 2 ou mais compartimentos
+  selecionados. Se a seleção não formar um retângulo completo sem espaços, a
+  app mostra o aviso "A seleção tem de formar um retângulo sem espaços." e não
+  junta nada.
 - **Dividir** — ativo com um compartimento selecionado que já resulte de uma
   junção anterior; volta a dividi-lo em células 1×1.
 
@@ -239,13 +261,25 @@ comum não pode atribuir um novo produto a um compartimento.
 - **Produto** (menu suspenso, obrigatório).
 - **Quantidade inicial** (número, ≥0, padrão 0).
 - **Quantidade alvo** (número, ≥0, padrão 1).
-- Botões **Cancelar** / **Atribuir**. Se outro gestor atribuir o mesmo
-  compartimento em simultâneo, mostra erro específico de conflito.
+- Botões **Cancelar** / **Atribuir**. Se o produto escolhido já estiver
+  atribuído a **outro** compartimento deste mesmo carro, a atribuição é
+  recusada com a mensagem "Este produto já está atribuído a outro slot deste
+  carro." (um produto só pode existir uma vez por carro — regra de negócio
+  intencional, ver secção 22.6). Não existe proteção equivalente ao nível do
+  compartimento: nada impede que dois gestores atribuam produtos diferentes
+  ao mesmo compartimento em simultâneo.
 
 ### Modo Ver (compartimento já ocupado)
 
 Mostra o nome do produto, "quantidade atual/alvo" e um badge de estado (OK,
-Reposição necessária, A expirar, Expirado). Botões:
+Reposição necessária, A expirar em breve, Expirado).
+
+> **Nota**: este badge é um campo guardado no compartimento, escrito como "ok"
+> na criação e nunca recalculado depois. Não avisa sozinho de uma validade
+> próxima nem de stock baixo — quem faz isso é o painel de **Alertas** da
+> instituição (secção 4), que é recalculado em tempo real.
+
+Botões:
 - **Fechar**
 - **Corrigir** — disponível a qualquer utilizador com acesso ao carro.
 - **Repor stock** — só gestor+.
@@ -321,6 +355,11 @@ marcado.
 > carro — um utilizador comum só vê os carros aos quais é explicitamente
 > atribuído aqui. Gestores e administradores veem sempre todos os carros.
 
+> **Nota**: cada membro aparece identificado apenas pelo seu UID do Firebase
+> Authentication (um código longo), não pelo nome nem pelo e-mail. Para saber
+> a que pessoa corresponde cada UID, consulta o separador Authentication na
+> consola Firebase.
+
 ---
 
 ## 14. Membros da instituição
@@ -328,19 +367,20 @@ marcado.
 **Como se chega aqui:** botão "Membros" no painel (só institution admin ou
 platform super admin).
 
-Lista de membros com o respetivo papel e estado. Em cada membro (exceto o
-próprio utilizador autenticado, que não tem menu sobre si mesmo), um menu
-(⋮) com:
-- **Mudar papel** — escolher entre Institution Admin / Manager / User.
+Lista de membros com o respetivo papel e estado (identificados pelo UID —
+ver nota na secção anterior). Em cada membro (exceto o próprio utilizador
+autenticado, que não tem menu sobre si mesmo), um menu (⋮) com:
+- **Mudar cargo** — escolher entre Institution Admin / Manager / User.
 - **Desativar / Reativar** — alterna o estado da associação (sem
   confirmação). Um membro desativado perde todo o acesso imediatamente.
 
 ### Botão flutuante
 
-- **Adicionar membro** — abre o diálogo com **E-mail**, **Palavra-passe**
-  (mínimo 6 caracteres) e **Papel**. Cria uma conta de autenticação nova de
-  raiz — a palavra-passe tem de ser comunicada ao novo membro por fora da
-  app (não existe convite por e-mail automático nesta versão).
+- **Adicionar membro** — abre o diálogo com **E-mail**, **Palavra-passe
+  temporária** (mínimo 6 caracteres) e **Cargo**. Cria uma conta de
+  autenticação nova de raiz — a palavra-passe tem de ser comunicada ao novo
+  membro por fora da app (não existe convite por e-mail automático nesta
+  versão, nem alteração/recuperação de palavra-passe dentro da app).
 
 ---
 
@@ -365,7 +405,7 @@ consulta e criação.
 membro ativo (só consulta).
 
 - Filtro por tipo de evento (Todos / Consumo / Reposição / Correção /
-  Reconciliação de auditoria) — chips clicáveis.
+  Reconciliação) — chips clicáveis.
 - Lista dos últimos 100 eventos da instituição (produto, tipo, quantidade).
 
 ### Botões de ação (sobre a lista já filtrada)
@@ -416,9 +456,14 @@ qualquer momento.
 Não é um ecrã, é uma barra fina que aparece automaticamente no topo de
 **qualquer** ecrã sempre que o dispositivo perde ligação à internet
 ("sem ligação à internet"), e desaparece sozinha quando a ligação volta. Os
-dados já carregados continuam visíveis (cache local do Firestore); qualquer
-ação feita offline fica em fila e é sincronizada automaticamente ao
-reconectar.
+dados já carregados continuam visíveis (cache local do Firestore).
+
+> **Importante**: registar consumo, repor stock e corrigir um evento exigem
+> ligação ativa ao servidor no momento em que se prime "Confirmar" (usam
+> transações do Firestore, que não funcionam a partir da cache local) — não
+> ficam em fila para sincronizar mais tarde. Se a ligação cair a meio, a ação
+> falha e tem de ser repetida depois de a ligação voltar. Apenas a
+> **consulta** de dados já carregados funciona sempre offline.
 
 ---
 

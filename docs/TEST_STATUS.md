@@ -1,6 +1,115 @@
 # Test status
 
-Updated: 2026-09-11
+Updated: 2026-09-16
+
+## Production-readiness audit against the real cloud project (2026-09-16)
+
+Following the first-ever deploy of `firestore.rules`/`firestore.indexes.json` to the
+real cloud project (`i-crash-pt-2026`, previously only exercised against the local
+emulator), a multi-agent audit was run to find every way the app could behave
+correctly against the emulator but fail or silently misbehave against production —
+motivated by one such divergence already found during that deploy (see "Index deploy
+divergence" below). Six dimensions were audited (every Firestore query vs. Rules,
+index coverage, console/Auth configuration, the two-admin bootstrap-document plan,
+emulator-vs-production behavioural divergences, and a fact-check of
+`docs/MANUAL_UTILIZADOR.md`), with adversarial verification (independent agents trying
+to refute each serious finding) wherever the session's usage limit allowed it to run.
+
+**Two real, confirmed bugs found and fixed** (both plain Dart application code —
+neither touches any of the ten protected business rules):
+
+1. **`mapFirebaseException` could never distinguish an authentication error.**
+   `FirebaseAuthException extends FirebaseException`, so the pre-existing
+   `if (error is FirebaseException)` check matched every auth error too, and its
+   switch has no auth-specific cases — every auth failure (wrong password, unknown
+   user, e-mail already in use, network error during login) fell through to
+   `RepositoryFailureReason.unknown`, and the dedicated `if (error is
+   FirebaseAuthException)` block right below it was dead code, unreachable in
+   practice. **Fixed**: reordered the two checks (auth-specific check first) and
+   added a `network-request-failed` case mapping to `offline`, so a wrong password
+   now correctly shows "Credenciais inválidas" and a network problem during login
+   shows "Sem ligação", matching what the app was always supposed to do (and what
+   `docs/MANUAL_UTILIZADOR.md` already claimed). File:
+   `03_Implementacao/app1/lib/src/data/firebase/firestore_exception_mapper.dart`.
+2. **The dashboard's cross-cart alerts panel and recent-activity panel silently
+   swallowed stream errors.** Both `StreamBuilder`s coerced an errored snapshot to an
+   empty list with `snapshot.data ?? const []`, with no `hasError` branch, so a query
+   failure (a FAILED_PRECONDITION while a newly-deployed index is still building, a
+   Rules regression, a quota error) rendered byte-identical to the healthy "no
+   alerts"/"no recent activity" state — the worst possible failure mode for a
+   crash-cart alerting panel. Confirmed via two independent adversarial verification
+   passes. **Fixed**: both widgets now render a visible, localized error message
+   (reusing the same pattern the carts list already used) instead of disappearing.
+   New strings `dashboardLoadAlertsError`/`dashboardLoadActivityError` in
+   `lib/l10n/app_{pt,en}.arb`. File:
+   `03_Implementacao/app1/lib/src/presentation/dashboard/institution_home_screen.dart`.
+
+Both fixes verified: `flutter analyze --no-pub` clean, `flutter test --no-pub` 132/132.
+
+**Two serious-sounding claims investigated and personally re-verified as false alarms**
+(not acted on):
+
+- *"Rewriting a drawer's slots blows Firestore's 20 get()/exists()-per-request Security
+  Rules budget for a default 5×7 grid (~35-105 calls)."* False: every slot write in the
+  batch is gated by the same `isManagerOrAbove(institutionId)` check, which reads the
+  *same* membership document path for every document in the batch — Firestore's
+  documented request-scoped `get()`/`exists()` result cache means this costs exactly
+  one real read, not one per slot, regardless of drawer size.
+- *"The nested, per-cart `watchAssignments` list query is a remaining unfixed instance
+  of the `list`-rule-evaluates-per-candidate-document class of bug already fixed twice
+  in this codebase (`memberIndex`, `carts`)."* False: that bug class is specifically
+  about a rule referencing `resource.data`/`resource.id`, or a `collectionGroup`'s
+  trailing wildcard — values that vary per candidate document and can't be resolved
+  during `list` validation. `institutions/{institutionId}/carts/{cartId}/assignments`'s
+  rule references `institutionId`/`cartId` from the match path itself, which are fixed
+  by the query's own collection reference, not per-document — the same safe pattern
+  already used by the (never-buggy) `drawers`/`responsibleUsers` nested rules.
+
+**Two-admin bootstrap plan (the `platformAdmins` + `institutions/icrash-hq` +
+`memberships` + `memberIndex` documents `tools/provision_cloud_admins.mjs` writes)
+validated as correct**: an independent audit cross-checked every path, field name, and
+value type against `firestore_paths.dart`, every domain parser, and the two emulator
+seed scripts, and found zero errors — the ordering/typo/type-mismatch failure modes it
+initially worried about were all refuted (mostly because `provision_cloud_admins.mjs`
+already writes everything atomically from source, not by hand). Confirmed once these
+documents exist, both accounts clear every Rules and UI gate for that institution. One
+real, informational nuance surfaced and is now documented in
+`docs/MANUAL_UTILIZADOR.md`'s role model section: the `platformAdmins` marker alone
+grants nothing in the app's own UI (the client never reads that collection — only the
+`institutionAdmin` membership role does), so both accounts still need their
+`institutionAdmin` membership to actually use the app, not just the marker.
+
+**Operational reminders for whoever runs the provisioning/first login** (not code
+changes — these are usage gotchas): a plain debug `flutter run` defaults to the local
+emulator (`--dart-define=ICRASH_BACKEND=cloud` is required to actually exercise
+`i-crash-pt-2026`); a `firebase deploy` without `-P development`/`--project
+i-crash-pt-2026` targets the demo project alias instead; and the console's Firestore
+Indexes tab should show every composite/field-override index as "Enabled" (not
+"Building") before the first real login, since none of this is enforced by the
+emulator and a still-building index fails as the same generic error every other
+failure does.
+
+**`docs/MANUAL_UTILIZADOR.md` fact-checked end to end** against the current code; 13
+inaccuracies found and corrected in place (role model, assignment-conflict wording,
+orphan-assignment deletion consequences, the per-slot status badge being static, the
+offline-write claim, cart status never being automatic, several button/label
+mismatches, and the UID-not-name identification in Members/Responsible-users). See the
+manual itself — corrections were applied directly rather than duplicated here.
+
+### Index deploy divergence (what motivated this audit)
+
+`firestore.indexes.json` declared `collectionGroup(assignments)` on `institutionId` as
+a single-field entry in the `indexes` (composite) array. The local emulator accepted
+this silently; the real Firestore Admin API rejected the deploy outright ("this index
+is not necessary, configure using single field index controls"). Fixed by moving it
+into `fieldOverrides` (the correct mechanism for enabling a single field for
+`COLLECTION_GROUP` query scope) — commit `f8db6df`. A follow-up finding from this audit
+(informational, not acted on): the `fieldOverrides` entry as written only declares
+ASCENDING/COLLECTION and ASCENDING/COLLECTION_GROUP, which *replaces* rather than
+extends Firestore's normal default single-field indexing for that field (DESCENDING
+and ARRAY_CONTAINS are dropped) — harmless today since `institutionId` is only ever
+used in one equality filter, but worth knowing if a future query ever needs to order by
+or array-contains that field.
 
 ## Full functional QA test run (2026-09-11)
 
