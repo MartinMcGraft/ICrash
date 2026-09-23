@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Indique um nome'**
   String get validationEnterName;
 
+  /// No description provided for @validationDuplicateCartName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já existe um carro com este nome.'**
+  String get validationDuplicateCartName;
+
   /// No description provided for @createCartTitle.
   ///
   /// In pt, this message translates to:
@@ -380,11 +386,11 @@ abstract class AppLocalizations {
   /// **'Editar carro'**
   String get editCartTitle;
 
-  /// No description provided for @editCartStatusLabel.
+  /// No description provided for @editCartOutOfServiceLabel.
   ///
   /// In pt, this message translates to:
-  /// **'Estado'**
-  String get editCartStatusLabel;
+  /// **'Fora de serviço'**
+  String get editCartOutOfServiceLabel;
 
   /// No description provided for @createProductTitle.
   ///
@@ -577,6 +583,24 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Ainda não existem produtos nesta instituição.'**
   String get productsEmpty;
+
+  /// No description provided for @deleteProductTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover produto'**
+  String get deleteProductTitle;
+
+  /// No description provided for @deleteProductMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta ação remove o produto do catálogo. Não pode ser desfeita.'**
+  String get deleteProductMessage;
+
+  /// No description provided for @productsDeleteError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível remover o produto. Tente novamente.'**
+  String get productsDeleteError;
 
   /// No description provided for @membersScreenTitle.
   ///
@@ -877,12 +901,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Carro removido'**
   String get cartRemoved;
-
-  /// No description provided for @dashboardLegacyAppTooltip.
-  ///
-  /// In pt, this message translates to:
-  /// **'Aplicação anterior (referência)'**
-  String get dashboardLegacyAppTooltip;
 
   /// No description provided for @dashboardOpenCartError.
   ///

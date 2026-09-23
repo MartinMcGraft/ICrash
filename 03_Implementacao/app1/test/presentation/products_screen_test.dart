@@ -74,4 +74,31 @@ void main() {
     expect(products.lastCreated?.name, 'Adrenalina');
     expect(find.text('Adrenalina'), findsOneWidget);
   });
+
+  testWidgets('hides the delete action for a non-manager', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    await tester.pumpWidget(
+      _wrap(buildTestServices(products: FakeProductRepository(products: [product]))),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
+  });
+
+  testWidgets('deletes a product after confirming', (tester) async {
+    const product = Product(id: 'p1', institutionId: 'inst-a', name: 'Adrenalina');
+    final products = FakeProductRepository(products: [product]);
+    await tester.pumpWidget(
+      _wrap(buildTestServices(products: products), canManage: true),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Remover'));
+    await tester.pumpAndSettle();
+
+    expect(products.lastDeletedId, 'p1');
+    expect(find.text('Adrenalina'), findsNothing);
+  });
 }

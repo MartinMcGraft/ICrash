@@ -129,6 +129,58 @@ void main() {
     expect(find.text('Carro Novo'), findsOneWidget);
   });
 
+  testWidgets('blocks creating a cart whose name already exists', (tester) async {
+    const existing = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    final carts = FakeCartRepository(carts: [existing]);
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: carts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Novo carro'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'carro 1');
+    await tester.tap(find.widgetWithText(FilledButton, 'Criar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Já existe um carro com este nome.'), findsOneWidget);
+    expect(carts.lastCreated, isNull);
+  });
+
+  testWidgets('renames a cart from the dashboard list without opening it', (
+    tester,
+  ) async {
+    const cart = Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1');
+    final carts = FakeCartRepository(carts: [cart]);
+    await tester.pumpWidget(
+      _wrap(
+        buildTestServices(
+          institutions: FakeInstitutionRepository(
+            myMembership: _membership(Role.manager),
+          ),
+          carts: carts,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Carro Renomeado');
+    await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(carts.carts.single.name, 'Carro Renomeado');
+    expect(find.byType(CartDetailScreen), findsNothing);
+  });
+
   testWidgets('hides "Novo carro" for a normal user', (tester) async {
     await tester.pumpWidget(
       _wrap(
@@ -177,38 +229,51 @@ void main() {
     expect(find.byTooltip('Membros'), findsNothing);
   });
 
-  testWidgets('can still open the legacy app', (tester) async {
+  testWidgets('no longer offers the legacy app entry point', (tester) async {
     await tester.pumpWidget(
       _wrap(buildTestServices(carts: FakeCartRepository())),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Aplicação anterior (referência)'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Registration'), findsOneWidget);
+    expect(find.byTooltip('Aplicação anterior (referência)'), findsNothing);
+    expect(find.byIcon(Icons.history), findsNothing);
   });
 
-  testWidgets('shows cart status counts in the dashboard summary', (
+  testWidgets('derives a cart\'s status from its assignment alerts instead of showing the raw manual value', (
     tester,
   ) async {
     const carts = [
       Cart(id: 'cart-1', institutionId: 'inst-a', name: 'Carro 1'),
-      Cart(id: 'cart-2', institutionId: 'inst-a', name: 'Carro 2'),
       Cart(
-        id: 'cart-3',
+        id: 'cart-2',
         institutionId: 'inst-a',
-        name: 'Carro 3',
-        status: CartStatus.auditRequired,
+        name: 'Carro 2',
+        status: CartStatus.outOfService,
       ),
     ];
+    final belowMinimum = CartProductAssignment(
+      id: 'a1',
+      cartId: 'cart-1',
+      slotId: 'r0c0',
+      productId: 'p1',
+      currentQuantity: 1,
+      targetQuantity: 5,
+      minimumQuantity: 2,
+    );
     await tester.pumpWidget(
-      _wrap(buildTestServices(carts: FakeCartRepository(carts: carts))),
+      _wrap(
+        buildTestServices(
+          carts: FakeCartRepository(carts: carts),
+          inventory: FakeInventoryRepository(assignments: [belowMinimum]),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Operacional: 2'), findsOneWidget);
-    expect(find.text('Auditoria necessária: 1'), findsOneWidget);
+    // cart-1 has no manual status override, so it's derived from the
+    // below-minimum assignment; cart-2's manual "out of service" always wins.
+    expect(find.text('Reposição necessária'), findsOneWidget);
+    expect(find.text('Fora de serviço'), findsOneWidget);
   });
 
   testWidgets('filters the cart list by name', (tester) async {

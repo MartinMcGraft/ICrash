@@ -64,4 +64,13 @@ class FirestoreProductRepository implements ProductRepository {
       throw mapFirebaseException(error);
     }
   }
+
+  @override
+  Future<void> deleteProduct(String institutionId, String productId) async {
+    try {
+      await _firestore.collection(FirestorePaths.products(institutionId)).doc(productId).delete();
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
 }

@@ -5,8 +5,10 @@ import '../../common/l10n/app_localizations.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_drawer.dart';
+import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
+import '../../domain/inventory_rules.dart';
 import 'bump_layout_version.dart';
 import 'cart_status_label.dart';
 import '../scanning/cart_qr_code_screen.dart';
@@ -21,9 +23,14 @@ import 'slot_editor_screen.dart';
 /// each drawer is edited in [SlotEditorScreen]; stock/assignments
 /// (workstreams C/E/F) are still future work.
 class CartDetailScreen extends StatefulWidget {
-  const CartDetailScreen({super.key, required this.cart});
+  const CartDetailScreen({super.key, required this.cart, required this.expiryWarningDays});
 
   final Cart cart;
+
+  /// From the parent [Institution] (spec section 46) — needed here to derive
+  /// the status chip the same way the dashboard does (`InventoryRules.
+  /// computeEffectiveCartStatus`), without re-fetching the institution.
+  final int expiryWarningDays;
 
   @override
   State<CartDetailScreen> createState() => _CartDetailScreenState();
@@ -33,6 +40,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
   late final Future<Membership?> _myMembership = AppServicesScope.of(context)
       .institutions
       .getMyMembership(widget.cart.institutionId);
+  late final Stream<List<CartProductAssignment>> _assignmentsStream =
+      AppServicesScope.of(context).inventory
+          .watchAssignments(widget.cart.institutionId, widget.cart.id);
+  late final Future<List<Cart>> _accessibleCarts = AppServicesScope.of(context)
+      .carts
+      .watchAccessibleCarts(widget.cart.institutionId)
+      .first;
 
   bool _canManageDrawers(Membership? membership) {
     if (membership == null || !membership.isActive) return false;
@@ -96,9 +110,12 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
 
   Future<void> _duplicateCart(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
+    final existingCarts = await _accessibleCarts;
+    if (!context.mounted) return;
     final newName = await showDuplicateCartDialog(
       context,
       defaultName: l10n.duplicateCartDefaultName(widget.cart.name),
+      existingNames: existingCarts.map((c) => c.name).toList(),
     );
     if (newName == null || !context.mounted) return;
     final services = AppServicesScope.of(context);
@@ -226,8 +243,17 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           preferredSize: const Size.fromHeight(48),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Chip(
-              label: Text(cartStatusLabel(context, widget.cart.status)),
+            child: StreamBuilder<List<CartProductAssignment>>(
+              stream: _assignmentsStream,
+              builder: (context, snapshot) {
+                final effectiveStatus = InventoryRules.computeEffectiveCartStatus(
+                  manualStatus: widget.cart.status,
+                  cartAssignments: snapshot.data ?? const <CartProductAssignment>[],
+                  expiryWarningDays: widget.expiryWarningDays,
+                  now: DateTime.now(),
+                );
+                return Chip(label: Text(cartStatusLabel(context, effectiveStatus)));
+              },
             ),
           ),
         ),

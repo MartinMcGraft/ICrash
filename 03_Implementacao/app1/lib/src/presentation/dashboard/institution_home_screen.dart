@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:icrash_app/home_menu.dart';
 
 import '../../common/app_services.dart';
 import '../../common/l10n/app_localizations.dart';
@@ -7,7 +6,6 @@ import '../../common/locale_scope.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_product_assignment.dart';
-import '../../domain/entities/cart_status.dart';
 import '../../domain/entities/institution.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/product.dart';
@@ -19,19 +17,17 @@ import '../cart/assignment_status_label.dart';
 import '../cart/cart_detail_screen.dart';
 import '../cart/cart_status_label.dart';
 import '../cart/create_cart_dialog.dart';
+import '../cart/edit_cart_dialog.dart';
 import '../members/members_screen.dart';
 import '../products/products_screen.dart';
 import '../reports/history_screen.dart';
 import '../scanning/cart_qr_scan_screen.dart';
 
-/// Per-institution home (spec section 49): a small dashboard — cart-status
-/// counts, cross-cart alerts (manager+ only, see
-/// `docs/FIREBASE_MODEL.md`'s "Why the cross-cart alerts query is manager+
-/// only") and recent activity — above the accessible-cart list, with a name
-/// filter for fast access when there are many carts. Keeps the legacy
-/// `HomeMenu` reachable via a button, per the "preserve existing
-/// functionality" rule, without wiring any new code to the obsolete Django
-/// `RequestHandler`.
+/// Per-institution home (spec section 49): a small dashboard — cross-cart
+/// alerts (manager+ only, see `docs/FIREBASE_MODEL.md`'s "Why the cross-cart
+/// alerts query is manager+ only") and recent activity — above the
+/// accessible-cart list, with a name filter for fast access when there are
+/// many carts.
 class InstitutionHomeScreen extends StatefulWidget {
   const InstitutionHomeScreen({super.key, required this.institution});
 
@@ -104,9 +100,14 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
         );
         return;
       }
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => CartDetailScreen(cart: cart)));
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CartDetailScreen(
+            cart: cart,
+            expiryWarningDays: widget.institution.expiryWarningDays,
+          ),
+        ),
+      );
     } on RepositoryFailure catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,9 +117,20 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   }
 
   Future<void> _createCart(BuildContext context) async {
-    final name = await showCreateCartDialog(context);
-    if (name == null || !context.mounted) return;
     final services = AppServicesScope.of(context);
+    // A fresh call, not a reused reference to `_cartsStream`: that field's
+    // underlying broadcast stream already delivered its one relevant
+    // snapshot to the list's own StreamBuilder, so listening to it again
+    // here would wait indefinitely for a next emission that may never come.
+    final existingCarts = await services.carts
+        .watchAccessibleCarts(widget.institution.id)
+        .first;
+    if (!context.mounted) return;
+    final name = await showCreateCartDialog(
+      context,
+      existingNames: existingCarts.map((c) => c.name).toList(),
+    );
+    if (name == null || !context.mounted) return;
     try {
       await services.carts.createCart(
         widget.institution.id,
@@ -128,6 +140,32 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).dashboardCreateCartError)),
+      );
+    }
+  }
+
+  /// Renames a cart (or toggles it out of service) straight from the
+  /// dashboard list, without navigating into [CartDetailScreen] first.
+  Future<void> _editCartFromList(BuildContext context, Cart cart) async {
+    final input = await showEditCartDialog(context, cart);
+    if (input == null || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      await services.carts.updateCart(
+        widget.institution.id,
+        Cart(
+          id: cart.id,
+          institutionId: cart.institutionId,
+          name: input.name,
+          status: input.status,
+          layoutVersion: cart.layoutVersion,
+          templateId: cart.templateId,
+        ),
+      );
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).cartDetailUpdateError)),
       );
     }
   }
@@ -194,13 +232,6 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               );
             },
           ),
-          IconButton(
-            tooltip: l10n.dashboardLegacyAppTooltip,
-            icon: const Icon(Icons.history),
-            onPressed: () =>
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => const HomeMenu())),
-          ),
           PopupMenuButton<Locale>(
             tooltip: l10n.languageSwitcherTooltip,
             icon: const Icon(Icons.language),
@@ -261,80 +292,124 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
               : carts
                     .where((c) => c.name.toLowerCase().contains(query))
                     .toList();
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: _CartStatusSummary(carts: carts),
-              ),
-              FutureBuilder<Membership?>(
-                future: _myMembership,
-                builder: (context, membershipSnapshot) {
-                  if (!_canManageCarts(membershipSnapshot.data)) {
-                    return const SizedBox.shrink();
-                  }
-                  return _CrossCartAlerts(
-                    assignmentsStream: _allAssignmentsStream,
-                    expiryWarningDays: widget.institution.expiryWarningDays,
-                    carts: carts,
-                    products: _products,
-                  );
-                },
-              ),
-              _RecentActivity(
-                eventsStream: _recentEventsStream,
-                products: _products,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: TextField(
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    labelText: l10n.dashboardSearchCartLabel,
-                    isDense: true,
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) => setState(() => _searchQuery = value),
-                ),
-              ),
-              Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
+          // A single subscription to `_allAssignmentsStream`, shared by the
+          // alerts panel and the cart list's status/edit column below: two
+          // independent `StreamBuilder`s off the same broadcast stream can
+          // end up subscribing a frame apart (e.g. each gated behind its own
+          // `FutureBuilder<Membership?>`, which — unlike a Future — a
+          // Stream does not replay past events to a late subscriber), so the
+          // second one can silently miss the one-shot emission and stay
+          // empty forever.
+          return StreamBuilder<List<CartProductAssignment>>(
+            stream: _allAssignmentsStream,
+            builder: (context, assignmentsSnapshot) {
+              final allAssignments =
+                  assignmentsSnapshot.data ?? const <CartProductAssignment>[];
+              final now = DateTime.now();
+              return Column(
+                children: [
+                  FutureBuilder<Membership?>(
+                    future: _myMembership,
+                    builder: (context, membershipSnapshot) {
+                      if (!_canManageCarts(membershipSnapshot.data)) {
+                        return const SizedBox.shrink();
+                      }
+                      if (assignmentsSnapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                           child: Text(
-                            l10n.dashboardNoCartMatches,
-                            textAlign: TextAlign.center,
+                            l10n.dashboardLoadAlertsError(assignmentsSnapshot.error!),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
                           ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final cart = filtered[index];
-                          return Card(
-                            child: ListTile(
-                              leading: const Icon(
-                                Icons.medical_services_outlined,
-                              ),
-                              title: Text(cart.name),
-                              subtitle: Text(
-                                cartStatusLabel(context, cart.status),
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => CartDetailScreen(cart: cart),
-                                ),
+                        );
+                      }
+                      return _CrossCartAlerts(
+                        assignments: allAssignments,
+                        expiryWarningDays: widget.institution.expiryWarningDays,
+                        carts: carts,
+                        products: _products,
+                      );
+                    },
+                  ),
+                  _RecentActivity(
+                    eventsStream: _recentEventsStream,
+                    products: _products,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        labelText: l10n.dashboardSearchCartLabel,
+                        isDense: true,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (value) => setState(() => _searchQuery = value),
+                    ),
+                  ),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                l10n.dashboardNoCartMatches,
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                          )
+                        : FutureBuilder<Membership?>(
+                            future: _myMembership,
+                            builder: (context, membershipSnapshot) {
+                              final canManage = _canManageCarts(membershipSnapshot.data);
+                              return ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final cart = filtered[index];
+                                  final effectiveStatus = InventoryRules.computeEffectiveCartStatus(
+                                    manualStatus: cart.status,
+                                    cartAssignments: allAssignments
+                                        .where((a) => a.cartId == cart.id)
+                                        .toList(),
+                                    expiryWarningDays: widget.institution.expiryWarningDays,
+                                    now: now,
+                                  );
+                                  return Card(
+                                    child: ListTile(
+                                      leading: const Icon(
+                                        Icons.medical_services_outlined,
+                                      ),
+                                      title: Text(cart.name),
+                                      subtitle: Text(
+                                        cartStatusLabel(context, effectiveStatus),
+                                      ),
+                                      trailing: canManage
+                                          ? IconButton(
+                                              tooltip: l10n.actionEdit,
+                                              icon: const Icon(Icons.edit_outlined),
+                                              onPressed: () => _editCartFromList(context, cart),
+                                            )
+                                          : const Icon(Icons.chevron_right),
+                                      onTap: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => CartDetailScreen(
+                                            cart: cart,
+                                            expiryWarningDays: widget.institution.expiryWarningDays,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -353,38 +428,6 @@ class _InstitutionHomeScreenState extends State<InstitutionHomeScreen> {
   }
 }
 
-/// Cart-status counts (spec section 49: "carts operational", "replenishment
-/// required", "audit overdue" are all derived from [Cart.status], already
-/// available from the same stream the list below uses — no extra query).
-class _CartStatusSummary extends StatelessWidget {
-  const _CartStatusSummary({required this.carts});
-
-  final List<Cart> carts;
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = <CartStatus, int>{
-      for (final status in CartStatus.values) status: 0,
-    };
-    for (final cart in carts) {
-      counts[cart.status] = (counts[cart.status] ?? 0) + 1;
-    }
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final status in CartStatus.values)
-          if (counts[status]! > 0)
-            Chip(
-              label: Text(
-                '${cartStatusLabel(context, status)}: ${counts[status]}',
-              ),
-            ),
-      ],
-    );
-  }
-}
-
 /// Cross-cart dashboard alerts (spec section 49): expiring/expired products
 /// and stock below its minimum, across every cart in the institution at
 /// once — manager+ only, since the underlying `collectionGroup('assignments')`
@@ -395,13 +438,13 @@ class _CartStatusSummary extends StatelessWidget {
 /// fetched again.
 class _CrossCartAlerts extends StatelessWidget {
   const _CrossCartAlerts({
-    required this.assignmentsStream,
+    required this.assignments,
     required this.expiryWarningDays,
     required this.carts,
     required this.products,
   });
 
-  final Stream<List<CartProductAssignment>> assignmentsStream;
+  final List<CartProductAssignment> assignments;
   final int expiryWarningDays;
   final List<Cart> carts;
   final Future<List<Product>> products;
@@ -423,60 +466,44 @@ class _CrossCartAlerts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return StreamBuilder<List<CartProductAssignment>>(
-      stream: assignmentsStream,
-      builder: (context, assignmentsSnapshot) {
-        if (assignmentsSnapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              l10n.dashboardLoadAlertsError(assignmentsSnapshot.error!),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          );
-        }
-        final assignments =
-            assignmentsSnapshot.data ?? const <CartProductAssignment>[];
-        final now = DateTime.now();
-        final alerts = <(CartProductAssignment, AssignmentAlert)>[
-          for (final assignment in assignments)
-            if (InventoryRules.computeAlert(
-                  assignment,
-                  expiryWarningDays: expiryWarningDays,
-                  now: now,
-                )
-                case final alert?)
-              (assignment, alert),
-        ];
-        if (alerts.isEmpty) return const SizedBox.shrink();
-        return FutureBuilder<List<Product>>(
-          future: products,
-          builder: (context, productsSnapshot) {
-            final productList = productsSnapshot.data ?? const <Product>[];
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.dashboardAlertsTitle,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  for (final (assignment, alert) in alerts)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        '${_assignmentAlertLabel(l10n, alert)} · ${_productName(l10n, productList, assignment.productId)}'
-                        ' · ${_cartName(l10n, assignment.cartId)}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ),
-                ],
+    final now = DateTime.now();
+    final alerts = <(CartProductAssignment, AssignmentAlert)>[
+      for (final assignment in assignments)
+        if (InventoryRules.computeAlert(
+              assignment,
+              expiryWarningDays: expiryWarningDays,
+              now: now,
+            )
+            case final alert?)
+          (assignment, alert),
+    ];
+    if (alerts.isEmpty) return const SizedBox.shrink();
+    return FutureBuilder<List<Product>>(
+      future: products,
+      builder: (context, productsSnapshot) {
+        final productList = productsSnapshot.data ?? const <Product>[];
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.dashboardAlertsTitle,
+                style: Theme.of(context).textTheme.labelLarge,
               ),
-            );
-          },
+              for (final (assignment, alert) in alerts)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '${_assignmentAlertLabel(l10n, alert)} · ${_productName(l10n, productList, assignment.productId)}'
+                    ' · ${_cartName(l10n, assignment.cartId)}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );

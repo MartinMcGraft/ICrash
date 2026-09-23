@@ -44,6 +44,7 @@
   "actionCreate": "Create",
   "actionDuplicate": "Duplicate",
   "validationEnterName": "Enter a name",
+  "validationDuplicateCartName": "A cart with this name already exists.",
 
   "createCartTitle": "New cart",
   "createCartNameLabel": "Cart name",
@@ -58,7 +59,7 @@
   "duplicateCartNameLabel": "New cart's name",
 
   "editCartTitle": "Edit cart",
-  "editCartStatusLabel": "Status",
+  "editCartOutOfServiceLabel": "Out of service",
 
   "createProductTitle": "New product",
   "createProductNameLabel": "Name",
@@ -113,6 +114,9 @@
     }
   },
   "productsEmpty": "There are no products in this institution yet.",
+  "deleteProductTitle": "Remove product",
+  "deleteProductMessage": "This removes the product from the catalogue. This cannot be undone.",
+  "productsDeleteError": "Couldn't remove the product. Try again.",
 
   "membersScreenTitle": "Members",
   "membersLoadError": "Couldn't load members: {error}",
@@ -211,7 +215,6 @@
   "productRemoved": "Removed product",
   "cartRemoved": "Removed cart",
 
-  "dashboardLegacyAppTooltip": "Previous application (reference)",
   "dashboardOpenCartError": "Couldn't open this cart.",
   "dashboardCreateCartError": "Couldn't create the cart. Try again.",
   "dashboardLoadCartsError": "Couldn't load carts: {error}",

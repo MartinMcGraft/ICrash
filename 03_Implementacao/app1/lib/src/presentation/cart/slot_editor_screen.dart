@@ -24,8 +24,9 @@ const double _minSlotCellExtent = 48;
 /// Edits the rectangular slot layout of one [CartDrawer] (spec sections
 /// 36-37): every cell starts as its own 1x1 slot; adjacent slots whose
 /// combined footprint is itself a rectangle can be merged into one bigger
-/// slot, and a merged slot can be split back into unit cells. Changes are
-/// local until "Guardar" writes the full new slot set in one call.
+/// slot, and a merged slot can be split back into unit cells. Each merge/
+/// split writes the full new slot set immediately (see [_save]) — there is
+/// no separate manual save step to forget.
 class SlotEditorScreen extends StatefulWidget {
   const SlotEditorScreen({super.key, required this.cart, required this.drawer});
 
@@ -120,7 +121,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     });
   }
 
-  void _merge() {
+  Future<void> _merge(BuildContext context) async {
     final slots = _slots!;
     final selected = slots.where((s) => _selectedIds.contains(s.id)).toList();
     if (!_selectionFormsRectangle(selected)) {
@@ -145,11 +146,12 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     );
     setState(() {
       _slots = [...slots.where((s) => !_selectedIds.contains(s.id)), merged];
-      _selectedIds = {merged.id};
+      _selectedIds = {};
     });
+    await _save(context);
   }
 
-  void _split() {
+  Future<void> _split(BuildContext context) async {
     final slot = _slots!.firstWhere((s) => s.id == _selectedIds.single);
     final unitCells = [
       for (var r = 0; r < slot.rowSpan; r++)
@@ -165,6 +167,7 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
       _slots = [..._slots!.where((s) => s.id != slot.id), ...unitCells];
       _selectedIds = {};
     });
+    await _save(context);
   }
 
   Future<void> _save(BuildContext context) async {
@@ -262,27 +265,12 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.drawer.name),
-        actions: [
-          FutureBuilder<Membership?>(
-            future: _myMembership,
-            builder: (context, snapshot) {
-              if (!_canManage(snapshot.data) || _slots == null) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                tooltip: AppLocalizations.of(context).actionSave,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_outlined),
-                onPressed: _saving ? null : () => _save(context),
-              );
-            },
-          ),
-        ],
+        bottom: _saving
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(minHeight: 2),
+              )
+            : null,
       ),
       body: FutureBuilder<List<Slot>>(
         future: _initialSlots,
@@ -390,8 +378,10 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                               spacing: 8,
                               children: [
                                 FilledButton.icon(
-                                  onPressed: _selectedIds.length >= 2
-                                      ? _merge
+                                  onPressed:
+                                      !_saving &&
+                                          _selectionFormsRectangle(selected)
+                                      ? () => _merge(context)
                                       : null,
                                   icon: const Icon(Icons.call_merge),
                                   label: Text(
@@ -399,7 +389,9 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                                   ),
                                 ),
                                 FilledButton.icon(
-                                  onPressed: canSplit ? _split : null,
+                                  onPressed: !_saving && canSplit
+                                      ? () => _split(context)
+                                      : null,
                                   icon: const Icon(Icons.call_split),
                                   label: Text(
                                     AppLocalizations.of(context).actionSplit,
@@ -485,11 +477,15 @@ class _SlotEditorScreenState extends State<SlotEditorScreen> {
                                     idealCellHeight >= _minSlotCellExtent) {
                                   return grid;
                                 }
-                                return Scrollbar(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: SingleChildScrollView(child: grid),
-                                  ),
+                                // A single 2D pan surface instead of two
+                                // independently-scrolling SingleChildScrollViews
+                                // (one per axis): a dense grid that overflows
+                                // both directions now scrolls diagonally with
+                                // one drag gesture instead of two disjoint ones.
+                                return InteractiveViewer(
+                                  constrained: false,
+                                  scaleEnabled: false,
+                                  child: grid,
                                 );
                               },
                             ),

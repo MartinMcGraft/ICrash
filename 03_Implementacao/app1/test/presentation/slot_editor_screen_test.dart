@@ -63,7 +63,7 @@ void main() {
     },
   );
 
-  testWidgets('merges two selected cells and saves the new layout', (
+  testWidgets('merges two selected cells and saves the new layout immediately', (
     tester,
   ) async {
     final drawers = FakeDrawerRepository();
@@ -83,15 +83,20 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Juntar'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Guardar'));
-    await tester.pumpAndSettle();
-
+    // No separate "Guardar" step: merging writes the new layout on its own.
     final saved = drawers.lastSavedSlots!;
     expect(saved, hasLength(3));
     expect(saved.any((s) => s.columnSpan == 2), isTrue);
+
+    // The merged cell's selection is cleared, not carried over — so "Dividir"
+    // is disabled until the merged cell is selected again.
+    final splitButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Dividir'),
+    );
+    expect(splitButton.onPressed, isNull);
   });
 
-  testWidgets('splits a merged slot back into unit cells', (tester) async {
+  testWidgets('splits a merged slot back into unit cells and saves immediately', (tester) async {
     final drawers = FakeDrawerRepository();
     await tester.pumpWidget(
       _wrap(
@@ -109,9 +114,12 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Juntar'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Dividir'));
+    // Merging clears the selection (it no longer carries over), so the
+    // merged cell — still labelled "1,1" — needs to be selected again
+    // before it can be split.
+    await tester.tap(find.text('1,1'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Guardar'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Dividir'));
     await tester.pumpAndSettle();
 
     final saved = drawers.lastSavedSlots!;
@@ -137,7 +145,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Juntar'), findsNothing);
-    expect(find.byTooltip('Guardar'), findsNothing);
+    expect(find.text('Dividir'), findsNothing);
   });
 
   testWidgets('a manager long-pressing an empty slot assigns a product', (
@@ -579,7 +587,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(Scrollbar), findsOneWidget);
+      expect(find.byType(InteractiveViewer), findsOneWidget);
     },
   );
 

@@ -16,6 +16,7 @@ class FirestoreDrawerRepository implements DrawerRepository {
   Stream<List<CartDrawer>> watchDrawers(String institutionId, String cartId) {
     return _firestore
         .collection(FirestorePaths.drawers(institutionId, cartId))
+        .orderBy('createdAt')
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => CartDrawer.fromMap(doc.id, cartId, normalizeTimestamps(doc.data(), const ['createdAt', 'updatedAt'])))

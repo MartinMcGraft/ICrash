@@ -44,6 +44,7 @@
   "actionCreate": "Criar",
   "actionDuplicate": "Duplicar",
   "validationEnterName": "Indique um nome",
+  "validationDuplicateCartName": "Já existe um carro com este nome.",
 
   "createCartTitle": "Novo carro",
   "createCartNameLabel": "Nome do carro",
@@ -58,7 +59,7 @@
   "duplicateCartNameLabel": "Nome do novo carro",
 
   "editCartTitle": "Editar carro",
-  "editCartStatusLabel": "Estado",
+  "editCartOutOfServiceLabel": "Fora de serviço",
 
   "createProductTitle": "Novo produto",
   "createProductNameLabel": "Nome",
@@ -113,6 +114,9 @@
     }
   },
   "productsEmpty": "Ainda não existem produtos nesta instituição.",
+  "deleteProductTitle": "Remover produto",
+  "deleteProductMessage": "Esta ação remove o produto do catálogo. Não pode ser desfeita.",
+  "productsDeleteError": "Não foi possível remover o produto. Tente novamente.",
 
   "membersScreenTitle": "Membros",
   "membersLoadError": "Não foi possível carregar os membros: {error}",
@@ -211,7 +215,6 @@
   "productRemoved": "Produto removido",
   "cartRemoved": "Carro removido",
 
-  "dashboardLegacyAppTooltip": "Aplicação anterior (referência)",
   "dashboardOpenCartError": "Não foi possível abrir este carro.",
   "dashboardCreateCartError": "Não foi possível criar o carro. Tente novamente.",
   "dashboardLoadCartsError": "Não foi possível carregar os carros: {error}",

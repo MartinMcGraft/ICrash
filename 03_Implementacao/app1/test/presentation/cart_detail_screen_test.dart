@@ -22,7 +22,7 @@ Widget _wrap(AppServices services) {
       locale: const Locale('pt', 'PT'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const CartDetailScreen(cart: _cart),
+      home: const CartDetailScreen(cart: _cart, expiryWarningDays: 30),
     ),
   );
 }

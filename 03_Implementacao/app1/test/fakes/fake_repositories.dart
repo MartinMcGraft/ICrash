@@ -298,6 +298,15 @@ class FakeProductRepository extends UnimplementedFake implements ProductReposito
     if (index != -1) products[index] = product;
     _emit();
   }
+
+  String? lastDeletedId;
+
+  @override
+  Future<void> deleteProduct(String institutionId, String productId) async {
+    lastDeletedId = productId;
+    products.removeWhere((p) => p.id == productId);
+    _emit();
+  }
 }
 
 class FakeInventoryRepository extends UnimplementedFake implements InventoryRepository {

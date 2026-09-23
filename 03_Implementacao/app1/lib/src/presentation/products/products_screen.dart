@@ -38,6 +38,37 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
+  Future<void> _deleteProduct(BuildContext context, Product product) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteProductTitle),
+        content: Text(l10n.deleteProductMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.actionRemove),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final services = AppServicesScope.of(context);
+    try {
+      await services.products.deleteProduct(widget.institutionId, product.id);
+    } on RepositoryFailure catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).productsDeleteError)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = AppServicesScope.of(context);
@@ -78,6 +109,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   leading: const Icon(Icons.medication_outlined),
                   title: Text(product.name),
                   subtitle: product.unitDescription != null ? Text(product.unitDescription!) : null,
+                  trailing: widget.canManage
+                      ? IconButton(
+                          tooltip: l10n.actionRemove,
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _deleteProduct(context, product),
+                        )
+                      : null,
                 ),
               );
             },

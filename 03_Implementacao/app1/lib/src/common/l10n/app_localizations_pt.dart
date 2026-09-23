@@ -124,6 +124,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get validationEnterName => 'Indique um nome';
 
   @override
+  String get validationDuplicateCartName => 'Já existe um carro com este nome.';
+
+  @override
   String get createCartTitle => 'Novo carro';
 
   @override
@@ -155,7 +158,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get editCartTitle => 'Editar carro';
 
   @override
-  String get editCartStatusLabel => 'Estado';
+  String get editCartOutOfServiceLabel => 'Fora de serviço';
 
   @override
   String get createProductTitle => 'Novo produto';
@@ -267,6 +270,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get productsEmpty => 'Ainda não existem produtos nesta instituição.';
+
+  @override
+  String get deleteProductTitle => 'Remover produto';
+
+  @override
+  String get deleteProductMessage =>
+      'Esta ação remove o produto do catálogo. Não pode ser desfeita.';
+
+  @override
+  String get productsDeleteError =>
+      'Não foi possível remover o produto. Tente novamente.';
 
   @override
   String get membersScreenTitle => 'Membros';
@@ -442,9 +456,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cartRemoved => 'Carro removido';
-
-  @override
-  String get dashboardLegacyAppTooltip => 'Aplicação anterior (referência)';
 
   @override
   String get dashboardOpenCartError => 'Não foi possível abrir este carro.';

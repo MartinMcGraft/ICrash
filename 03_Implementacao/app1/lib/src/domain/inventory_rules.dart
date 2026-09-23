@@ -1,5 +1,6 @@
 import 'entities/batch.dart';
 import 'entities/cart_product_assignment.dart';
+import 'entities/cart_status.dart';
 
 /// Cross-cart dashboard alert kinds (spec section 49). Deliberately computed
 /// at read-time rather than stored on the assignment: an approaching expiry
@@ -68,5 +69,29 @@ class InventoryRules {
     final minimum = assignment.minimumQuantity;
     if (minimum != null && assignment.currentQuantity <= minimum) return AssignmentAlert.belowMinimum;
     return null;
+  }
+
+  /// The cart's status (spec section 40), derived automatically from its
+  /// assignments' alerts rather than left as an arbitrary manual value —
+  /// except [CartStatus.outOfService], which stays a manual, administrative
+  /// override (nothing in the inventory data can tell a cart is physically
+  /// out of service) and always wins over whatever the assignments say.
+  static CartStatus computeEffectiveCartStatus({
+    required CartStatus manualStatus,
+    required List<CartProductAssignment> cartAssignments,
+    required int expiryWarningDays,
+    required DateTime now,
+  }) {
+    if (manualStatus == CartStatus.outOfService) return CartStatus.outOfService;
+    var replenishmentRequired = false;
+    for (final assignment in cartAssignments) {
+      final alert = computeAlert(assignment, expiryWarningDays: expiryWarningDays, now: now);
+      // Expired takes priority and short-circuits: only a physical audit may
+      // reconcile an expired lot (spec sections 25-28), so nothing below it
+      // changes that outcome.
+      if (alert == AssignmentAlert.expired) return CartStatus.auditRequired;
+      if (alert == AssignmentAlert.belowMinimum) replenishmentRequired = true;
+    }
+    return replenishmentRequired ? CartStatus.replenishmentRequired : CartStatus.operational;
   }
 }

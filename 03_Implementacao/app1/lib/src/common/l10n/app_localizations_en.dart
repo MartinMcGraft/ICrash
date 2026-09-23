@@ -123,6 +123,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validationEnterName => 'Enter a name';
 
   @override
+  String get validationDuplicateCartName =>
+      'A cart with this name already exists.';
+
+  @override
   String get createCartTitle => 'New cart';
 
   @override
@@ -154,7 +158,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editCartTitle => 'Edit cart';
 
   @override
-  String get editCartStatusLabel => 'Status';
+  String get editCartOutOfServiceLabel => 'Out of service';
 
   @override
   String get createProductTitle => 'New product';
@@ -263,6 +267,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productsEmpty => 'There are no products in this institution yet.';
+
+  @override
+  String get deleteProductTitle => 'Remove product';
+
+  @override
+  String get deleteProductMessage =>
+      'This removes the product from the catalogue. This cannot be undone.';
+
+  @override
+  String get productsDeleteError => 'Couldn\'t remove the product. Try again.';
 
   @override
   String get membersScreenTitle => 'Members';
@@ -435,9 +449,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cartRemoved => 'Removed cart';
-
-  @override
-  String get dashboardLegacyAppTooltip => 'Previous application (reference)';
 
   @override
   String get dashboardOpenCartError => 'Couldn\'t open this cart.';

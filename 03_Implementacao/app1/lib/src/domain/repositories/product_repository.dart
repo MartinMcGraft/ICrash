@@ -8,4 +8,6 @@ abstract class ProductRepository {
   Future<Product> createProduct(String institutionId, Product product);
 
   Future<void> updateProduct(String institutionId, Product product);
+
+  Future<void> deleteProduct(String institutionId, String productId);
 }
