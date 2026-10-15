@@ -1,0 +1,1826 @@
+{
+  "@@locale": "pt",
+  "appTitle": "I-Crash",
+  "actionCancel": "Cancelar",
+  "actionClose": "Fechar",
+  "actionSave": "Guardar",
+  "actionConfirm": "Confirmar",
+  "actionBack": "Voltar",
+  "assignmentStatusOk": "OK",
+  "assignmentStatusReplenishmentRequired": "Reposição necessária",
+  "assignmentStatusExpiringSoon": "A expirar em breve",
+  "assignmentStatusExpired": "Expirado",
+  "usageEventConsumption": "Consumo",
+  "usageEventReplenishment": "Reposição",
+  "usageEventCorrection": "Correção",
+  "usageEventAuditReconciliation": "Reconciliação",
+  "cartStatusOperational": "Operacional",
+  "cartStatusReplenishmentRequired": "Reposição necessária",
+  "cartStatusAuditRequired": "Verificação em atraso",
+  "cartStatusOutOfService": "Fora de serviço",
+  "roleSuperAdmin": "Engenheiro (suporte)",
+  "roleInstitutionAdmin": "Gestor da instituição",
+  "roleManager": "Gestor de serviço",
+  "roleUser": "Profissional de saúde",
+  "membershipStatusActive": "Ativo",
+  "membershipStatusInvited": "Convidado",
+  "membershipStatusDisabled": "Desativado",
+  "loginTagline": "Gestão de carros de emergência",
+  "loginEmailLabel": "E-mail institucional",
+  "loginEmailRequired": "Indique o e-mail",
+  "loginPasswordLabel": "Palavra-passe",
+  "loginPasswordRequired": "Indique a palavra-passe",
+  "loginSubmit": "Entrar",
+  "loginErrorInvalidCredentials": "Credenciais inválidas. Verifique o e-mail e a palavra-passe.",
+  "loginErrorOffline": "Sem ligação. Verifique a rede e tente novamente.",
+  "loginErrorGeneric": "Não foi possível iniciar sessão. Tente novamente.",
+  "actionCreate": "Criar",
+  "actionDuplicate": "Duplicar",
+  "validationEnterName": "Indique um nome",
+  "createCartTitle": "Novo carro",
+  "createCartNameLabel": "Nome do carro",
+  "createDrawerTitle": "Nova gaveta",
+  "createDrawerNameLabel": "Nome da gaveta",
+  "createDrawerRowsLabel": "Linhas",
+  "createDrawerColumnsLabel": "Colunas",
+  "duplicateCartTitle": "Duplicar carro",
+  "duplicateCartDescription": "Cria um novo carro com as mesmas gavetas e slots. Não copia produtos, stock nem histórico.",
+  "duplicateCartNameLabel": "Nome do novo carro",
+  "editCartTitle": "Editar carro",
+  "editCartStatusLabel": "Estado",
+  "createProductTitle": "Novo produto",
+  "createProductNameLabel": "Nome",
+  "createProductUnitLabel": "Unidade (opcional)",
+  "createProductUnitHint": "ex.: 1 mg/mL, ampola 1 mL",
+  "createProductGtinLabel": "GTIN (opcional)",
+  "addMemberTitle": "Novo membro",
+  "addMemberEmailRequired": "Indique um e-mail",
+  "addMemberPasswordLabel": "Palavra-passe temporária",
+  "addMemberPasswordMinLength": "Mínimo de 6 caracteres",
+  "addMemberRoleLabel": "Cargo",
+  "cartQrScreenTitle": "Código do carro",
+  "cartQrSemanticLabel": "Código QR do carro {cartName}",
+  "@cartQrSemanticLabel": {
+    "placeholders": {
+      "cartName": {
+        "type": "String"
+      }
+    }
+  },
+  "cartQrInstruction": "Digitalize este código para abrir diretamente este carro.",
+  "cartQrScanTitle": "Ler código do carro",
+  "cartQrScanError": "Código lido mas não é um código de carro reconhecido. Tente novamente.",
+  "cartQrScanInstruction": "Aponte a câmara ao código do carro.",
+  "scannerPreviewUnavailable": "Pré-visualização da câmara indisponível.",
+  "gs1ScanTitle": "Digitalizar código GS1",
+  "gs1ScanError": "Código lido mas sem GTIN, lote ou validade reconhecidos. Tente novamente.",
+  "gs1ScanInstructionHid": "Digitalize o código com o leitor de códigos de barras ligado a este computador.",
+  "gs1ScanInstructionCamera": "Aponte a câmara ao código GS1 Data Matrix da embalagem.",
+  "actionCancelManualEntry": "Cancelar e inserir manualmente",
+  "gs1HidWaitingLabel": "Aguardando leitura...",
+  "actionSignOut": "Terminar sessão",
+  "institutionSelectionTitle": "Escolher instituição",
+  "institutionSelectionLoadError": "Não foi possível carregar as instituições: {error}",
+  "@institutionSelectionLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "institutionSelectionEmpty": "Ainda não tem acesso a nenhuma instituição.\nContacte o administrador da sua instituição.",
+  "connectivityOfflineMessage": "Sem ligação à internet — a mostrar dados guardados localmente.",
+  "productsScreenTitle": "Produtos",
+  "productsCreateError": "Não foi possível criar o produto. Tente novamente.",
+  "productsLoadError": "Não foi possível carregar os produtos: {error}",
+  "@productsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsEmpty": "Ainda não existem produtos nesta instituição.",
+  "membersScreenTitle": "Membros",
+  "membersLoadError": "Não foi possível carregar os membros: {error}",
+  "@membersLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "membersEmpty": "Ainda não existem membros nesta instituição.",
+  "membersCreateErrorConflict": "Já existe uma conta com este e-mail.",
+  "membersCreateErrorInvalidInput": "E-mail ou palavra-passe inválidos.",
+  "membersCreateErrorGeneric": "Não foi possível criar o membro. Tente novamente.",
+  "membersChangeRoleTitle": "Mudar cargo",
+  "membersChangeRoleError": "Não foi possível mudar o cargo. Tente novamente.",
+  "membersToggleStatusError": "Não foi possível alterar o estado do membro. Tente novamente.",
+  "membersDeactivate": "Desativar",
+  "membersReactivate": "Reativar",
+  "responsibleUsersTitle": "Responsáveis pelo carro",
+  "productSearchHint": "Nome do produto ou GTIN",
+  "productSearchPrompt": "Escreva o nome de um produto para o encontrar neste carro.",
+  "productSearchEmpty": "Nenhum produto encontrado neste carro.",
+  "actionEdit": "Editar",
+  "actionShowQrCode": "Mostrar código QR",
+  "actionSearchProduct": "Pesquisar produto",
+  "actionResponsible": "Responsáveis",
+  "cartDetailCreateDrawerError": "Não foi possível criar a gaveta. Tente novamente.",
+  "cartUpdatedMessage": "Carro atualizado.",
+  "cartDetailUpdateError": "Não foi possível atualizar o carro. Tente novamente.",
+  "duplicateCartDefaultName": "{name} (cópia)",
+  "@duplicateCartDefaultName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartDuplicatedMessage": "Carro duplicado como \"{name}\".",
+  "@cartDuplicatedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartDetailDuplicateError": "Não foi possível duplicar o carro. Tente novamente.",
+  "cartDetailLoadDrawersError": "Não foi possível carregar as gavetas: {error}",
+  "@cartDetailLoadDrawersError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "cartDetailDrawersEmpty": "Ainda não existem gavetas neste carro.",
+  "drawerGridSize": "{rows} linhas × {columns} colunas",
+  "@drawerGridSize": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      }
+    }
+  },
+  "historyScreenTitle": "Histórico",
+  "historyFilterAll": "Todos",
+  "historyLoadError": "Não foi possível carregar o histórico: {error}",
+  "@historyLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "historyEmpty": "Sem eventos para mostrar.",
+  "exportCsvButton": "Exportar CSV",
+  "actionCopy": "Copiar",
+  "csvCopiedMessage": "CSV copiado.",
+  "exportPdfButton": "Exportar PDF",
+  "historyPdfDocumentTitle": "Histórico de atividade",
+  "summaryViewButton": "Ver resumo",
+  "summaryDialogTitle": "Resumo",
+  "summaryGroupProduct": "Produto",
+  "summaryGroupCart": "Carro",
+  "summaryGroupPeriod": "Período",
+  "periodUnitDay": "Dia",
+  "periodUnitWeek": "Semana",
+  "periodUnitMonth": "Mês",
+  "summaryEmpty": "Sem dados para resumir.",
+  "summaryConsumedReplenished": "Consumido: {consumed}   Reposto: {replenished}",
+  "@summaryConsumedReplenished": {
+    "placeholders": {
+      "consumed": {
+        "type": "int"
+      },
+      "replenished": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryOtherAdjustments": "   Outros ajustes: {value}",
+  "@summaryOtherAdjustments": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "productRemoved": "Produto removido",
+  "cartRemoved": "Carro removido",
+  "dashboardLegacyAppTooltip": "Aplicação anterior (referência)",
+  "dashboardOpenCartError": "Não foi possível abrir este carro.",
+  "dashboardCreateCartError": "Não foi possível criar o carro. Tente novamente.",
+  "dashboardLoadCartsError": "Não foi possível carregar os carros: {error}",
+  "@dashboardLoadCartsError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardCartsEmpty": "Ainda não existem carros de emergência nesta instituição.",
+  "dashboardSearchCartLabel": "Pesquisar carro",
+  "dashboardNoCartMatches": "Nenhum carro corresponde à pesquisa.",
+  "dashboardAlertsTitle": "Alertas",
+  "alertBelowMinimum": "Stock abaixo do mínimo",
+  "dashboardRecentActivityTitle": "Atividade recente",
+  "assignConflictError": "Este produto já está atribuído a outro slot deste carro.",
+  "assignGenericError": "Não foi possível atribuir o produto. Tente novamente.",
+  "consumeExceedsError": "Não pode consumir mais do que a quantidade atual.",
+  "consumeGenericError": "Não foi possível registar o consumo. Tente novamente.",
+  "replenishMissingExpiry": "Indique a validade do lote.",
+  "replenishGenericError": "Não foi possível repor o stock. Tente novamente.",
+  "gs1UnknownGtin": "GTIN não reconhecido no catálogo — não foi associado a nenhum produto.",
+  "gs1WrongProductWarning": "Atenção: este código corresponde a \"{productName}\", não ao produto deste slot.",
+  "@gs1WrongProductWarning": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
+  "reconcileGenericError": "Não foi possível reconciliar. Tente novamente.",
+  "correctGenericError": "Não foi possível corrigir. Tente novamente.",
+  "emptySlotTitle": "Slot vazio",
+  "emptySlotMessage": "Este slot ainda não tem produto atribuído.",
+  "assignDialogTitle": "Atribuir produto",
+  "noProductsMessage": "Crie primeiro um produto no catálogo da instituição.",
+  "productLabel": "Produto",
+  "initialQuantityLabel": "Quantidade inicial",
+  "targetQuantityLabel": "Quantidade alvo",
+  "chooseProductValidation": "Escolha um produto",
+  "actionAssign": "Atribuir",
+  "recordConsumptionTitle": "Registar consumo",
+  "consumedQuantityLabel": "Quantidade consumida",
+  "validatePositiveInt": "Indique um número positivo",
+  "replenishStockTitle": "Repor stock",
+  "receivedQuantityLabel": "Quantidade recebida",
+  "lotNumberLabel": "Número de lote",
+  "lotRequiredValidation": "Indique o lote",
+  "chooseExpiryLabel": "Escolher validade",
+  "expiryDateLabel": "Validade: {date}",
+  "@expiryDateLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reconcileDialogTitle": "Reconciliar (auditoria)",
+  "confirmedQuantityLabel": "Quantidade confirmada fisicamente",
+  "validateNonNegativeInt": "Indique um número válido",
+  "noBatchesMessage": "Sem lotes registados; a reconciliação fica sem lotes confirmados.",
+  "confirmedBatchesLabel": "Lotes confirmados como fisicamente presentes:",
+  "batchLotLabel": "Lote {lotNumber}",
+  "@batchLotLabel": {
+    "placeholders": {
+      "lotNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "correctEventDialogTitle": "Corrigir evento",
+  "noEventsToCorrect": "Ainda não existem eventos para corrigir.",
+  "eventToCorrectLabel": "Evento a corrigir",
+  "chooseEventValidation": "Escolha um evento",
+  "adjustmentLabel": "Ajuste (positivo ou negativo)",
+  "validateNonZeroInt": "Indique um ajuste diferente de zero",
+  "currentTargetLabel": "Atual: {current}   Alvo: {target}",
+  "@currentTargetLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCorrect": "Corrigir",
+  "actionReconcile": "Reconciliar",
+  "slotSelectionNotRectangle": "A seleção tem de formar um retângulo sem espaços.",
+  "drawerSavedMessage": "Gaveta guardada.",
+  "drawerSaveError": "Não foi possível guardar a gaveta. Tente novamente.",
+  "reassignSlotError": "Não foi possível reatribuir o slot. Tente novamente.",
+  "removeAssignmentTitle": "Remover atribuição",
+  "removeAssignmentMessage": "Esta atribuição aponta para um slot que já não existe nesta gaveta. Remover a atribuição também remove os lotes registados; o histórico de eventos mantém-se. Esta ação não pode ser desfeita.",
+  "actionRemove": "Remover",
+  "deleteAssignmentError": "Não foi possível remover a atribuição. Tente novamente.",
+  "loadSlotsError": "Não foi possível carregar os slots: {error}",
+  "@loadSlotsError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "actionMerge": "Juntar",
+  "actionSplit": "Dividir",
+  "orphanedAssignmentsHeader": "Atribuições sem slot válido (de uma junção/divisão anterior):",
+  "actionReassign": "Reatribuir",
+  "reassignTooltip": "Reatribuir a um slot livre",
+  "slotPositionTooltip": "Linha {row}, coluna {column}",
+  "@slotPositionTooltip": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      },
+      "column": {
+        "type": "int"
+      }
+    }
+  },
+  "languageSwitcherTooltip": "Idioma",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English",
+  "cartStateEmergencyActive": "Emergência ativa",
+  "@cartStateEmergencyActive": {},
+  "slotHealthOk": "OK",
+  "@slotHealthOk": {},
+  "slotHealthExpiring": "A expirar",
+  "@slotHealthExpiring": {},
+  "slotHealthExpired": "Expirado",
+  "@slotHealthExpired": {},
+  "slotHealthLowStock": "Stock baixo",
+  "@slotHealthLowStock": {},
+  "slotHealthMissing": "Em falta",
+  "@slotHealthMissing": {},
+  "slotHealthFree": "Livre",
+  "@slotHealthFree": {},
+  "syncSynced": "Sincronizado",
+  "@syncSynced": {},
+  "syncPending": "{count, plural, =1{1 alteração por enviar} other{{count} alterações por enviar}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncOffline": "Sem ligação · a trabalhar offline",
+  "@syncOffline": {},
+  "actionBackTooltip": "Voltar",
+  "@actionBackTooltip": {},
+  "stateLoading": "A carregar…",
+  "@stateLoading": {},
+  "stateLoadError": "Não foi possível carregar os dados.",
+  "@stateLoadError": {},
+  "stateRetry": "Tentar novamente",
+  "@stateRetry": {},
+  "stateNoAccess": "Não tem acesso a esta área.",
+  "@stateNoAccess": {},
+  "actionGenericError": "Não foi possível concluir a ação. Tente novamente.",
+  "@actionGenericError": {},
+  "actionOfflineError": "Sem ligação. A alteração será enviada quando a ligação voltar.",
+  "@actionOfflineError": {},
+  "actionPermissionError": "Não tem permissão para esta ação.",
+  "@actionPermissionError": {},
+  "stubNotice": "Funcionalidade de demonstração: os dados ficam guardados só neste dispositivo.",
+  "@stubNotice": {},
+  "formatToday": "Hoje, {time}",
+  "@formatToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatYesterday": "Ontem, {time}",
+  "@formatYesterday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "slotQuantitySemantics": "{current} de {target} unidades",
+  "@slotQuantitySemantics": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "loginTitle": "Iniciar sessão",
+  "@loginTitle": {},
+  "loginForgotPassword": "Esqueci-me da palavra-passe",
+  "@loginForgotPassword": {},
+  "loginUsePin": "Desbloquear com PIN",
+  "@loginUsePin": {},
+  "loginCartLogin": "Entrar no carro",
+  "@loginCartLogin": {},
+  "loginNeedsSavedSession": "Inicie sessão uma vez neste dispositivo para usar o PIN ou entrar num carro.",
+  "@loginNeedsSavedSession": {},
+  "loginResetSent": "Enviámos um e-mail para redefinir a palavra-passe.",
+  "@loginResetSent": {},
+  "loginResetNeedsEmail": "Escreva primeiro o seu e-mail.",
+  "@loginResetNeedsEmail": {},
+  "pinWorksOffline": "Funciona sem rede",
+  "@pinWorksOffline": {},
+  "pinWrong": "{count, plural, =1{PIN errado. Resta 1 tentativa.} other{PIN errado. Restam {count} tentativas.}}",
+  "@pinWrong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pinNotMe": "Não é {name}? Iniciar sessão",
+  "@pinNotMe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pinDelete": "Apagar",
+  "@pinDelete": {},
+  "pinDigitsSemantics": "{entered} de {total} dígitos",
+  "@pinDigitsSemantics": {
+    "placeholders": {
+      "entered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "scannerUsbHint": "Leitor USB: leia o código ou escreva-o e prima Enter",
+  "@scannerUsbHint": {},
+  "cartLoginCaption": "Aponte para o código QR do carro",
+  "@cartLoginCaption": {},
+  "cartLoginHelp": "Leia o código QR colado no carro ou aproxime o crachá NFC do leitor. A sessão fica limitada a este carro.",
+  "@cartLoginHelp": {},
+  "cartLoginUseNfc": "Usar NFC",
+  "@cartLoginUseNfc": {},
+  "cartLoginNfcUnavailable": "NFC ainda não está disponível nesta versão.",
+  "@cartLoginNfcUnavailable": {},
+  "scannerTorch": "Lanterna",
+  "@scannerTorch": {},
+  "scannerTorchOff": "Desligar lanterna",
+  "@scannerTorchOff": {},
+  "cartLoginEnterCode": "Introduzir código do carro",
+  "@cartLoginEnterCode": {},
+  "cartLoginCodeLabel": "Código do carro",
+  "@cartLoginCodeLabel": {},
+  "cartLoginCodeHint": "Código impresso por baixo do QR",
+  "@cartLoginCodeHint": {},
+  "cartLoginBackToLogin": "Voltar ao início de sessão",
+  "@cartLoginBackToLogin": {},
+  "cartLoginNotFound": "Este carro não existe ou foi arquivado.",
+  "@cartLoginNotFound": {},
+  "cartLoginNoAccess": "Não tem acesso a este carro.",
+  "@cartLoginNoAccess": {},
+  "profileSetPin": "Definir PIN",
+  "@profileSetPin": {},
+  "profileChangePin": "Alterar PIN",
+  "@profileChangePin": {},
+  "profileLockNow": "Bloquear agora",
+  "@profileLockNow": {},
+  "profileSwitchInstitution": "Mudar de instituição",
+  "@profileSwitchInstitution": {},
+  "pinSetupHelp": "O PIN desbloqueia a sessão guardada neste dispositivo, mesmo sem rede. Não é partilhado com outros dispositivos.",
+  "@pinSetupHelp": {},
+  "pinNewLabel": "Novo PIN (4 dígitos)",
+  "@pinNewLabel": {},
+  "pinRepeatLabel": "Repetir PIN",
+  "@pinRepeatLabel": {},
+  "pinFourDigits": "O PIN tem 4 dígitos",
+  "@pinFourDigits": {},
+  "pinMismatch": "Os PIN não coincidem",
+  "@pinMismatch": {},
+  "pinSaved": "PIN guardado neste dispositivo.",
+  "@pinSaved": {},
+  "navCarts": "Carrinhos",
+  "@navCarts": {},
+  "navReports": "Relatórios",
+  "@navReports": {},
+  "navScan": "Ler código",
+  "@navScan": {},
+  "navProfile": "Perfil",
+  "@navProfile": {},
+  "navOverview": "Visão geral",
+  "@navOverview": {},
+  "navCatalog": "Catálogo",
+  "@navCatalog": {},
+  "navTemplates": "Modelos",
+  "@navTemplates": {},
+  "navUsers": "Utilizadores",
+  "@navUsers": {},
+  "navShifts": "Turnos",
+  "@navShifts": {},
+  "navHistory": "Histórico",
+  "@navHistory": {},
+  "dashboardBrandSubtitle": "Gestão · {institution}",
+  "@dashboardBrandSubtitle": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "cartsSubtitle": "{institution} · {count, plural, =1{1 carrinho} other{{count} carrinhos}}",
+  "@cartsSubtitle": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsSearchHint": "Pesquisar carrinho",
+  "@cartsSearchHint": {},
+  "cartsFilterAll": "Todos ({count})",
+  "@cartsFilterAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterAttention": "Precisam de atenção ({count})",
+  "@cartsFilterAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterAttentionShort": "Atenção ({count})",
+  "@cartsFilterAttentionShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterMine": "Os meus ({count})",
+  "@cartsFilterMine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineTitle": "Sem ligação à rede",
+  "@offlineTitle": {},
+  "offlineMessage": "{count, plural, =0{Pode continuar a trabalhar. As alterações serão enviadas quando a ligação voltar.} =1{Pode continuar a trabalhar. 1 alteração será enviada quando a ligação voltar.} other{Pode continuar a trabalhar. {count} alterações serão enviadas quando a ligação voltar.}}",
+  "@offlineMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countExpired": "{count, plural, =1{1 expirado} other{{count} expirados}}",
+  "@countExpired": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countMissing": "{count} em falta",
+  "@countMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countExpiring": "{count} a expirar",
+  "@countExpiring": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countLowStock": "{count} com stock baixo",
+  "@countLowStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkOverdueDays": "{days, plural, =1{Verificação mensal em atraso (1 dia)} other{Verificação mensal em atraso ({days} dias)}}",
+  "@checkOverdueDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noStockAlerts": "Sem alertas de stock",
+  "@noStockAlerts": {},
+  "allCompliant": "Tudo conforme",
+  "@allCompliant": {},
+  "lastCheckLine": "Verificação mensal: {date} · {name}",
+  "@lastCheckLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lastCheckNever": "Verificação mensal: ainda não feita",
+  "@lastCheckNever": {},
+  "compliant": "Conforme",
+  "@compliant": {},
+  "responsibleOnShift": "Responsável no turno: {name}",
+  "@responsibleOnShift": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "drawersTitle": "Gavetas",
+  "@drawersTitle": {},
+  "drawerGridLong": "{rows} × {columns} · {positions} posições · {withProduct} com produto",
+  "@drawerGridLong": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      },
+      "withProduct": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerGridShort": "{rows} × {columns} · {positions} posições",
+  "@drawerGridShort": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "cartMenuTitle": "Menu do carro",
+  "@cartMenuTitle": {},
+  "monthlyCheckTitle": "Verificação mensal",
+  "@monthlyCheckTitle": {},
+  "qrCodeShort": "Código QR",
+  "@qrCodeShort": {},
+  "changeStateAction": "Alterar estado",
+  "@changeStateAction": {},
+  "cartReportsAction": "Relatórios do carro",
+  "@cartReportsAction": {},
+  "emergencyHint": "Para registar consumos rápidos durante ou logo após uma emergência.",
+  "@emergencyHint": {},
+  "emergencyModeTitle": "Modo de emergência",
+  "@emergencyModeTitle": {},
+  "emergencyShort": "Emergência",
+  "@emergencyShort": {},
+  "emergencyResume": "Voltar ao modo de emergência",
+  "@emergencyResume": {},
+  "autoStateRule": "Regra automática (quando ativa): produto expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.",
+  "@autoStateRule": {},
+  "printLabel": "Imprimir etiqueta",
+  "@printLabel": {},
+  "productLocation": "Gaveta {number} · {drawer} · posição {position}",
+  "@productLocation": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "drawer": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "drawerTitle": "Gaveta {number} · {name}",
+  "@drawerTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "drawerSubtitle": "{cart} · {rows} × {columns} · {positions} posições",
+  "@drawerSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerSubtitleShort": "{cart} · {rows} × {columns}",
+  "@drawerSubtitleShort": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerSelectHint": "Toque numa posição para ver o produto, a quantidade e a validade.",
+  "@drawerSelectHint": {},
+  "slotPositionInDrawer": "Posição {position} · Gaveta {drawer}",
+  "@slotPositionInDrawer": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      },
+      "drawer": {
+        "type": "int"
+      }
+    }
+  },
+  "slotFreeTitle": "Posição livre",
+  "@slotFreeTitle": {},
+  "unitsOf": "{current} de {target} un.",
+  "@unitsOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "ofTargetUnits": "de {target} unidades",
+  "@ofTargetUnits": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "expiryLabel": "Validade",
+  "@expiryLabel": {},
+  "lotLabel": "Lote",
+  "@lotLabel": {},
+  "minimumLabel": "Mínimo",
+  "@minimumLabel": {},
+  "lotWithUnits": "{lot} · {units} un.",
+  "@lotWithUnits": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "units": {
+        "type": "int"
+      }
+    }
+  },
+  "daysCount": "{days, plural, =1{1 dia} other{{days} dias}}",
+  "@daysCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "changeProductAction": "Trocar produto",
+  "@changeProductAction": {},
+  "changeProductConfirm": "O produto atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.",
+  "@changeProductConfirm": {},
+  "panelSubtitle": "{product} · {position} · atual {current} de {target}",
+  "@panelSubtitle": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      },
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "quantityLabel": "Quantidade",
+  "@quantityLabel": {},
+  "confirmConsumption": "Confirmar consumo",
+  "@confirmConsumption": {},
+  "consumptionRecorded": "Consumo registado.",
+  "@consumptionRecorded": {},
+  "confirmReplenishment": "Confirmar reposição",
+  "@confirmReplenishment": {},
+  "replenishmentRecorded": "Reposição registada.",
+  "@replenishmentRecorded": {},
+  "replenishScanHelp": "Leia o Data Matrix da embalagem para preencher lote e validade.",
+  "@replenishScanHelp": {},
+  "correctionRecorded": "Correção registada.",
+  "@correctionRecorded": {},
+  "reconcileRecorded": "Reconciliação registada.",
+  "@reconcileRecorded": {},
+  "catalogSearchHint": "Pesquisar no catálogo",
+  "@catalogSearchHint": {},
+  "monthlyCheckSubtitle": "{cart} · Gaveta {index} de {total} · {drawer}",
+  "@monthlyCheckSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "drawer": {
+        "type": "String"
+      }
+    }
+  },
+  "saveAndExit": "Guardar e sair",
+  "@saveAndExit": {},
+  "progressSemantics": "Gaveta {index} de {total}",
+  "@progressSemantics": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "monthlyCheckEmptyDrawer": "Esta gaveta não tem produtos atribuídos.",
+  "@monthlyCheckEmptyDrawer": {},
+  "expiresOn": "expira a {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expectedUnits": "esperado {count}",
+  "@expectedUnits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiryShort": "val. {date}",
+  "@expiryShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "checkVerified": "{count, plural, =1{1 verificada} other{{count} verificadas}}",
+  "@checkVerified": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkProblems": "{count, plural, =1{1 com problema} other{{count} com problema}}",
+  "@checkProblems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkPending": "{count} por verificar",
+  "@checkPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthlyCheckHelp": "Toque numa linha para confirmar quantidade e validade. Toque de novo para assinalar um problema; toque longo para limpar. Os problemas ficam registados no relatório.",
+  "@monthlyCheckHelp": {},
+  "checkMarkAll": "Marcar restantes como verificadas",
+  "@checkMarkAll": {},
+  "addNote": "Adicionar nota",
+  "@addNote": {},
+  "editNote": "Editar nota",
+  "@editNote": {},
+  "noteHint": "Observações para o relatório",
+  "@noteHint": {},
+  "nextDrawer": "Gaveta seguinte",
+  "@nextDrawer": {},
+  "previousDrawer": "Gaveta anterior",
+  "@previousDrawer": {},
+  "finishCheck": "Concluir e gerar relatório",
+  "@finishCheck": {},
+  "reportKindMonthlyCheck": "Verificação mensal",
+  "@reportKindMonthlyCheck": {},
+  "reportKindEmergency": "Resumo de emergência",
+  "@reportKindEmergency": {},
+  "reportMonthlyTitle": "Relatório de verificação mensal",
+  "@reportMonthlyTitle": {},
+  "reportEmergencyTitle": "Resumo de emergência",
+  "@reportEmergencyTitle": {},
+  "reportSigned": "Assinado",
+  "@reportSigned": {},
+  "reportPendingSignature": "Por assinar",
+  "@reportPendingSignature": {},
+  "reportDate": "Data",
+  "@reportDate": {},
+  "reportCheckedBy": "Verificado por",
+  "@reportCheckedBy": {},
+  "reportStartedBy": "Iniciado por",
+  "@reportStartedBy": {},
+  "reportPositionsChecked": "Posições verificadas",
+  "@reportPositionsChecked": {},
+  "reportPeriod": "Período",
+  "@reportPeriod": {},
+  "xOfY": "{x} de {y}",
+  "@xOfY": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "reportFindings": "Problemas encontrados ({count})",
+  "@reportFindings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportNoFindings": "Sem problemas encontrados.",
+  "@reportNoFindings": {},
+  "findingOther": "diferença",
+  "@findingOther": {},
+  "emergencyConsumptions": "Consumos registados ({count})",
+  "@emergencyConsumptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportNotes": "Notas",
+  "@reportNotes": {},
+  "downloadPdf": "Descarregar PDF",
+  "@downloadPdf": {},
+  "signedByOn": "Assinado por {name} · {date}",
+  "@signedByOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportLockedHelp": "Depois de assinado, o relatório não pode ser alterado.",
+  "@reportLockedHelp": {},
+  "signReport": "Assinar relatório",
+  "@signReport": {},
+  "signReportHelp": "Ao assinar confirma que verificou o carro e que os dados estão corretos. Depois de assinado, o relatório não pode ser alterado.",
+  "@signReportHelp": {},
+  "confirmCheck": "Confirmo a verificação",
+  "@confirmCheck": {},
+  "pinLabel": "PIN",
+  "@pinLabel": {},
+  "signNeedsPin": "Defina primeiro um PIN neste dispositivo para assinar.",
+  "@signNeedsPin": {},
+  "signNeedsConfirmation": "Marque “Confirmo a verificação” para assinar.",
+  "@signNeedsConfirmation": {},
+  "signWrongPin": "PIN errado.",
+  "@signWrongPin": {},
+  "reportSignedMessage": "Relatório assinado.",
+  "@reportSignedMessage": {},
+  "reportsFilterPending": "Por assinar ({count})",
+  "@reportsFilterPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsEmpty": "Ainda não há relatórios. São criados no fim de uma verificação mensal ou de um modo de emergência.",
+  "@reportsEmpty": {},
+  "emergencyNotActive": "O modo de emergência deste carro já terminou.",
+  "@emergencyNotActive": {},
+  "emergencyHeader": "Modo de emergência · {cart}",
+  "@emergencyHeader": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyStarted": "Iniciado às {time} (há {minutes} min) · {name}",
+  "@emergencyStarted": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyEnd": "Terminar emergência",
+  "@emergencyEnd": {},
+  "emergencyEndConfirm": "O carro passa a “Reposição necessária” e é criado um resumo dos consumos para assinar.",
+  "@emergencyEndConfirm": {},
+  "drawerShort": "Gaveta {number}",
+  "@drawerShort": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "emergencyHelp": "Toque numa posição para registar 1 unidade usada. Toque longo para outra quantidade.",
+  "@emergencyHelp": {},
+  "emergencyNothingLeft": "Esta posição já não tem unidades.",
+  "@emergencyNothingLeft": {},
+  "emergencyNotSent": "{count, plural, =1{1 consumo não foi enviado ao servidor; fica no resumo.} other{{count} consumos não foram enviados ao servidor; ficam no resumo.}}",
+  "@emergencyNotSent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "undoLast": "Desfazer último",
+  "@undoLast": {},
+  "scanProductCaption": "Aponte para o código do produto",
+  "@scanProductCaption": {},
+  "scanModeProduct": "Produto",
+  "@scanModeProduct": {},
+  "scanModeCart": "Carro",
+  "@scanModeCart": {},
+  "scanHelp": "QR, Data Matrix (GS1) ou código de barras. Também funciona com leitor USB.",
+  "@scanHelp": {},
+  "scanLastRead": "Último código lido",
+  "@scanLastRead": {},
+  "scanLot": "Lote {lot}",
+  "@scanLot": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      }
+    }
+  },
+  "scanExpiry": "Val. {date}",
+  "@scanExpiry": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReplenishThis": "Repor este produto",
+  "@scanReplenishThis": {},
+  "scanManual": "Manual",
+  "@scanManual": {},
+  "scanManualProductLabel": "GTIN ou código GS1",
+  "@scanManualProductLabel": {},
+  "scanOtherInstitution": "Este carro pertence a outra instituição.",
+  "@scanOtherInstitution": {},
+  "scanNotInAnyCart": "Este produto não está atribuído a nenhum carro a que tenha acesso.",
+  "@scanNotInAnyCart": {},
+  "exportReport": "Exportar relatório",
+  "@exportReport": {},
+  "metricOperational": "Carrinhos operacionais",
+  "@metricOperational": {},
+  "metricNeedReplenishment": "{count, plural, =0{Nenhum precisa de reposição} =1{1 precisa de reposição} other{{count} precisam de reposição}}",
+  "@metricNeedReplenishment": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "metricExpiring30": "A expirar em 30 dias",
+  "@metricExpiring30": {},
+  "metricInCarts": "{count, plural, =1{em 1 carrinho} other{em {count} carrinhos}}",
+  "@metricInCarts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "metricChecksOverdue": "Verificações em atraso",
+  "@metricChecksOverdue": {},
+  "metricEmergencies": "Emergências este mês",
+  "@metricEmergencies": {},
+  "metricUnitsRecorded": "{count} consumos registados",
+  "@metricUnitsRecorded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsNeedingAttention": "Carrinhos que precisam de atenção",
+  "@cartsNeedingAttention": {},
+  "columnCart": "Carrinho",
+  "@columnCart": {},
+  "columnState": "Estado",
+  "@columnState": {},
+  "columnAlerts": "Alertas",
+  "@columnAlerts": {},
+  "columnServiceLocation": "Serviço · local",
+  "@columnServiceLocation": {},
+  "activityEmergency": "Modo de emergência · {count} consumos",
+  "@activityEmergency": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activityCheckSigned": "Verificação mensal assinada",
+  "@activityCheckSigned": {},
+  "activityCheckDone": "Verificação mensal concluída",
+  "@activityCheckDone": {},
+  "cartsServicesSubtitle": "{carts, plural, =1{1 carrinho} other{{carts} carrinhos}} · {services, plural, =1{1 serviço} other{{services} serviços}}",
+  "@cartsServicesSubtitle": {
+    "placeholders": {
+      "carts": {
+        "type": "int"
+      },
+      "services": {
+        "type": "int"
+      }
+    }
+  },
+  "createFromTemplate": "Criar a partir de modelo",
+  "@createFromTemplate": {},
+  "newCart": "Novo carrinho",
+  "@newCart": {},
+  "cartsSearchHintLong": "Pesquisar carrinho ou serviço",
+  "@cartsSearchHintLong": {},
+  "cartsFilterOutOfService": "Fora de serviço ({count})",
+  "@cartsFilterOutOfService": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "columnLastCheck": "Última verificação",
+  "@columnLastCheck": {},
+  "columnOnShift": "Responsável no turno",
+  "@columnOnShift": {},
+  "cartCreated": "Carrinho “{name}” criado.",
+  "@cartCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateLabel": "Modelo",
+  "@templateLabel": {},
+  "templatesEmpty": "Ainda não há modelos. Crie um em Modelos.",
+  "@templatesEmpty": {},
+  "fieldName": "Nome",
+  "@fieldName": {},
+  "fieldService": "Serviço",
+  "@fieldService": {},
+  "fieldServiceHint": "ex.: Urgência",
+  "@fieldServiceHint": {},
+  "fieldLocation": "Local",
+  "@fieldLocation": {},
+  "fieldLocationHint": "ex.: Piso 0 · Sala de reanimação",
+  "@fieldLocationHint": {},
+  "cartConfigSubtitle": "Configuração do carrinho",
+  "@cartConfigSubtitle": {},
+  "archiveCart": "Arquivar carrinho",
+  "@archiveCart": {},
+  "archiveCartConfirm": "O carrinho deixa de aparecer nas listas. O histórico e os relatórios mantêm-se.",
+  "@archiveCartConfirm": {},
+  "cartArchived": "Carrinho arquivado.",
+  "@cartArchived": {},
+  "saveChanges": "Guardar alterações",
+  "@saveChanges": {},
+  "cartInfoTitle": "Informação",
+  "@cartInfoTitle": {},
+  "originTemplate": "Modelo de origem",
+  "@originTemplate": {},
+  "autoStateLabel": "Atualizar o estado automaticamente",
+  "@autoStateLabel": {},
+  "drawersCount": "Gavetas ({count})",
+  "@drawersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addDrawer": "Adicionar gaveta",
+  "@addDrawer": {},
+  "columnNumber": "Nº",
+  "@columnNumber": {},
+  "columnSize": "Dimensão",
+  "@columnSize": {},
+  "columnPositions": "Posições",
+  "@columnPositions": {},
+  "columnWithProduct": "Com produto",
+  "@columnWithProduct": {},
+  "editGrid": "Editar grelha",
+  "@editGrid": {},
+  "drawerNameHint": "ex.: Fármacos",
+  "@drawerNameHint": {},
+  "gridEditorTitle": "Gaveta {number} · {name}",
+  "@gridEditorTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gridEditorSubtitle": "{cart} · editar grelha e posições",
+  "@gridEditorSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      }
+    }
+  },
+  "saveGrid": "Guardar grelha",
+  "@saveGrid": {},
+  "gridSaved": "Grelha guardada.",
+  "@gridSaved": {},
+  "mergePositions": "Juntar posições",
+  "@mergePositions": {},
+  "clearPosition": "Limpar posição",
+  "@clearPosition": {},
+  "clearPositionConfirm": "Remove {product} da posição {position}. Os lotes registados são removidos; o histórico mantém-se.",
+  "@clearPositionConfirm": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "gridSelectionHint": "Toque numa posição para a configurar. Toque em várias para as juntar.",
+  "@gridSelectionHint": {},
+  "mergeLosesAssignments": "{count, plural, =1{1 posição perde o produto, que fica em “sem posição” até ser reatribuído.} other{{count} posições perdem o produto, que fica em “sem posição” até ser reatribuído.}}",
+  "@mergeLosesAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unsavedGridTitle": "Alterações por guardar",
+  "@unsavedGridTitle": {},
+  "unsavedGridMessage": "Sair sem guardar a grelha?",
+  "@unsavedGridMessage": {},
+  "discardChanges": "Descartar",
+  "@discardChanges": {},
+  "orphansTitle": "Produtos sem posição ({count})",
+  "@orphansTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orphanReassignHint": "Selecione uma posição livre na grelha e toque em Reatribuir.",
+  "@orphanReassignHint": {},
+  "positionTitle": "Posição {position}",
+  "@positionTitle": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "positionsSelected": "{count} posições selecionadas",
+  "@positionsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "positionSelectHint": "Selecione uma posição para configurar o produto.",
+  "@positionSelectHint": {},
+  "gridUnsavedHint": "Guarde a grelha antes de configurar posições.",
+  "@gridUnsavedHint": {},
+  "chooseProduct": "Escolher produto",
+  "@chooseProduct": {},
+  "catalogNoMatches": "Nenhum produto corresponde à pesquisa.",
+  "@catalogNoMatches": {},
+  "minimumQuantityLabel": "Quantidade mínima",
+  "@minimumQuantityLabel": {},
+  "expiryWarningDaysLabel": "Aviso de validade (dias)",
+  "@expiryWarningDaysLabel": {},
+  "askLotOnReplenish": "Pedir lote e validade na reposição",
+  "@askLotOnReplenish": {},
+  "applyToPosition": "Aplicar à posição",
+  "@applyToPosition": {},
+  "positionApplied": "Posição atualizada.",
+  "@positionApplied": {},
+  "catalogTitle": "Catálogo de consumíveis",
+  "@catalogTitle": {},
+  "catalogSubtitle": "{count, plural, =1{1 produto} other{{count} produtos}} · usados em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}",
+  "@catalogSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "carts": {
+        "type": "int"
+      }
+    }
+  },
+  "importCsv": "Importar CSV",
+  "@importCsv": {},
+  "importCsvHelp": "Cole uma linha por produto: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os produtos com nome ou GTIN já existentes são ignorados.",
+  "@importCsvHelp": {},
+  "importCsvHint": "Cole aqui o conteúdo do ficheiro CSV",
+  "@importCsvHint": {},
+  "importAction": "Importar",
+  "@importAction": {},
+  "importResult": "{created, plural, =1{1 produto importado} other{{created} produtos importados}} · {skipped} ignorados.",
+  "@importResult": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "newProduct": "Novo produto",
+  "@newProduct": {},
+  "editProduct": "Editar produto",
+  "@editProduct": {},
+  "catalogSearchByNameOrGtin": "Pesquisar por nome ou GTIN",
+  "@catalogSearchByNameOrGtin": {},
+  "filterAll": "Todos",
+  "@filterAll": {},
+  "categoryDrug": "Fármaco",
+  "@categoryDrug": {},
+  "categoryDrugs": "Fármacos",
+  "@categoryDrugs": {},
+  "categoryMaterial": "Material",
+  "@categoryMaterial": {},
+  "categoryFluid": "Fluido",
+  "@categoryFluid": {},
+  "categoryFluids": "Fluidos",
+  "@categoryFluids": {},
+  "columnPresentation": "Apresentação",
+  "@columnPresentation": {},
+  "columnGtin": "GTIN",
+  "@columnGtin": {},
+  "columnCategory": "Categoria",
+  "@columnCategory": {},
+  "columnInUse": "Em uso",
+  "@columnInUse": {},
+  "expiryWarningShort": "Aviso de validade",
+  "@expiryWarningShort": {},
+  "inCartsCount": "{count, plural, =0{—} =1{1 carrinho} other{{count} carrinhos}}",
+  "@inCartsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "productCreated": "Produto “{name}” criado.",
+  "@productCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "productUpdated": "Produto atualizado.",
+  "@productUpdated": {},
+  "gtinTaken": "Já existe um produto com este GTIN.",
+  "@gtinTaken": {},
+  "gtinInvalid": "O GTIN tem 8, 12, 13 ou 14 algarismos.",
+  "@gtinInvalid": {},
+  "scanGtin": "Ler GTIN da embalagem",
+  "@scanGtin": {},
+  "expiryWarningDefaultHint": "Vazio = valor da instituição",
+  "@expiryWarningDefaultHint": {},
+  "templatesTitle": "Modelos de carrinho",
+  "@templatesTitle": {},
+  "templatesSubtitle": "Crie carrinhos iguais a partir de um modelo",
+  "@templatesSubtitle": {},
+  "templatesEmptyDashboard": "Ainda não há modelos. Crie um a partir de um carrinho já configurado.",
+  "@templatesEmptyDashboard": {},
+  "newTemplate": "Novo modelo",
+  "@newTemplate": {},
+  "editTemplate": "Editar modelo",
+  "@editTemplate": {},
+  "deleteTemplate": "Eliminar modelo",
+  "@deleteTemplate": {},
+  "deleteTemplateConfirm": "Eliminar o modelo “{name}”? Os carrinhos já criados a partir dele não são alterados.",
+  "@deleteTemplateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateDeleted": "Modelo eliminado.",
+  "@templateDeleted": {},
+  "templateSaved": "Modelo guardado.",
+  "@templateSaved": {},
+  "templateSummary": "{drawers, plural, =1{1 gaveta} other{{drawers} gavetas}} · {positions} posições · usado em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}",
+  "@templateSummary": {
+    "placeholders": {
+      "drawers": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      },
+      "carts": {
+        "type": "int"
+      }
+    }
+  },
+  "templateUpdatedBy": "Atualizado a {date} por {name}",
+  "@templateUpdatedBy": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateDrawerSize": "{rows} × {columns} · {positions} posições",
+  "@templateDrawerSize": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "templateCopyNote": "Os carrinhos criados a partir do modelo copiam gavetas, posições e quantidades alvo. Stock e histórico não são copiados.",
+  "@templateCopyNote": {},
+  "createCartFromThisTemplate": "Criar carrinho a partir deste modelo",
+  "@createCartFromThisTemplate": {},
+  "templateCopyName": "{name} (cópia)",
+  "@templateCopyName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateSourceCart": "Carrinho de origem",
+  "@templateSourceCart": {},
+  "templateRefreshFromCart": "Atualizar a partir de um carrinho",
+  "@templateRefreshFromCart": {},
+  "templateKeepStructure": "Manter a estrutura atual",
+  "@templateKeepStructure": {},
+  "templateChooseCart": "Escolha um carrinho",
+  "@templateChooseCart": {},
+  "usersTitle": "Utilizadores e permissões",
+  "@usersTitle": {},
+  "usersCount": "{count, plural, =1{1 utilizador} other{{count} utilizadores}}",
+  "@usersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteUser": "Convidar utilizador",
+  "@inviteUser": {},
+  "sendInvite": "Enviar convite",
+  "@sendInvite": {},
+  "inviteNote": "A pessoa recebe um e-mail para definir a sua palavra-passe.",
+  "@inviteNote": {},
+  "inviteSent": "Convite enviado para {email}.",
+  "@inviteSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resendInvite": "Reenviar e-mail de acesso",
+  "@resendInvite": {},
+  "emailTaken": "Já existe um utilizador com este e-mail.",
+  "@emailTaken": {},
+  "emailInvalid": "Indique um e-mail válido.",
+  "@emailInvalid": {},
+  "fieldEmail": "E-mail",
+  "@fieldEmail": {},
+  "usersSearchHint": "Pesquisar por nome ou e-mail",
+  "@usersSearchHint": {},
+  "usersFilterManagers": "Gestores ({count})",
+  "@usersFilterManagers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersFilterProfessionals": "Profissionais de saúde ({count})",
+  "@usersFilterProfessionals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersFilterInvited": "Convites pendentes ({count})",
+  "@usersFilterInvited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersNoMatches": "Nenhum utilizador corresponde à pesquisa.",
+  "@usersNoMatches": {},
+  "columnUserType": "Tipo de utilizador",
+  "@columnUserType": {},
+  "allServices": "Todos",
+  "@allServices": {},
+  "moreActions": "Mais ações",
+  "@moreActions": {},
+  "cannotEditSelf": "Não pode alterar a sua própria conta.",
+  "@cannotEditSelf": {},
+  "changeUserType": "Alterar tipo de utilizador",
+  "@changeUserType": {},
+  "deactivateUser": "Desativar",
+  "@deactivateUser": {},
+  "reactivateUser": "Reativar",
+  "@reactivateUser": {},
+  "deactivateUserConfirm": "{name} deixa de conseguir entrar. O histórico mantém-se.",
+  "@deactivateUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reactivateUserConfirm": "{name} volta a conseguir entrar.",
+  "@reactivateUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userUpdated": "Utilizador atualizado.",
+  "@userUpdated": {},
+  "permissionsTitle": "Permissões",
+  "@permissionsTitle": {},
+  "permissionsNote": "Proposta (D2). As permissões ficam guardadas neste dispositivo até existir suporte no servidor.",
+  "@permissionsNote": {},
+  "permViewCarts": "Ver carrinhos e gavetas",
+  "@permViewCarts": {},
+  "permRecordConsumption": "Registar consumos",
+  "@permRecordConsumption": {},
+  "permReplenish": "Repor stock (lote e validade)",
+  "@permReplenish": {},
+  "permMonthlyCheck": "Fazer a verificação mensal",
+  "@permMonthlyCheck": {},
+  "permSignReports": "Assinar relatórios",
+  "@permSignReports": {},
+  "permEmergencyMode": "Usar o modo de emergência",
+  "@permEmergencyMode": {},
+  "permChangeCartState": "Alterar o estado do carrinho",
+  "@permChangeCartState": {},
+  "permEditDrawers": "Editar gavetas e grelhas",
+  "@permEditDrawers": {},
+  "permManageUsersAndShifts": "Gerir utilizadores e turnos",
+  "@permManageUsersAndShifts": {},
+  "shiftsTitle": "Turnos",
+  "@shiftsTitle": {},
+  "shiftsWeekOf": "Semana de {start} a {end}",
+  "@shiftsWeekOf": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "previousWeek": "Semana anterior",
+  "@previousWeek": {},
+  "nextWeek": "Semana seguinte",
+  "@nextWeek": {},
+  "addShift": "Adicionar turno",
+  "@addShift": {},
+  "copyPreviousWeek": "Copiar semana anterior",
+  "@copyPreviousWeek": {},
+  "shiftsCopied": "{count, plural, =0{Nenhum turno copiado.} =1{1 turno copiado.} other{{count} turnos copiados.}}",
+  "@shiftsCopied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shiftsByCart": "Por carrinho",
+  "@shiftsByCart": {},
+  "shiftsByPerson": "Por pessoa",
+  "@shiftsByPerson": {},
+  "columnPerson": "Pessoa",
+  "@columnPerson": {},
+  "shiftsNoneThisWeek": "Sem turnos nesta semana.",
+  "@shiftsNoneThisWeek": {},
+  "shiftsLegend": "M = manhã (08–16) · T = tarde (16–24) · N = noite (00–08)",
+  "@shiftsLegend": {},
+  "shiftMorningShort": "M",
+  "@shiftMorningShort": {},
+  "shiftAfternoonShort": "T",
+  "@shiftAfternoonShort": {},
+  "shiftNightShort": "N",
+  "@shiftNightShort": {},
+  "shiftMorning": "Manhã",
+  "@shiftMorning": {},
+  "shiftAfternoon": "Tarde",
+  "@shiftAfternoon": {},
+  "shiftNight": "Noite",
+  "@shiftNight": {},
+  "shiftDay": "Dia",
+  "@shiftDay": {},
+  "shiftResponsible": "Responsável",
+  "@shiftResponsible": {},
+  "shiftNobody": "Ninguém",
+  "@shiftNobody": {},
+  "shiftSaved": "Turno guardado.",
+  "@shiftSaved": {},
+  "reportsHistoryTitle": "Relatórios e histórico",
+  "@reportsHistoryTitle": {},
+  "exportCsv": "Exportar CSV",
+  "@exportCsv": {},
+  "exportCsvHelp": "{count, plural, =1{1 evento} other{{count} eventos}} do período e carrinho escolhidos. Copie e cole numa folha de cálculo.",
+  "@exportCsvHelp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCsv": "Copiar",
+  "@copyCsv": {},
+  "csvCopied": "CSV copiado.",
+  "@csvCopied": {},
+  "tabReports": "Relatórios",
+  "@tabReports": {},
+  "tabEvents": "Histórico de eventos",
+  "@tabEvents": {},
+  "tabStatistics": "Estatísticas",
+  "@tabStatistics": {},
+  "filterCart": "Carrinho: {name}",
+  "@filterCart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAllCarts": "todos",
+  "@filterAllCarts": {},
+  "filterPeriod": "Período: {period}",
+  "@filterPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "columnReport": "Relatório",
+  "@columnReport": {},
+  "columnDate": "Data",
+  "@columnDate": {},
+  "columnSignedBy": "Assinado por",
+  "@columnSignedBy": {},
+  "reportPendingSignatureShort": "Por assinar",
+  "@reportPendingSignatureShort": {},
+  "actionOpen": "Abrir",
+  "@actionOpen": {},
+  "reportsEmptyPeriod": "Sem relatórios neste período.",
+  "@reportsEmptyPeriod": {},
+  "eventsEmptyPeriod": "Sem eventos neste período.",
+  "@eventsEmptyPeriod": {},
+  "eventsCapped": "A mostrar os {count} eventos mais recentes da instituição.",
+  "@eventsCapped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statConsumed": "Consumido",
+  "@statConsumed": {},
+  "statReplenished": "Reposto",
+  "@statReplenished": {},
+  "statChecks": "Verificações",
+  "@statChecks": {},
+  "statEmergencies": "Emergências",
+  "@statEmergencies": {},
+  "statPendingSignatures": "Por assinar",
+  "@statPendingSignatures": {},
+  "statTopProducts": "Produtos mais consumidos",
+  "@statTopProducts": {},
+  "statByCart": "Por carrinho",
+  "@statByCart": {},
+  "pagerRange": "{from}–{to} de {total}",
+  "@pagerRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pagerPrevious": "Página anterior",
+  "@pagerPrevious": {},
+  "pagerNext": "Página seguinte",
+  "@pagerNext": {},
+  "closePanel": "Fechar painel",
+  "@closePanel": {},
+  "viewAsApp": "Ver como App (teste)",
+  "@viewAsApp": {},
+  "viewAsDashboard": "Ver como Dashboard (teste)",
+  "@viewAsDashboard": {}
+}
