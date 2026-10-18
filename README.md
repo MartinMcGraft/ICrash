@@ -23,7 +23,7 @@ ICrash/
 ├── app/            The Flutter app (package `icrash_app`, shown on devices as "ICrash")
 ├── firebase/       Firebase backend config: Firestore rules, indexes, emulator config,
 │                   rules tests and admin tools
-├── docs/           APP, FIREBASE, DESIGN, DOMAIN rules, open decisions, release checklist
+├── docs/           APP, FIREBASE, DESIGN, DOMAIN rules, DATABASE, open decisions, release checklist
 ├── isel/           Archive of the 2023 ISEL bachelor's project (report, planning,
 │                   analysis, the original Django server and the original app1 Flutter
 │                   app, legacy code included). Kept for reference; not maintained.
@@ -274,6 +274,7 @@ clinical questions for the nurses are in `docs/OPEN_DECISIONS.md`.
 | `docs/DESIGN.md` | Figma file and pages, design principles, colour/type/spacing tokens, components, state system, layout per screen size |
 | `docs/OPEN_DECISIONS.md` | Decisions D1–D15 with their status, and the clinical questions; never answer those in code by guesswork |
 | `docs/RELEASE_CHECKLIST.md` | What a real store release requires (signing, accounts) |
+| `docs/DATABASE.md` | Database design for the relational/PostgreSQL version. Part 1: the conceptual ER model (every entity, attribute and relationship explained, with cardinalities, rules and open items; diagram in `docs/ICrash_ERD_Conceptual.png`). Part 2: the logical model (tables, types, NULL/NOT NULL, keys, constraints; diagram in `docs/ICrash_ERD_Logical.png`) |
 | `docs/DOMAIN.md` | The domain rules and why they exist (stock, lots, expiry, audits, roles, scanning, no patient data). Code comments "spec section N" refer to §N here |
 | `isel/README.md` | Install guide of the 2023 Django + Flutter version |
 

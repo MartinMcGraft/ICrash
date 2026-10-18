@@ -419,6 +419,11 @@ correction `+1 Adrenaline, correcting event XYZ`.
 **Today:** A8 (D4, half-confirmed) goes drawer by drawer and flags positions with
 differences in the report. Lot-level reconciliation is done from the slot panel.
 
+**Update 18 Oct (D4 decided):** the monthly check covers the whole cart in one go, but
+only the items that are **expired or expiring** are checked; the rest is valid by default.
+The "every drawer must be verified" rule above is replaced. The app still needs to change
+(A8). See `docs/OPEN_DECISIONS.md` D4 and `docs/DATABASE.md` §1.4.
+
 ### 52. Daily checklist
 Support configurable operational checklists, but **don't invent clinical procedures**:
 the checklist items must be configurable. This is clinical question 9.
