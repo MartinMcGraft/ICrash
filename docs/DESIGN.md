@@ -48,6 +48,12 @@ What each screen does is in [APP.md](APP.md).
 | D8 Shifts | B8 | Confirmed |
 | §9 Emergency mode | A10 | Idea kept (wireframes and mockups saved), **left out of the final prototype** |
 
+**Changed since the cover (18 Oct 2026, database design):** D3 changed (the institution
+issues `userNumber`, password and PIN, checked by the server on any tablet); D4 decided
+(the monthly check lists only expired and expiring batches, for the whole cart in one go);
+D10 decided (no minimum stock). A1, A2, A8 and the slot states need updating in Figma.
+Details in [OPEN_DECISIONS.md](OPEN_DECISIONS.md) and [DATABASE.md](DATABASE.md).
+
 **Sync rule:** Figma is the source of truth for the look, and `tokens.dart` mirrors it
 with the same names. When a variable changes in Figma, change the same token in code,
 and the reverse.
@@ -215,6 +221,13 @@ okCirculo`
 
 A drawer and a cart show the **worst** state of what they contain, plus counts
 ("1 expirado · 2 em falta").
+
+**Database model (18 Oct):** the database stores four slot states: *Válido/OK*,
+*Reposição necessária*, *A expirar*, *Expirado*. With no minimum stock (D10), "Em falta"
+and "Stock baixo" both become *Reposição necessária* (below max); the design may still show
+0 units differently. "Livre" isn't a stored state: it's a slot with no product. Cart states
+match the database's CartState, except "Emergência ativa", which is shown only while
+emergency mode is open and isn't stored.
 
 ---
 

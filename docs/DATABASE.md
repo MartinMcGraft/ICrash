@@ -429,7 +429,7 @@ many-to-many link between CrashCart and User.
 | # | Relationship | Cardinality | Meaning |
 |---|---|---|---|
 | R24 | User — **Who** — History | User 1..1 : History 0..N | Every stock change was made by exactly one user; a user makes any number of changes |
-| R25 | SlotCC — **What and where** — History | SlotCC 1..1 : History 0..N | Every stock change is to exactly one placement, which tells *what* item changed and *where* (slot, drawer, cart); a placement has any number of changes |
+| R25 | SlotCC — **What and where** — History | SlotCC 1..1 : History 0..N | Every stock change is to exactly one placement, which tells *what* item changed and *where* (slot, drawer, cart); a placement has any number of changes. History holds stock changes only; administrative changes are left to the security phase (DB12) |
 | R26 | HistoryType — **Has a** — History | HistoryType 1..1 : History 0..N | Every change is of exactly one type; a type applies to any number of changes |
 | R27 | Batch — **Affects** — History | Batch 0..1 : History 0..N | A change may concern one batch: a replenishment points to the batch it created or added to, a discard to the batch it removed from. Consumption rows have no batch, because nobody records which unit was used. A batch can be affected by any number of changes |
 | R28 | Report — **Lists** — History | Report 0..1 : History 0..N | A change may have been made during a check or an emergency, and then belongs to that report; ordinary daily changes have no report. A report lists any number of changes |
@@ -490,7 +490,8 @@ These constraints come from the business rules and will be enforced in part 2:
 
 ## 1.6 Open items
 
-Also tracked in `docs/OPEN_DECISIONS.md` §2b.
+Also tracked in `docs/OPEN_DECISIONS.md` §2b. Open points found while building the logical model
+(DB7–DB12) are in §2.6.
 
 | # | Item | Status and notes |
 |---|---|---|
@@ -841,7 +842,20 @@ The ERDplus schema is a beta export. These are the places where the tables above
 | 6 | No UNIQUE on SLOTCC's slot columns | UNIQUE (`idSlot`, `idDrawer`, `idCrashCart`) | R8 is 1 : 0..1. Without it, a slot could hold two consumables |
 | 7 | — | UNIQUE pairs on USERTYPEPERMISSION, CRASHCARTUSER and REPORTITEM; UNIQUE (`idCrashCart`, `idClinicalConsumable`) on SLOTCC; UNIQUE (`idCrashCart`, `number`) on DRAWER | Business rules the diagram doesn't show |
 
-## 2.6 Names in PostgreSQL
+## 2.6 Open points in the logical model
+
+To settle before the PostgreSQL script. Also tracked in `docs/OPEN_DECISIONS.md` §2b.
+
+| # | Item | Notes |
+|---|---|---|
+| DB7 | Templates and mandatory columns | `qr_code` and `location` are NOT NULL, as in the conceptual model, but a template isn't a physical cart and has neither. Options: allow NULL only when `isTemplate` = true, or store a placeholder |
+| DB8 | Uniqueness of `qr_code` and `permission` | Neither is marked unique. A scanned cart QR must identify exactly one cart, so `qr_code` should probably be UNIQUE. The same applies to a permission's name |
+| DB9 | Slot state stored or calculated | SLOTCC stores `idSlotState`, so it must be recalculated whenever stock changes and once a day (§2.3). The alternative is to calculate it in a view, like `earliestExpirationDate`, which removes R11's FK |
+| DB10 | `weight` and `volume` as text | Stored with their unit ("1 mg", "10 ml"), because medicines use many units. Numbers would need one fixed unit per column |
+| DB11 | Deactivating users | USER has no active/disabled status (the Firebase version has one), and a user can't be deleted once History or a Report points to them. Something like an `active` boolean is needed to block people who leave |
+| DB12 | Not modelled yet | A per-product expiry warning (the app has one; the model only has the institution's `expiryWarningDays`); drawer layout versions (`DOMAIN.md` §38); the administrative audit log of roles, permissions and layout changes (`DOMAIN.md` §45), left to the security phase |
+
+## 2.7 Names in PostgreSQL
 
 The names above match the diagrams. In the SQL script:
 - PostgreSQL turns unquoted names to lowercase (`idCrashCart` becomes `idcrashcart`). The script

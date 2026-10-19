@@ -5,7 +5,11 @@ flows, and how the code is organised. For setup, read the repository
 [README](../README.md); for the backend, [FIREBASE.md](FIREBASE.md); for the visual
 design, [DESIGN.md](DESIGN.md).
 
-Updated 15 Oct 2026 (design v2, branch `DEV-Martim`).
+Updated 18 Oct 2026 (design v2, branch `DEV-Martim`).
+
+This describes the app **as it runs today, on Firebase**. The relational database designed
+on 18 Oct for the local-server version is in [DATABASE.md](DATABASE.md); where it changes
+how a screen should work, a "Database model" note says so.
 
 ---
 
@@ -60,6 +64,10 @@ shell switch, and sign out.
 
 "Manager+" in this document means `manager`, `institutionAdmin` or `platformSuperAdmin`.
 
+**Database model:** user types and their permissions are tables (UserType, Permission,
+UserTypePermission), so the B7 toggles become shared data instead of a local stub. A user
+belongs to one institution, so the institution picker isn't needed on a local server.
+
 ### Permission toggles (B7)
 
 `AppPermission` (`domain/entities/app_permission.dart`) holds the fine-grained switches
@@ -106,6 +114,11 @@ start ─▶ saved session on this device?
 The flow lives in `ui/app/app_root_view_model.dart` (stages:
 `starting → signedOut | locked | pin | cartLogin → pickingInstitution → ready`).
 
+**Database model (18 Oct, D3 changed):** the institution issues each employee a
+`userNumber`, password and PIN, which must be changed on first login. The PIN is checked by
+the server, so it works on any cart tablet, not only the device with a saved session. A1
+and A2 will change accordingly; the login method is still open (DATABASE.md DB3).
+
 ---
 
 ## 4. App shell screens
@@ -143,6 +156,9 @@ The flow lives in `ui/app/app_root_view_model.dart` (stages:
 - The drawer's **slot grid** (`SlotGrid`). Each cell shows the product's short name,
   quantity, and a status badge when it isn't OK. Free slots look different from
   "assigned, 0 units".
+- **Database model:** the panel's data is a SlotCC with its batches. "Earliest known
+  expiry" is calculated from the batches not yet removed, and there's no minimum quantity
+  (D10), so **low stock** and **missing** both become *Replenishment needed* (below max).
 - **Tapping a slot** opens the side panel **over** the grid (it never shrinks the grid).
   The panel shows the product, quantity vs target, earliest known expiry, lots, and
   actions:
@@ -166,6 +182,11 @@ The flow lives in `ui/app/app_root_view_model.dart` (stages:
 - Notes per check. **"Guardar e sair"** saves a draft to continue later.
 - **Terminar** creates a monthly-check report (positions with differences are flagged)
   and opens **A9** to sign it.
+- **To change (D4 decided, 18 Oct):** the check covers the whole cart in one go, but lists
+  only the batches that are **expired or expiring**; everything else counts as valid. The
+  nurse handles each one (replaced, discarded, kept, not found), can pause and resume, and
+  can finish only when all are handled. Database: REPORT, REPORTITEM and RESULTITEM
+  (DATABASE.md §1.4).
 
 ### A9 Report: view and sign
 `features/reports/report_screen.dart`, list in `reports_list_screen.dart`
@@ -173,6 +194,8 @@ The flow lives in `ui/app/app_root_view_model.dart` (stages:
 - Decision D6: sign with **name + PIN + date**. The signer confirms, enters their PIN,
   and the report becomes **read-only**.
 - PDF export (`report_pdf.dart`). Reports and signatures are a **local stub** for now.
+- **Database model:** the person who performs the check is the one who signs it (a
+  separate signer is open, DB4). A signed report has `signedAt` and can't change.
 
 ### A10 Emergency mode
 `features/emergency/`
@@ -233,6 +256,13 @@ In short:
   GTIN, source (manual / GS1 scan / audit).
 - **Usage events** are an append-only log: consumption, replenishment, correction,
   audit reconciliation.
+
+**In the relational model** ([DATABASE.md](DATABASE.md)) the same ideas have these names:
+assignment → **SlotCC** (`currNumberCC`, `maxNumberCC`; no minimum), batches → **Batch**
+(one per expiry date, `lotNumber` optional, `removedAt` instead of deleting),
+`earliestKnownExpiry` → `earliestExpirationDate` (**derived** from the batches not
+removed), usage events → **History**. The rules below are unchanged. FIREBASE.md §10 maps
+every collection to its table.
 
 Rules (pure functions in `domain/inventory_rules.dart`, tested in
 `test/domain/inventory_rules_test.dart`):
@@ -358,7 +388,8 @@ Run with `flutter test` in `app/`.
    Firestore transactions, which need the server. They should become batched
    increments plus an immutable event, so they queue offline.
 2. **Slot ids repeat across drawers** (`r{row}c{col}`), so an assignment's `slotId` is
-   ambiguous between drawers. The assignment needs a `drawerId`.
+   ambiguous between drawers. The assignment needs a `drawerId`. (In the relational model
+   a slot's key includes its drawer and cart, so this can't happen there.)
 3. **Rules vs permissions:** health professionals can't replenish under the current
    rules (only `currentQuantity` may change). The rules must follow the confirmed D2
    permission set.

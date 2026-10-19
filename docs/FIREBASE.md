@@ -4,8 +4,14 @@ Everything about the backend: what exists, how to run it locally, how to work wi
 cloud project, how to set one up from zero, the data model and the security rules.
 This document replaces `FIREBASE_MODEL.md`.
 
-Updated 15 Oct 2026. Files live in [`firebase/`](../firebase); app-side code is in
+Updated 18 Oct 2026. Files live in [`firebase/`](../firebase); app-side code is in
 `app/lib/src/data/firebase/`.
+
+> **New direction (18 Oct 2026):** each institution is to run I-Crash on **its own local
+> server**, with a relational (PostgreSQL) database designed in [DATABASE.md](DATABASE.md).
+> Whether Firebase stays, and in what role, is decided in the security/hosting phase. Until
+> then this document describes the backend the app **runs on today**. How each Firestore
+> collection maps to the relational model, and what differs, is in §10.
 
 ---
 
@@ -267,6 +273,10 @@ The proposed Firestore shape for them (`reports/…/signatures`, `shifts`, `temp
 to Firestore means adding the collection, its rules and tests, and swapping the
 implementation in `AppServices`.
 
+**Superseded for the relational version:** the model of 18 Oct in
+[DATABASE.md](DATABASE.md) covers these too (reports, report items and signing; templates;
+permissions; the automatic-state switch; a server-checked PIN). See §10.
+
 ---
 
 ## 6. Security rules
@@ -365,3 +375,34 @@ the next audit.
   Cloud Function if billing is ever enabled.
 - **PIN:** local only (salted SHA-256 in SharedPreferences). It unlocks the session
   already saved on the device; Firebase isn't involved.
+- **Changed direction (18 Oct, D3):** in the relational model the institution issues each
+  employee a `userNumber`, password and PIN (changed on first login), and the server checks
+  the PIN, so it works on any cart tablet. Login method still open (DATABASE.md DB3).
+
+---
+
+## 10. Mapping to the relational model (DATABASE.md)
+
+How the Firestore data model (§5) corresponds to the PostgreSQL design for the local-server
+version. Table names are those of DATABASE.md part 2.
+
+| Firestore | Relational table | Differences |
+|---|---|---|
+| `platformAdmins/{uid}` | USER with UserType "Engineer Admin" | No separate marker. Each server holds one institution |
+| `institutions/{i}` | INSTITUTION | One row per server. `createdBy` isn't kept |
+| `memberships/{uid}`, `memberIndex/{uid}` | USER (`idInstitution`, `idUserType`) | **A user belongs to one institution** (two hospitals = two accounts), so `memberIndex` isn't needed. Login is by `userNumber`, not e-mail (`email` is optional). Membership `status` (active / invited / disabled) has no equivalent yet (DB11). Membership `service` isn't kept |
+| Roles (`Role`) and permission toggles (local stub) | USERTYPE, PERMISSION, USERTYPEPERMISSION | Permissions per user type are data |
+| `products/{p}` | CLINICALCONSUMABLE + CATEGORY | `unitDescription` → `weight` / `volume`. `category` is a lookup table. The per-product `expiryWarningDays` isn't modelled (DB12) |
+| `carts/{c}` | CRASHCART + CARTSTATE | `status` → CARTSTATE. `service` → DEPARTMENT (with `floor`). `templateId` → `idTemplate`. `layoutVersion` isn't modelled (DB12). The auto-state switch (local stub) → `autoState` |
+| `carts/{c}/responsibleUsers`, `responsibleUserIds[]` | CRASHCARTUSER | One table instead of a subcollection plus a copied array. Shifts (local stub) aren't modelled yet (DB5) |
+| `drawers/{d}` | DRAWER | `name` → `number` |
+| `slots/{s}` | SLOT | `label` isn't stored (calculated). The key includes the drawer and cart, so slot ids no longer clash between drawers (APP.md known issue 2) |
+| `assignments/{a}` | SLOTCC + SLOTSTATE | `currentQuantity` → `currNumberCC`, `targetQuantity` → `maxNumberCC`. `minimumQuantity` is dropped (D10). `earliestKnownExpiry` → `earliestExpirationDate`, **derived** from the batches. `status` → SLOTSTATE. The copied `institutionId`/`cartId` aren't needed |
+| `assignments/{a}/batches/{b}` | BATCH | One batch per **expiry date** in the slot. `lotNumber` optional; `removedAt` added (batches are never deleted). `gtin`, `source` and `createdBy` aren't stored on the batch; who created it is on the History row |
+| `usageEvents/{e}` | HISTORY + HISTORYTYPE | `type` → HISTORYTYPE (Consumption, Replenishment, Discard, Correction, Count). `correctsEventId` → `idCorrectedHistory`. `actorUid` → `idUser`. One `createdAt` instead of local and server timestamps. Adds the batch affected and the report the row belongs to |
+| `auditEvents/{e}` | — | The administrative log isn't modelled; left to the security phase (DB12) |
+| Reports, signatures, check drafts (local stubs) | REPORT, REPORTSTATUS, REPORTITEM, RESULTITEM | A monthly check lists only expired and expiring batches (D4). The signer is the user who performed the check (DB4) |
+| Emergency sessions (local stub) | REPORT with `isEmergency` = true | The consumption rows recorded during it point to the report |
+| Cart templates (local stub) | CRASHCART with `isTemplate` = true | Same tables as a real cart |
+| Device session and PIN (local stub) | USER `pinHash`, `passwordHash`, `mustChangeCredentials` | Checked by the server, not the device |
+| Firestore Rules (§6) | — | Security on the local server (database privileges, triggers, API) is designed in the security phase |
