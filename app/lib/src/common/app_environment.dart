@@ -27,11 +27,18 @@ class AppEnvironment {
 
   static bool get isEmulator => backend == FirebaseBackend.emulator;
 
+  static const String _emulatorHostOverride = String.fromEnvironment('ICRASH_EMULATOR_HOST');
+
   /// Host that reaches `127.0.0.1` of the development machine from the
   /// platform actually running the app. The Android emulator maps its own
   /// loopback interface, so the host machine is reached via `10.0.2.2`
   /// instead; every other supported platform can use `127.0.0.1` directly.
+  ///
+  /// A physical Android phone on USB uses `adb reverse` plus
+  /// `--dart-define=ICRASH_EMULATOR_HOST=127.0.0.1`, which overrides the
+  /// default above.
   static String get emulatorHost {
+    if (_emulatorHostOverride.isNotEmpty) return _emulatorHostOverride;
     if (kIsWeb) return '127.0.0.1';
     if (defaultTargetPlatform == TargetPlatform.android) return '10.0.2.2';
     return '127.0.0.1';

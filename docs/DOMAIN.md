@@ -95,10 +95,10 @@ a cart-scoped session opened by scanning the cart QR. Neither replaces real
 authentication.
 
 **Database model (18 Oct, D3 changed):** the institution issues each employee a
-`userNumber`, password and PIN, and the employee must change them on first login
-(`mustChangeCredentials`). The PIN is checked by the institution's server, so it works on
-any cart tablet; this replaces the device-only PIN. Login method still open (DATABASE.md
-DB3).
+`userNumber`, password and PIN. The PIN is checked by the institution's server, so it
+works on any cart tablet; this replaces the device-only PIN. **Decided (28 Oct, DB3):**
+only the administration can change or reset credentials; users can't change their own.
+Each institution chooses its login method, last.
 
 ---
 
@@ -398,6 +398,10 @@ removed) are flagged for reassignment or removal.
 History points to SlotCC, which points to its slot, so a slot with history can't be
 deleted; a layout change must keep it.
 
+**Decided (28 Oct, P1/P2):** crash carts rarely change structure, so a cart keeps the
+design it was built with. Drawers, slots and placements that have history can't be
+deleted, and a used slot keeps its consumable.
+
 ### 39. Templates and duplication
 - Support duplicating carts and drawers, and reusable cart and drawer templates.
 - **Templates and duplicates copy configuration only, never consumption, audit or event
@@ -409,6 +413,8 @@ don't.
 **Database model:** a template is a CrashCart with `isTemplate` = true and no department;
 the recursive "Created from" relationship records which template a cart came from. The
 copy is made once; History is never copied. Drawer templates aren't modelled.
+**Decided (28 Oct, P3):** templates are made when I-Crash is set up or when cart layouts
+need changing; they're edited by hand or archived, never deleted.
 
 ### 40. Cart status
 - States: **Operational**, **Replenishment required**, **Audit required**, **Out of
@@ -446,7 +452,8 @@ and record what was consumed, finding products either by the **virtual drawer** 
 
 **Today:** emergency mode (A10) groups the consumption recorded while it's open into a
 summary report. It's an idea kept but **left out of the final prototype**, and it
-mustn't contradict this section. See OPEN_DECISIONS.md §4.
+mustn't contradict this section. See OPEN_DECISIONS.md §4. **Set aside (28 Oct, P12):**
+no emergency mode for now.
 
 **Database model:** an emergency summary is a Report with `isEmergency` = true; the
 consumption History rows recorded during it point to it ("Lists"). Ordinary daily

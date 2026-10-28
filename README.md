@@ -1,13 +1,13 @@
 # I-Crash
 
 **Intelligence Crash-Cart Management System.** I-Crash helps hospital teams keep
-emergency (crash) carts complete and in date. Today the monthly expiry check of a
-crash cart is done on paper and takes a health professional about a morning; I-Crash
+emergency crash-carts complete and in date. Today the monthly expiry check of a
+crash-cart is done on paper and takes a health professional about a morning; I-Crash
 replaces it with a tablet app that knows every drawer, slot, product, lot and expiry
 date in the cart, plus a web dashboard for the people who configure the carts.
 
-Owners: **Martim Pinheiro Alves** and **Pedro Jorge**. The project started as their
-ISEL bachelor's final project (LEIM, 2023, Django + Flutter) and is now being turned
+Owners: **Martim Pinheiro Alves** and **Pedro Jorge**. The project started as a
+ISEL bachelor's final project (LEIM, 2023, PostgreSQL + Django + Flutter) and is now being turned
 into a product, with ESEL nursing professors as the first clients and testers.
 
 > **New here, human or AI?** Read this file top to bottom first. It is the current

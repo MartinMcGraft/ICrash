@@ -115,9 +115,10 @@ The flow lives in `ui/app/app_root_view_model.dart` (stages:
 `starting → signedOut | locked | pin | cartLogin → pickingInstitution → ready`).
 
 **Database model (18 Oct, D3 changed):** the institution issues each employee a
-`userNumber`, password and PIN, which must be changed on first login. The PIN is checked by
-the server, so it works on any cart tablet, not only the device with a saved session. A1
-and A2 will change accordingly; the login method is still open (DATABASE.md DB3).
+`userNumber`, password and PIN. The PIN is checked by the server, so it works on any cart
+tablet, not only the device with a saved session. **Decided (28 Oct, DB3):** only the
+administration can change or reset credentials, so the Profile menu's "definir PIN" goes
+away. A1 and A2 will change accordingly; each institution chooses its login method, last.
 
 ---
 
@@ -194,13 +195,16 @@ and A2 will change accordingly; the login method is still open (DATABASE.md DB3)
 - Decision D6: sign with **name + PIN + date**. The signer confirms, enters their PIN,
   and the report becomes **read-only**.
 - PDF export (`report_pdf.dart`). Reports and signatures are a **local stub** for now.
-- **Database model:** the person who performs the check is the one who signs it (a
-  separate signer is open, DB4). A signed report has `signedAt` and can't change.
+- **Database model:** the person who performs the check is the one who signs it; there
+  is no separate signer (DB4, decided 28 Oct). A signed report has `signedAt` and can't
+  change.
 
 ### A10 Emergency mode
 `features/emergency/`
 
 - Proposal §9. In the final prototype it's kept as an idea, not a priority.
+- **Set aside (28 Oct, P12):** there's no emergency mode for now, and its rules aren't
+  being defined. The screen below is what the code does today.
 - Entered from the cart menu. The shell turns **red** so nobody stays in it by accident.
 - **Consumption only:** every product of the cart is visible at once (the column count
   adapts so nothing scrolls); **tap = −1 unit**. "Desfazer último" records a
@@ -233,7 +237,7 @@ and A2 will change accordingly; the login method is still open (DATABASE.md DB3)
 | **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete), drawers list and **add drawer** |
 | **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, minimum, expiry warning ("Aplicar à posição"), "Limpar posição". Handles **orphaned assignments** (a product whose slot disappeared): reassign or remove |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
-| **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture, delete; create a cart from it. Templates never carry stock, lots or history |
+| **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture, delete; create a cart from it. Templates never carry stock, lots or history. **Database model (P3):** templates are archived, never deleted |
 | **B7 Users & permissions** | `users_*` | Members with name, e-mail, role, status. **Invite** (name + e-mail + role): the account gets a random password nobody sees and a reset e-mail, so the person picks their own. Resend invite, change role, enable/disable (not yourself). Permission toggles per role (§2) |
 | **B8 Shifts** | `shifts_*` | Decision D8: **one responsible health professional per cart per shift**. Week view by cart or by person. Shifts: morning 08–16, afternoon 16–24, night 00–08. "Copiar semana anterior" fills empty slots |
 | **B9 Reports & history** | `reports_history_*` | Tabs for reports and events. Filter by cart and month. Totals (consumed, replenished, checks, emergencies, pending signatures), most consumed products, per-cart summary. Event rows show when, where (cart › drawer › position), what and who. CSV export (currently a copy dialog). Reads the latest N events and says when it hits the cap |

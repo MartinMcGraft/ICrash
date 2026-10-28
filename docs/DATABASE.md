@@ -4,15 +4,18 @@ The relational database design for I-Crash, to be implemented and tested in Post
 
 | Part | Content | Status |
 |---|---|---|
-| **1. Conceptual model** | Entity–relationship (ER) diagram: entities, attributes, relationships and cardinalities | **Finished** (18 Oct 2026), being validated |
-| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026). The PostgreSQL script with realistic data comes next |
+| **1. Conceptual model** | Entity–relationship (ER) diagram: entities, attributes, relationships and cardinalities | **Finished** (18 Oct 2026, updated 28 Oct), being validated |
+| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026, updated 28 Oct). The PostgreSQL script with realistic data comes next |
 
 **Diagrams:**
 - Conceptual: [`ICrash_ERD_Conceptual.png`](ICrash_ERD_Conceptual.png). Part 1 explains it; if the two
-  ever disagree, the diagram is the reference.
+  ever disagree, the diagram is the reference, with one exception: the diagram draws drawer `number`
+  with a dashed underline, as if it were part of the drawer's key. It's an ordinary attribute, unique
+  within its cart (UNIQUE (`idCrashCart`, `number`), §2.2).
 - Logical: [`ICrash_ERD_Logical.png`](ICrash_ERD_Logical.png), generated from the conceptual model by
-  ERDplus (a beta feature). It's a reference only: where it's wrong, part 2 corrects it and lists the
-  corrections (§2.5).
+  ERDplus (a beta feature). It's only a visual aid: **part 2 is the definition of the logical model.**
+  §2.5 lists where the diagram differs from it.
+- Both diagrams were last updated on 28 Oct 2026.
 
 Background reasoning: `Claude outputs/ERD_Review_2026-10-18.md` (the review rounds that led to this model).
 
@@ -112,9 +115,9 @@ CrashCart isn't weak: a template has no department.
 |---|---|---|
 | `idCrashCart` | Unique | Identifies the cart |
 | `name` | | The name staff use, e.g. "Carro Urgência 1" |
-| `location` | | Where the cart stands inside the department, e.g. "Sala de reanimação" |
-| `qr_code` | | The content of the QR label stuck on the cart. Scanning it opens that cart in the app |
-| `isTemplate` | Boolean | True if this row is a template layout rather than a real cart |
+| `location` | Optional | Where the cart stands inside the department, e.g. "Sala de reanimação". Empty for templates, which don't stand anywhere (DB7) |
+| `qr_code` | Unique, optional | The content of the QR label stuck on the cart. Scanning it opens that cart in the app, so no two carts share one. Empty for templates, which have no label (DB7, DB8) |
+| `isTemplate` | Boolean | True if this row is a template layout rather than a real cart. Templates are made when I-Crash is set up, or when the cart layouts need changing; they're edited by hand or archived, never deleted (P3) |
 | `archived` | Boolean | True if the cart is retired. Carts are never deleted, because their history and reports must be kept |
 | `autoState` | Boolean | True if the cart's state is updated automatically (expired or missing item → replenishment required; check overdue → audit required). False if staff set it by hand (decision D7) |
 
@@ -137,7 +140,7 @@ exists inside its cart, so it's a weak entity.
 | Attribute | Marking | What it is and why it exists |
 |---|---|---|
 | `idDrawer` | Partially unique | Identifies the drawer within its cart |
-| `number` | | The drawer's position in the cart (1 = top), as printed on the cart |
+| `number` | Unique within its cart | The drawer's position in the cart (1 = top), as printed on the cart. Two drawers of one cart never share a number |
 | `rows` | | Number of rows in the drawer's grid |
 | `columns` | | Number of columns in the drawer's grid |
 
@@ -168,7 +171,7 @@ is the link between a slot and the consumable it holds, and it's where the quant
 |---|---|---|
 | `idSlotCC` | Unique | Identifies the placement |
 | `maxNumberCC` | | The full quantity: how many units the slot should hold. Below this, the slot needs replenishing. There's no minimum stock (decision D10) |
-| `currNumberCC` | | How many units are in the slot now. **Stored**, not derived: it's updated with every stock change recorded in History |
+| `currNumberCC` | | How many units are in the slot now. **Stored**, not derived: it's updated with every stock change recorded in History. It starts as the stock the cart already holds when it's configured in I-Crash; there's no separate first-stock event (P6). How that stock and its expiry dates are entered is open (P19) |
 | `earliestExpirationDate` | **Derived** | The earliest expiry date among the slot's batches that haven't been removed. It drives the expiry warnings and the slot's colour in the grid |
 
 #### Batch (weak, under SlotCC)
@@ -184,7 +187,7 @@ placement, so it's a weak entity.
 | `idBatch` | Partially unique | Identifies the batch within its SlotCC |
 | `expirationDate` | | The expiry date shared by the batch's units |
 | `quantity` | | How many units with this date were put in the slot. Daily consumption doesn't lower it, because nobody records which unit was used; `currNumberCC` holds the real count |
-| `lotNumber` | Optional | The manufacturer's lot code. Optional because many items have none, or it isn't read |
+| `lotNumber` | Optional | The manufacturer's lot code. Optional because some items show only an expiry date; then the batch is entered and checked by hand (P9) |
 | `removedAt` | Optional | When the batch was confirmed gone (used up, discarded or not found). Empty while the batch is in the slot. Batches are never deleted, so the history stays complete |
 
 #### SlotState (lookup)
@@ -194,11 +197,16 @@ Expired.
 state that applies is worked out from `currNumberCC`, `maxNumberCC`, `earliestExpirationDate`,
 the institution's `expiryWarningDays` and today's date.
 
+**Decided (28 Oct, DB9):** the slot state describes the state the slot is in now. When several
+states apply, the one with the highest `priority` wins, e.g. Expired (3) → Expiring (2) → Valid (1).
+Those numbers only show the order; the real values are set once the database design is closed (P4).
+Whether the state is stored or calculated in a view is still open.
+
 | Attribute | Marking | What it is and why it exists |
 |---|---|---|
 | `idSlotState` | Unique | Identifies the state |
 | `slotState` | Unique | The state's name |
-| `priority` | | Decides which state is shown when a slot has two problems at once (e.g. expired *and* short): the worst one wins |
+| `priority` | Unique | Decides which state is shown when a slot has two problems at once (e.g. expired *and* short): the worst one wins. Unique, so two states never tie |
 
 #### ClinicalConsumable
 **What it is:** a catalogue item: a medicine or a piece of material, e.g. "Adrenalina 1 mg/ml,
@@ -211,9 +219,9 @@ catalogue instead of in every slot.
 | `idClinicalConsumable` | Unique | Identifies the item |
 | `name` | | The item's name as staff know it |
 | `description` | | Longer description: presentation, strength, notes |
-| `weight` | Optional | Weight or dose per unit, when relevant (e.g. 1 mg) |
-| `volume` | Optional | Volume per unit, when relevant (e.g. 10 ml) |
-| `gtin` | Optional | The GS1 product code read from the item's Data Matrix or barcode, so scanning finds the item. Optional because not every item carries one |
+| `weight` | Optional | Weight or dose per unit, when relevant, written with its unit (e.g. "30 mg"). The units offered are an app setting (DB10) |
+| `volume` | Optional | Volume per unit, when relevant, written with its unit (e.g. "3 ml"). The units offered are an app setting (DB10) |
+| `gtin` | Unique, optional | The GS1 product code read from the item's Data Matrix or barcode, so scanning finds the item. Unique, so a scan finds one item; optional because not every item carries one (P16) |
 
 #### Category (lookup)
 **What it is:** the kind of item: Fármacos, Material, Fluidos…
@@ -230,8 +238,9 @@ entity.
 #### User
 **What it is:** a person who uses I-Crash: a nurse, a manager, an administrator.
 **Why it's here:** every action is recorded against the person who did it, reports are signed by
-a person, and permissions depend on who is using the app. The institution creates each user's
-credentials and hands them to the employee.
+a person, and permissions depend on who is using the app. The administration generates each user's
+credentials and hands them to the employee. Only the administration can change or reset them; users
+can't change their own (DB3).
 
 | Attribute | Marking | What it is and why it exists |
 |---|---|---|
@@ -241,11 +250,11 @@ credentials and hands them to the employee.
 | `email` | Optional | Contact email. Optional because not every employee has one the hospital wants to use |
 | `passwordHash` | | The password, stored only as a secure hash, never in plain text |
 | `pinHash` | | The short PIN used to unlock a cart tablet and to sign reports, stored as a hash. **Not unique**: two people may pick the same PIN, and identity comes from `userNumber` |
-| `mustChangeCredentials` | Boolean | True when the user must set their own password and PIN at the next login: after the account is created, or after a reset |
 
 #### UserType
 **What it is:** a kind of user: Engineer Admin, Institution Manager, Health Professional (a
-fourth type is still to be defined).
+fourth type is still to be defined). The Engineer Admin is the institution's IT department, with
+administrative access to I-Crash; when they need help, they contact the I-Crash team (P14).
 **Why it's here:** permissions are given per type of user, not per person.
 
 | Attribute | Marking | What it is and why it exists |
@@ -262,7 +271,7 @@ fixed in code.
 | Attribute | Marking | What it is and why it exists |
 |---|---|---|
 | `idPermission` | Unique | Identifies the permission |
-| `permission` | | The permission's short name |
+| `permission` | Unique | The permission's short name. Unique so the same permission can't be listed twice (DB8) |
 | `description` | | What the permission allows, in plain words, for the administration screen |
 
 #### UserTypePermission (associative entity: UserType ↔ Permission)
@@ -394,7 +403,7 @@ zero or more B.
 
 | # | Relationship | Cardinality | Meaning |
 |---|---|---|---|
-| R8 | Slot — **Relates** — SlotCC | Slot 1..1 : SlotCC 0..1 | A slot holds at most one consumable (it may be empty); each placement is in exactly one slot |
+| R8 | Slot — **Relates** — SlotCC | Slot 1..1 : SlotCC 0..1 | A slot holds at most one consumable (it may be empty); each placement is in exactly one slot. Once a placement has History, the slot keeps that consumable: a cart's structure is expected to stay as it was built (P1, P2) |
 | R9 | ClinicalConsumable — **Relates** — SlotCC | ClinicalConsumable 1..1 : SlotCC 0..N | A catalogue item can be placed in any number of slots (in different carts); each placement is of exactly one item |
 | R10 | SlotCC — **Has** — Batch *(identifying)* | SlotCC 1..1 : Batch 0..N | A placement has any number of batches (one per expiry date); each batch belongs to exactly one placement |
 | R11 | SlotState — **Has a** — SlotCC | SlotState 1..1 : SlotCC 0..N | Each placement is in exactly one state at any moment; a state applies to any number of placements |
@@ -418,7 +427,7 @@ many-to-many link between CrashCart and User.
 | # | Relationship | Cardinality | Meaning |
 |---|---|---|---|
 | R18 | CrashCart — **Which** — Report | CrashCart 1..1 : Report 0..N | Every report is about exactly one cart; a cart has any number of reports over time |
-| R19 | User — **Performed and/or Signed by** — Report | User 1..1 : Report 0..N | Every report has exactly one responsible user, who performs the check and signs it; a user can have any number of reports. A separate signer (e.g. a manager) is open item DB4 |
+| R19 | User — **Performed and/or Signed by** — Report | User 1..1 : Report 0..N | Every report has exactly one responsible user, who performs the check and signs it; a user can have any number of reports. There is no separate signer (DB4, decided 28 Oct) |
 | R20 | ReportStatus — **Has a** — Report | ReportStatus 1..1 : Report 0..N | Every report is in exactly one status; a status applies to any number of reports |
 | R21 | Report — **Relates** — ReportItem | Report 1..1 : ReportItem 0..N | A report has any number of items to check; each item belongs to exactly one report. Only monthly checks have items |
 | R22 | Batch — **Checks** — ReportItem | Batch 1..1 : ReportItem 0..N | Each report item is about exactly one batch; a batch can appear in any number of checks over time (e.g. "expiring" this month, "expired" next month). The slot, drawer, cart and consumable are all reached through the batch |
@@ -478,13 +487,21 @@ These constraints come from the business rules and will be enforced in part 2:
 - During a check, a flagged batch whose units aren't in the slot gets the result "Not found" and
   a `removedAt`.
 - Only carts with `isTemplate` = true can be the template side of "Created from". Every real cart
-  (not a template) must have a department; templates have none.
+  (not a template) must have a department, a `location` and a `qr_code`; templates have none of
+  the three (DB7).
 - Report items exist only on monthly checks (`isEmergency` = false).
 - A check can only be finished when every report item has `handledAt`.
 - A signed report has `signedAt` and can no longer be changed.
 - History rows are never edited or deleted. Batches and carts are never deleted either
   (`removedAt`, `archived`).
 - PIN hashes are salted, so `pinHash` is never checked for uniqueness.
+- Only the administration creates, changes or resets a user's `userNumber`, password and PIN; users
+  can't change their own (DB3).
+- `qr_code`, `gtin` and `permission` are unique. `qr_code` and `gtin` may be empty, and any number of
+  rows may leave them empty (DB8, P16).
+- A cart's structure is set when the cart is built and isn't expected to change (P1, P2). Drawers,
+  slots and placements that History refers to can't be deleted, and a placement with History keeps
+  its slot and its consumable, so a used slot can't take a different consumable.
 
 ---
 
@@ -495,12 +512,31 @@ Also tracked in `docs/OPEN_DECISIONS.md` §2b. Open points found while building 
 
 | # | Item | Status and notes |
 |---|---|---|
-| DB1 | Batch | **Decided (18 Oct): adopted** and drawn. Still to test the scenarios in PostgreSQL (part 2), and to confirm with ESEL how lots are handled after an emergency (clinical question 6) |
-| DB2 | Catalogue per institution or shared (ClinicalConsumable and Category) | **Open.** Not drawn until decided. Pre-filling from a public list (e.g. INFARMED Infomed, medicines only) would be a one-way copy into the hospital's server |
-| DB3 | Login method | **Open.** Institution-issued `userNumber` + password + PIN, changed on first login. Possibly the hospital's own login (Active Directory) later. Use a slow, salted hash and an attempt limit |
-| DB4 | Separate signer (decision D6) | **Open.** Today one relationship (R19) covers both performing and signing |
+| DB1 | Batch | **Decided (18 Oct, confirmed 28 Oct):** a batch is the units of one slot that share the same expiry date. Still to test the scenarios in PostgreSQL (part 2). Clinical question 6 (lots after an emergency) waits with emergency mode (P12) |
+| DB2 | Catalogue per institution or shared (ClinicalConsumable and Category) | **Decided (28 Oct): per institution**, on its own server, because institutions differ (not all have the same departments or items). It can be pre-loaded at setup from an outside catalogue (a template catalogue, INFARMED, or, most likely, the hospital's own catalogue database). That's a one-way copy; afterwards the institution maintains its own |
+| DB3 | Login method | **Decided (28 Oct):** the administration generates each user's `userNumber`, password and PIN and hands them to the employee. Only the administration can change or reset them; users can't change their own (a safety rule). How each institution logs in (e.g. its own Active Directory) is defined last, per institution: I-Crash offers options, some optional, some suggested. `mustChangeCredentials` removed. Use a slow, salted hash and an attempt limit |
+| DB4 | Separate signer (decision D6) | **Decided (28 Oct): no separate signer.** The person who performs the check signs it; one relationship (R19) covers both |
 | DB5 | Shifts on CrashCartUser (decision D8) | **Open.** Would add the day and the shift to the assignment |
 | DB6 | Checking only flagged items | **Open.** Relies on recorded quantities being right. Ask ESEL whether procedure still requires a quick look at the rest |
+
+Also decided on 28 Oct, from the comparison of this design with the code (questions P1–P18 in
+`claude/db-design-vs-code-gap-report-2026-10-19.md`, claude.ai project):
+- **P1, P2:** no way to retire a used placement, slot or drawer. Crash carts rarely change structure,
+  so a cart keeps the design it was built with (§1.5).
+- **P12:** no emergency mode for now. `isEmergency`, R28 and the emergency summary stay in the model
+  but aren't used yet.
+- **P16:** `gtin` is unique and optional.
+- **P3:** templates are made when I-Crash is set up or when cart layouts need changing. They're
+  edited by hand or archived, never deleted.
+- **P5:** no overfill. A crash cart never holds more than it needs (`currNumberCC ≤ maxNumberCC`).
+- **P6:** there's no "first stock" event. A cart is configured with the stock it already holds.
+  How that stock and its expiry dates are entered is a new open point, **P19**.
+- **P9:** `lotNumber` is optional. Some items show only an expiry date; then the batch is entered and
+  checked by hand.
+- **P11:** month-only expiry dates are stored as the last day of the month.
+- **P14:** the Engineer Admin is the institution's IT department, with administrative access. When
+  they need help, they contact the I-Crash team.
+- **P17:** users have no department, and drawers have no name.
 
 ---
 
@@ -574,21 +610,25 @@ One row: the hospital or clinic this server belongs to.
 | Column | Key | Type (size) | Null | Notes |
 |---|---|---|---|---|
 | `idCrashCart` | PK | INTEGER, auto | NOT NULL | |
-| `qr_code` | | VARCHAR(255) | NOT NULL | The text in the cart's QR label (an `icrash://v1/…` link) |
+| `qr_code` | UNIQUE | VARCHAR(255) | NULL | The text in the cart's QR label (an `icrash://v1/…` link). Empty for templates (DB7, DB8) |
 | `name` | | VARCHAR(100) | NOT NULL | |
 | `isTemplate` | | BOOLEAN | NOT NULL | Default false |
-| `location` | | VARCHAR(150) | NOT NULL | |
+| `location` | | VARCHAR(150) | NULL | Empty for templates (DB7) |
 | `archived` | | BOOLEAN | NOT NULL | Default false |
 | `autoState` | | BOOLEAN | NOT NULL | Default true (the D7 rule is on) |
 | `idDepartment` | FK → DEPARTMENT | INTEGER | NULL | R3. Empty for templates |
 | `idInstitution` | FK → DEPARTMENT | INTEGER | NULL | R3. Second half of the department's key |
 | `idCartState` | FK → CARTSTATE | INTEGER | NOT NULL | R5 |
-| `idTemplate` | FK → CRASHCART | INTEGER | NULL | R4: the template this cart was created from. Named `idCrashCart` in the ERDplus diagram |
+| `idCrashCartTemplate` | FK → CRASHCART | INTEGER | NULL | R4: the template this cart was created from |
 
 **Constraints:**
 - FK (`idDepartment`, `idInstitution`) → DEPARTMENT, `MATCH FULL`: both columns filled or both empty.
 - CHECK `isTemplate = (idDepartment IS NULL)`: real carts have a department, templates don't.
-- CHECK `idTemplate <> idCrashCart`: a cart isn't its own template.
+- CHECK `isTemplate = (qr_code IS NULL)` and CHECK `isTemplate = (location IS NULL)`: real carts have a
+  QR code and a location, templates don't (DB7).
+- UNIQUE (`qr_code`): a scanned QR identifies exactly one cart. PostgreSQL's UNIQUE accepts any
+  number of NULLs, so templates don't clash (DB8).
+- CHECK `idCrashCartTemplate <> idCrashCart`: a cart isn't its own template.
 
 #### CARTSTATE
 | Column | Key | Type (size) | Null | Notes |
@@ -647,7 +687,7 @@ Fitting inside the drawer's grid and not overlapping other slots needs a trigger
 |---|---|---|---|---|
 | `idBatch` | PK | INTEGER, auto | NOT NULL | Partial key |
 | `idSlotCC` | PK, FK → SLOTCC | INTEGER | NOT NULL | R10 |
-| `expirationDate` | | DATE | NOT NULL | Items marked only with month and year are stored as the last day of that month (as GS1 does) |
+| `expirationDate` | | DATE | NOT NULL | Items marked only with month and year are stored as the last day of that month (as GS1 does; P11) |
 | `quantity` | | SMALLINT | NOT NULL | CHECK `> 0` |
 | `lotNumber` | | VARCHAR(20) | NULL | 20 = maximum length of a GS1 lot number |
 | `removedAt` | | TIMESTAMPTZ | NULL | |
@@ -661,16 +701,16 @@ one expiry date, so stocking more units with the same date adds to the existing 
 |---|---|---|---|---|
 | `idSlotState` | PK | INTEGER, auto | NOT NULL | |
 | `slotState` | UNIQUE | VARCHAR(50) | NOT NULL | Valid/OK, Replenishment needed, Expiring, Expired |
-| `priority` | | SMALLINT | NOT NULL | Higher = worse; the worst state wins |
+| `priority` | UNIQUE | SMALLINT | NOT NULL | Higher = worse; the worst state wins. Unique, so two states never tie |
 
 #### CLINICALCONSUMABLE
 | Column | Key | Type (size) | Null | Notes |
 |---|---|---|---|---|
 | `idClinicalConsumable` | PK | INTEGER, auto | NOT NULL | |
 | `name` | | VARCHAR(150) | NOT NULL | |
-| `weight` | | VARCHAR(30) | NULL | Value with its unit, e.g. "1 mg", "5000 UI". Text, because medicines use many units |
-| `volume` | | VARCHAR(30) | NULL | Value with its unit, e.g. "10 ml" |
-| `gtin` | | CHAR(14) | NULL | GTIN-14; shorter codes (EAN-13) are padded with leading zeros. CHECK digits only |
+| `weight` | | VARCHAR(30) | NULL | Value with its unit, e.g. "30 mg", "5000 UI". Text, because medicines use many units; the units offered are an app setting (DB10) |
+| `volume` | | VARCHAR(30) | NULL | Value with its unit, e.g. "3 ml" (DB10) |
+| `gtin` | UNIQUE | CHAR(14) | NULL | GTIN-14; shorter codes (EAN-13) are padded with leading zeros. CHECK digits only. Unique when filled; any number of items may have none (P16) |
 | `description` | | VARCHAR(500) | NOT NULL | |
 | `idCategory` | FK → CATEGORY | INTEGER | NOT NULL | R12 |
 
@@ -691,7 +731,6 @@ one expiry date, so stocking more units with the same date adds to the existing 
 | `email` | | VARCHAR(254) | NULL | 254 = maximum length of an email address |
 | `pinHash` | | VARCHAR(255) | NOT NULL | The encoded hash (algorithm, salt and hash in one string). Not unique |
 | `passwordHash` | | VARCHAR(255) | NOT NULL | Same format as `pinHash` |
-| `mustChangeCredentials` | | BOOLEAN | NOT NULL | Default true: a new account must change its credentials |
 | `idUserType` | FK → USERTYPE | INTEGER | NOT NULL | R13 |
 | `idInstitution` | FK → INSTITUTION | INTEGER | NOT NULL | R2 |
 
@@ -705,7 +744,7 @@ one expiry date, so stocking more units with the same date adds to the existing 
 | Column | Key | Type (size) | Null | Notes |
 |---|---|---|---|---|
 | `idPermission` | PK | INTEGER, auto | NOT NULL | |
-| `permission` | | VARCHAR(50) | NOT NULL | |
+| `permission` | UNIQUE | VARCHAR(50) | NOT NULL | DB8 |
 | `description` | | VARCHAR(255) | NOT NULL | |
 
 #### USERTYPEPERMISSION
@@ -738,7 +777,7 @@ revisited if shifts are added (DB5).
 | `periodStart` | | TIMESTAMPTZ | NOT NULL | |
 | `periodEnd` | | TIMESTAMPTZ | NULL | |
 | `notes` | | VARCHAR(1000) | NULL | |
-| `idUser` | FK → USER | INTEGER | NOT NULL | R19 |
+| `idUser` | FK → USER | INTEGER | NOT NULL | R19: the person who performs the check and signs it (DB4) |
 | `idReportStatus` | FK → REPORTSTATUS | INTEGER | NOT NULL | R20 |
 | `idCrashCart` | FK → CRASHCART | INTEGER | NOT NULL | R18 |
 
@@ -785,14 +824,14 @@ only a finished report can be signed.
 | `idReport` | FK → REPORT | INTEGER | NULL | R28 |
 | `idUser` | FK → USER | INTEGER | NOT NULL | R24 |
 | `idSlotCC` | FK → SLOTCC, and FK → BATCH | INTEGER | NOT NULL | R25, and second half of the batch's key for R27 |
-| `idCorrectedHistory` | FK → HISTORY | INTEGER | NULL | R29: the row this one corrects. Named `idHistory` in the ERDplus diagram |
+| `idHistoryCorrection` | FK → HISTORY | INTEGER | NULL | R29: the row this one corrects |
 | `idHistoryType` | FK → HISTORYTYPE | INTEGER | NOT NULL | R26 |
 | `idBatch` | FK → BATCH | INTEGER | NULL | R27 |
 
 **Constraints:**
 - FK (`idBatch`, `idSlotCC`) → BATCH, checked only when `idBatch` is filled. Because `idSlotCC` is
   shared with R25, a History row can only point to a batch of the same slot.
-- CHECK `idCorrectedHistory <> idHistory`.
+- CHECK `idHistoryCorrection <> idHistory`.
 
 #### HISTORYTYPE
 | Column | Key | Type (size) | Null | Notes |
@@ -809,11 +848,12 @@ These rules from §1.5 depend on other rows or other tables, so a CHECK can't ex
 | Rule | Where |
 |---|---|
 | A slot fits inside its drawer's grid (`row + rowSpan − 1 ≤ rows`, `column + columnSpan − 1 ≤ columns`) and doesn't overlap another slot of the same drawer | SLOT, on insert and update |
-| `idTemplate` points to a cart with `isTemplate` = true | CRASHCART |
+| `idCrashCartTemplate` points to a cart with `isTemplate` = true | CRASHCART |
 | Report items exist only on monthly checks (`isEmergency` = false) | REPORTITEM |
 | A report can only be finished when every item has `handledAt`; a signed report can't change | REPORT |
 | History rows are never updated or deleted; batches and carts are never deleted | HISTORY, BATCH, CRASHCART (or by not granting UPDATE/DELETE to the app's database user) |
 | `currNumberCC` changes with every History row (`currNumberCC + amount`) | HISTORY, on insert |
+| Once a History row points to a placement, its `idSlot`, `idDrawer`, `idCrashCart` and `idClinicalConsumable` can't change (P1). Deleting used drawers, slots and placements is already blocked by the FKs | SLOTCC, on update |
 | `idSlotState` is recalculated from the quantities and dates. It's stored, so it's recalculated when stock changes and once a day, because a batch can start expiring without anything being recorded | SLOTCC, plus a daily job |
 
 ## 2.4 Derived values (views)
@@ -828,19 +868,21 @@ Calculated when read, never stored:
 | Emergency summary | `SUM(amount)` per consumable of the History rows linked to the report |
 | Slot label ("B3") | Letter from `row`, number from `column` |
 
-## 2.5 Corrections to the ERDplus diagram
+## 2.5 Differences from the ERDplus diagram
 
-The ERDplus schema is a beta export. These are the places where the tables above differ from it:
+The ERDplus schema is a beta export and only a visual aid; the tables above are the definition.
+These are the places where the 28 Oct diagram differs from them:
 
-| # | In the ERDplus diagram | Corrected to | Why |
+| # | In the ERDplus diagram | In the tables above | Why |
 |---|---|---|---|
-| 1 | SLOT's PK is only `idSlot` | PK (`idSlot`, `idDrawer`, `idCrashCart`) | Slot is a weak entity: `idSlot` is only unique within its drawer, so the PK must include the drawer's PK |
-| 2 | SLOTCC points to Slot with `idSlot` only | `idSlot`, `idDrawer`, `idCrashCart` | An FK must contain the whole PK it points to (follows from 1) |
-| 3 | CRASHCART has two columns named `idCrashCart` (PK and the template FK) | The FK is `idTemplate` | A table can't have two columns with the same name |
-| 4 | HISTORY has two columns named `idHistory` (PK and the correction FK) | The FK is `idCorrectedHistory` | Same reason |
-| 5 | HISTORY has `idSlotCC` twice (R25, and inside the Batch FK) | One `idSlotCC`, used by both FKs | Same reason. Sharing it also guarantees the batch belongs to the same slot as the row |
-| 6 | No UNIQUE on SLOTCC's slot columns | UNIQUE (`idSlot`, `idDrawer`, `idCrashCart`) | R8 is 1 : 0..1. Without it, a slot could hold two consumables |
-| 7 | — | UNIQUE pairs on USERTYPEPERMISSION, CRASHCARTUSER and REPORTITEM; UNIQUE (`idCrashCart`, `idClinicalConsumable`) on SLOTCC; UNIQUE (`idCrashCart`, `number`) on DRAWER | Business rules the diagram doesn't show |
+| 1 | HISTORY has no `idBatch`: relationship R27 ("Affects") is missing | `idBatch` NULL, with FK (`idBatch`, `idSlotCC`) → BATCH. The FK reuses HISTORY's own `idSlotCC` (the one for R25); there is only one `idSlotCC` column | R27 is in the conceptual model: a replenishment or discard points to its batch. Sharing `idSlotCC` guarantees the batch belongs to the same slot as the row |
+| 2 | DRAWER `number` is marked (U), i.e. unique across all carts | UNIQUE (`idCrashCart`, `number`) | A drawer number is unique within its cart; every cart has a drawer 1. ERDplus can't show a uniqueness rule over two columns |
+| 3 | No UNIQUE on SLOTCC's slot columns | UNIQUE (`idSlot`, `idDrawer`, `idCrashCart`) | R8 is 1 : 0..1. Without it, a slot could hold two consumables |
+| 4 | — | UNIQUE pairs on USERTYPEPERMISSION, CRASHCARTUSER and REPORTITEM; UNIQUE (`idCrashCart`, `idClinicalConsumable`) on SLOTCC; the CHECKs in §2.2 and the triggers in §2.3 | Rules the diagram doesn't show |
+
+Fixed in the 28 Oct diagram, so no longer differences: SLOT's three-column PK, SLOTCC's three-column
+FK to SLOT, drawer `number` out of DRAWER's PK, and the duplicate column names in CRASHCART and
+HISTORY (now `idCrashCartTemplate` and `idHistoryCorrection`).
 
 ## 2.6 Open points in the logical model
 
@@ -848,10 +890,10 @@ To settle before the PostgreSQL script. Also tracked in `docs/OPEN_DECISIONS.md`
 
 | # | Item | Notes |
 |---|---|---|
-| DB7 | Templates and mandatory columns | `qr_code` and `location` are NOT NULL, as in the conceptual model, but a template isn't a physical cart and has neither. Options: allow NULL only when `isTemplate` = true, or store a placeholder |
-| DB8 | Uniqueness of `qr_code` and `permission` | Neither is marked unique. A scanned cart QR must identify exactly one cart, so `qr_code` should probably be UNIQUE. The same applies to a permission's name |
-| DB9 | Slot state stored or calculated | SLOTCC stores `idSlotState`, so it must be recalculated whenever stock changes and once a day (§2.3). The alternative is to calculate it in a view, like `earliestExpirationDate`, which removes R11's FK |
-| DB10 | `weight` and `volume` as text | Stored with their unit ("1 mg", "10 ml"), because medicines use many units. Numbers would need one fixed unit per column |
+| DB7 | Templates and mandatory columns | **Decided (28 Oct):** templates have no `qr_code` or `location`. Both columns allow NULL, and CHECKs tie them to `isTemplate` (§2.2, CRASHCART) |
+| DB8 | Uniqueness of `qr_code` and `permission` | **Decided (28 Oct):** both UNIQUE. `qr_code` may be NULL (templates). `gtin` is UNIQUE and nullable too (P16) |
+| DB9 | Slot state stored or calculated | **Meaning decided (28 Oct):** the state the slot is in now; the highest `priority` wins (§1.2 SlotState). **Still open:** stored or calculated. SLOTCC stores `idSlotState`, so it must be recalculated whenever stock changes and once a day (§2.3). The alternative is to calculate it in a view, like `earliestExpirationDate`, which removes R11's FK |
+| DB10 | `weight` and `volume` as text | **Decided (28 Oct):** descriptive text with the unit ("30 mg", "3 ml"). The list of units is an app configuration setting, not a table, so countries that don't use the metric system can be supported |
 | DB11 | Deactivating users | USER has no active/disabled status (the Firebase version has one), and a user can't be deleted once History or a Report points to them. Something like an `active` boolean is needed to block people who leave |
 | DB12 | Not modelled yet | A per-product expiry warning (the app has one; the model only has the institution's `expiryWarningDays`); drawer layout versions (`DOMAIN.md` §38); the administrative audit log of roles, permissions and layout changes (`DOMAIN.md` §45), left to the security phase |
 
