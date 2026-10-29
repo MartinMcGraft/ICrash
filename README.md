@@ -11,7 +11,7 @@ ISEL bachelor's final project (LEIM, 2023, PostgreSQL + Django + Flutter) and is
 into a product, with ESEL nursing professors as the first clients and testers.
 
 > **New here, human or AI?** Read this file top to bottom first. It is the current
-> source of truth (updated 15 Oct 2026). See [Documentation map](#documentation-map)
+> source of truth (updated 29 Oct 2026). See [Documentation map](#documentation-map)
 > for the other documents and where older records live.
 
 ---
@@ -67,10 +67,18 @@ flutter run                    # pick Android / Chrome / macOS
 flutter test                   # app tests
 ```
 
-Test accounts created by `seed_qa_run.mjs` (emulator only; the password is in the
-script): `enfermeira.teste@icrash.pt` (institutionAdmin), `gestor.teste@icrash.pt`
-(manager), `utilizador.teste@icrash.pt` (user), `super.teste@icrash.pt` (platform
-super admin, no institution).
+Test accounts created by `seed_qa_run.mjs` (emulator only):
+
+| E-mail | Role | Password | PIN |
+|---|---|---|---|
+| `enfermeira.teste@icrash.pt` | institutionAdmin (also in "Hospital Teste B", so the institution picker appears) | `icrash-teste-123` | `1234` |
+| `gestor.teste@icrash.pt` | manager | `icrash-teste-123` | `1234` |
+| `utilizador.teste@icrash.pt` | user (health professional) | `icrash-teste-123` | `1234` |
+| `super.teste@icrash.pt` | platform super admin, no institution | `icrash-teste-123` | — |
+
+Credentials are set by the administration only (DB3): there's no "forgot password" and
+no "set PIN" in the app. Administrators create users with a password and PIN in B7; IT
+resets a password with `firebase/tools/set_password.mjs` (docs/FIREBASE.md §9).
 
 Firestore rules tests (from `firebase/`):
 
@@ -177,8 +185,8 @@ Key conventions:
 
 | Repository | Backed by |
 |---|---|
-| Auth, institutions/members, carts, drawers/slots, products, inventory, usage events, audit | **Firestore / Firebase Auth** |
-| Device session (remembered user, PIN as salted SHA-256), reports & signatures, emergencies, templates, shifts, permissions, per-cart auto-status | **Local stubs** (`data/local/`, SharedPreferences). These live only on one device until they get a Firestore implementation; swapping one is a one-line change in `AppServices` |
+| Auth, institutions/members (+ the administrator-set PIN hash, PBKDF2), carts, drawers/slots, products, inventory, usage events, audit | **Firestore / Firebase Auth** |
+| Device session (remembered user, cached copy of the PIN hash), reports & signatures, emergencies, templates, shifts, permissions, per-cart auto-status | **Local stubs** (`data/local/`, SharedPreferences). These live only on one device until they get a Firestore implementation; swapping one is a one-line change in `AppServices` |
 
 ### Roles
 
@@ -225,6 +233,7 @@ Full reasoning, with examples: `docs/DOMAIN.md` (§20–28, §44–48, §58–59
 | Sep 2026 | Pedro (AI-assisted) | **Modernisation** on branch `DEV-Pedro`: Flutter/Android toolchain updated, backend moved from Django to **Firebase** (Auth + Firestore, rules, emulator tests), new V2 screens under `lib/src/presentation/` (carts, drawers/slots, products, stock, GS1 scanning, history, CSV/PDF, PT/EN). Old screens kept reachable as "legacy". Its work logs (`IMPLEMENTATION_STATUS.md`, `AI_HANDOFF.md`, `TEST_STATUS.md`, `MODERNIZATION_2026.md`) are in git history on `DEV-Pedro` |
 | 13 & 28 Sep 2026 | Martim (with Claude) | Code, UX and security audits of the September version (kept in the claude.ai "I-Crash" project; the 13 Sep one is also in git history) |
 | Oct 2026 | Martim | **Design v2 rewrite** on branch `DEV-Martim`: new Figma design, MVVM structure under `lib/src/ui/`, App and Dashboard shells, monthly check, emergency mode, reports with signature, templates, shifts, users & permissions, the no-scroll layout rule. The pre-v2 `lib/src/presentation/` screens were deleted (still in git history) |
+| 29 Oct 2026 | Martim (with Claude) | **App aligned with the database decisions of 28 Oct** (`docs/DATABASE.md`, `OPEN_DECISIONS.md` §2b): no minimum stock (D10); stock always within 0 … target (P5); one slot-state priority table (DB9); drawers have a number, no name (P17), and are created with their slots; placements store `drawerId`; GTINs padded to 14 (P16); month-only expiry = last day (P11); only the person who did the check signs (DB4); batches never deleted, lot optional (DB1, P9); atomic reconciliation; correction reason; the cart structure is fixed once used, via a Firestore-only `usedAt` marker (P1/P2); templates archived (P3); credentials set by the administration, PIN as a PBKDF2 hash (DB3). Emergency mode's entry point is hidden (P12). Visible changes for Figma are listed in `docs/DESIGN_CHANGES.md` |
 | 15 Oct 2026 | Martim | **Repository reorganised**: the app moved from `03_Implementacao/app1` to `app/` and was renamed **ICrash** on every platform. The legacy V1 code (`home_menu.dart`, `grids/`, `registration/`, `request_handler/`, `qr_code_reader/`, `updates/`, `teste/`) and its now-unused packages (`http`, `camera`, `image`, `google_mlkit_*`, `zxing_lib`) were removed from the app. The original app with its legacy code is kept in `isel/03_Implementacao/app1`, as Pedro asked. Firebase files moved into `firebase/`; the bachelor's material moved into `isel/` |
 
 ### Git branches (as of 15 Oct 2026)
@@ -236,8 +245,8 @@ Full reasoning, with examples: `docs/DOMAIN.md` (§20–28, §44–48, §58–59
   a sign-out fix, and two production-only fixes. They were written against the old
   `presentation/` screens, so they must be ported by hand into the v2 code, not merged
   blindly.
-- `DEV-Martim`: the design v2 rewrite. **The v2 code and the 15 Oct reorganisation are
-  not committed yet.**
+- `DEV-Martim`: the design v2 rewrite, the 15 Oct reorganisation and the 29 Oct database
+  alignment (all committed).
 - Do not develop directly on `main`.
 
 ---
@@ -248,8 +257,9 @@ Full reasoning, with examples: `docs/DOMAIN.md` (§20–28, §44–48, §58–59
 2. **Offline stock writes:** consumption, replenishment and correction use Firestore
    transactions, which fail offline. They should become increments plus immutable
    events so they queue.
-3. **Slot ids repeat across drawers** (`r{row}c{col}`), so an assignment's `slotId` is
-   ambiguous; the assignment needs a `drawerId`.
+3. **Old cloud data isn't migrated:** drawers without a number, placements without
+   `drawerId`, used placements without the `usedAt` marker, users without a PIN. The app
+   reads them tolerantly; the migration list is in `docs/FIREBASE.md` §11.
 4. **Rules:** health professionals may only change `currentQuantity`, so replenishment
    is limited to managers until D2 is decided.
 5. **Local stubs** (reports, templates, shifts, permissions, emergencies) need Firestore
@@ -258,6 +268,9 @@ Full reasoning, with examples: `docs/DOMAIN.md` (§20–28, §44–48, §58–59
    cart login by NFC is a stub.
 7. **Release:** Android release signing and store accounts are human-only tasks; see
    `docs/RELEASE_CHECKLIST.md`.
+8. **The PIN under Firebase is a prototype measure** (the user can read their own PIN hash;
+   a 4-digit PIN can be brute-forced from it). The real check moves to the institution's
+   server. See `docs/FIREBASE.md` §9.
 
 Product decisions (D1–D15, with what is confirmed and what is still open) and the
 clinical questions for the nurses are in `docs/OPEN_DECISIONS.md`.
@@ -272,6 +285,7 @@ clinical questions for the nurses are in `docs/OPEN_DECISIONS.md`.
 | `docs/APP.md` | The app in detail: shells, roles and permissions, every screen (A1–A12, B1–B9), flows, code structure, MVVM rules, layout rule, how to add a screen |
 | `docs/FIREBASE.md` | Backend: local emulators, cloud project, deploying rules, creating admins, a new project from zero, data model, security rules and their quirks, indexes, inventory rules |
 | `docs/DESIGN.md` | Figma file and pages, design principles, colour/type/spacing tokens, components, state system, layout per screen size |
+| `docs/DESIGN_CHANGES.md` | Visible changes made in code that the Figma file doesn't show yet (frame and node ids, PT/EN copy, components), as input for a Figma session |
 | `docs/OPEN_DECISIONS.md` | Decisions D1–D15 with their status, and the clinical questions; never answer those in code by guesswork |
 | `docs/RELEASE_CHECKLIST.md` | What a real store release requires (signing, accounts) |
 | `docs/DATABASE.md` | Database design for the relational/PostgreSQL version. Part 1: the conceptual ER model (every entity, attribute and relationship explained, with cardinalities, rules and open items; diagram in `docs/ICrash_ERD_Conceptual.png`). Part 2: the logical model (tables, types, NULL/NOT NULL, keys, constraints; diagram in `docs/ICrash_ERD_Logical.png`) |

@@ -5,7 +5,9 @@ flows, and how the code is organised. For setup, read the repository
 [README](../README.md); for the backend, [FIREBASE.md](FIREBASE.md); for the visual
 design, [DESIGN.md](DESIGN.md).
 
-Updated 18 Oct 2026 (design v2, branch `DEV-Martim`).
+Updated 29 Oct 2026 (design v2, branch `DEV-Martim`; aligned with the database decisions
+of 28 Oct: no minimum stock, no overfill, drawer numbers, batches never deleted, structure
+fixed once used, templates archived, credentials set by the administration).
 
 This describes the app **as it runs today, on Firebase**. The relational database designed
 on 18 Oct for the local-server version is in [DATABASE.md](DATABASE.md); where it changes
@@ -45,9 +47,10 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 Sections the user can't use are **hidden**, not shown disabled. Each section keeps its
 own navigation stack (`SectionNavigator`), so switching sections doesn't lose your place.
 
-**Profile menu** (both shells): language (Português / English), set or change the PIN,
-lock now (only with a PIN), switch institution (only with more than one), the debug-only
-shell switch, and sign out.
+**Profile menu** (both shells): language (Português / English), lock now (only with a
+PIN), switch institution (only with more than one), the debug-only shell switch, and sign
+out. There is no "set/change PIN" any more (DB3): a line says "Para alterar as suas
+credenciais, contacte a administração." 
 
 ---
 
@@ -106,19 +109,20 @@ start ─▶ saved session on this device?
 
 | Screen | What it does |
 |---|---|
-| **A1 Login** (`features/auth/login_screen.dart`) | E-mail and password through Firebase Auth. "Esqueci-me da palavra-passe" sends a password-reset e-mail. When a session is saved on the device, it also offers the PIN and cart login |
-| **A2 PIN unlock** (`pin_unlock_screen.dart`) | Decision D3: the PIN **unlocks the session already saved on this device**, so it works offline and needs no server. Five wrong attempts drop the saved session and require the password. "Não é {nome}? Iniciar sessão" signs out. The PIN is stored as a salted SHA-256 hash, locally only |
+| **A1 Login** (`features/auth/login_screen.dart`) | E-mail and password through Firebase Auth. No "forgot password" (DB3): a note says to contact the administration. When a session is saved on the device, it also offers the PIN and cart login |
+| **A2 PIN unlock** (`pin_unlock_screen.dart`) | Unlocks the session already saved on this device, offline. The PIN is **set by an administrator in B7** (DB3), stored as a salted PBKDF2 hash in the membership's `private/credentials` document; the device copies the hash after each online sign-in and checks the PIN against it. Five wrong attempts drop the saved session and require the password. "Não é {nome}? Iniciar sessão" signs out. A user with no PIN set can only sign in with the password |
 | **A3 Cart login** (`cart_login_screen.dart`) | Decision D3: scanning a cart's QR (or typing the code printed under it) opens a session **limited to that cart**. NFC is shown but is a stub |
 | **Institution picker** (`institution_picker_screen.dart`) | Lists the institutions where the user has an active membership. Skipped automatically when there's only one |
 
 The flow lives in `ui/app/app_root_view_model.dart` (stages:
 `starting → signedOut | locked | pin | cartLogin → pickingInstitution → ready`).
 
-**Database model (18 Oct, D3 changed):** the institution issues each employee a
-`userNumber`, password and PIN. The PIN is checked by the server, so it works on any cart
-tablet, not only the device with a saved session. **Decided (28 Oct, DB3):** only the
-administration can change or reset credentials, so the Profile menu's "definir PIN" goes
-away. A1 and A2 will change accordingly; each institution chooses its login method, last.
+**Credentials (DB3, done 29 Oct):** only the administration sets or resets a user's
+password and PIN (B7); users can't change their own, and the app offers no way to.
+**Interim, under Firebase:** the PIN hash is readable by its user so the device can check
+it offline, and a 4-digit PIN can be brute-forced from it (FIREBASE.md §9). In the
+relational model the institution issues `userNumber` + password + PIN and its server checks
+the PIN; the login method itself (e-mail today) is chosen per institution, last.
 
 ---
 
@@ -137,10 +141,12 @@ away. A1 and A2 will change accordingly; each institution chooses its login meth
 ### A5 Cart
 `features/cart/cart_screen.dart`
 
-- The cart's **drawers**, each with its own state (worst slot wins) and counts.
-- **Cart menu:** monthly check · search product (shows the drawer and position) · show
-  the cart QR code · change state (manager+) · the cart's reports · **Modo de
-  emergência** (if allowed).
+- The cart's **drawers**, shown as **"Gaveta N"** in number order (P17: drawers have a
+  number and no name), each with its own state (worst slot wins) and counts.
+- **Cart menu:** monthly check · search product (shows "Gaveta N · posição B3") · show
+  the cart QR code · change state (manager+) · the cart's reports. The **Modo de
+  emergência** button is **hidden** for now (P12; `kEmergencyModeEnabled` in
+  `cart_screen.dart`); A10's code is kept.
 - **Automatic state (D7)**, when switched on for the cart in B3:
   - expired or missing product → **Reposição necessária**;
   - last monthly check older than **31 days** → **Verificação em atraso**
@@ -157,22 +163,32 @@ away. A1 and A2 will change accordingly; each institution chooses its login meth
 - The drawer's **slot grid** (`SlotGrid`). Each cell shows the product's short name,
   quantity, and a status badge when it isn't OK. Free slots look different from
   "assigned, 0 units".
+- There's **no minimum quantity** (D10). Stock always stays within **0 … target** (P5:
+  no overfill): Repor stock is offered only up to the target, and a correction or
+  reconciliation can't go above it or below 0 (PT/EN messages; the rules enforce it too).
 - **Database model:** the panel's data is a SlotCC with its batches. "Earliest known
-  expiry" is calculated from the batches not yet removed, and there's no minimum quantity
-  (D10), so **low stock** and **missing** both become *Replenishment needed* (below max).
+  expiry" is calculated from the batches not yet removed.
 - **Tapping a slot** opens the side panel **over** the grid (it never shrinks the grid).
   The panel shows the product, quantity vs target, earliest known expiry, lots, and
   actions:
   - **Registar consumo:** lower the quantity (anyone with `recordConsumption`).
-  - **Repor stock (A7):** add units with lot and expiry. Can be pre-filled by a GS1
-    scan. Manager+ under the current rules.
-  - **Atribuir / trocar produto:** a product can be in only **one slot per cart**.
-  - **Reconciliar:** after a physical audit, confirm the real quantity and which lots
-    are present.
-  - **Corrigir:** fix a past event with a compensating event.
-- Slot states (`SlotHealth`), most urgent first: **expired** → **missing** (0 units) →
-  **expiring** (within the warning window, default 30 days) → **low stock** (below
-  target or minimum) → **ok**; plus **free** (no product).
+  - **Repor stock (A7):** add units with an **expiry date** (required), a quantity > 0
+    and an **optional lot** (P9). Can be pre-filled by a GS1 scan; month-only GS1 dates
+    become the **last day of the month** (P11). The event records the batch it created.
+    Manager+ under the current rules. Same-date batches aren't merged yet (P10 open).
+  - **Atribuir / trocar produto:** a product can be in only **one slot per cart**, and a
+    slot holds one product. The initial quantity can't exceed the target. Once the slot
+    has History, **"Trocar produto" is refused** (P1: a used slot keeps its product).
+  - **Reconciliar:** after a physical audit, confirm the real quantity and which batches
+    are present; the others are **marked removed** (`removedAt`), never deleted (DB1).
+    Quantity, batches and event are written together.
+  - **Corrigir:** fix a past event with a compensating event, with an **optional
+    reason** (shown in B9 and the CSV).
+- Slot states (`SlotHealth`), one per slot, the highest priority wins (DB9). The order
+  lives in one table, `slotStatePriority` in `domain/inventory_health.dart` (values to be
+  fixed with P4): **expired** → **missing** (0 units) → **expiring** (within the warning
+  window, default 30 days) → **low stock** (below target, not empty) → **ok**; plus
+  **free** (no product).
 
 ### A8 Monthly check
 `features/monthly_check/`
@@ -192,12 +208,11 @@ away. A1 and A2 will change accordingly; each institution chooses its login meth
 ### A9 Report: view and sign
 `features/reports/report_screen.dart`, list in `reports_list_screen.dart`
 
-- Decision D6: sign with **name + PIN + date**. The signer confirms, enters their PIN,
-  and the report becomes **read-only**.
+- Decision D6: sign with **name + PIN + date**. The signer confirms, enters their PIN
+  (the one the administration set), and the report becomes **read-only**.
+- **Only the person who performed the check signs it** (DB4): anyone else sees "Só quem
+  fez a verificação pode assinar" instead of the PIN field.
 - PDF export (`report_pdf.dart`). Reports and signatures are a **local stub** for now.
-- **Database model:** the person who performs the check is the one who signs it; there
-  is no separate signer (DB4, decided 28 Oct). A signed report has `signedAt` and can't
-  change.
 
 ### A10 Emergency mode
 `features/emergency/`
@@ -205,10 +220,12 @@ away. A1 and A2 will change accordingly; each institution chooses its login meth
 - Proposal §9. In the final prototype it's kept as an idea, not a priority.
 - **Set aside (28 Oct, P12):** there's no emergency mode for now, and its rules aren't
   being defined. The screen below is what the code does today.
-- Entered from the cart menu. The shell turns **red** so nobody stays in it by accident.
+- **Entry point hidden** (29 Oct): the cart menu doesn't offer it while
+  `kEmergencyModeEnabled` is false. The code is kept as it was.
+- The shell turns **red** so nobody stays in it by accident.
 - **Consumption only:** every product of the cart is visible at once (the column count
   adapts so nothing scrolls); **tap = −1 unit**. "Desfazer último" records a
-  compensating correction.
+  compensating correction of **that exact event** (its id is kept on the line).
 - **Ending it** sets the cart to *Reposição necessária* (when the role may) and creates
   an emergency summary report.
 - Writes that fail offline are counted and kept in the local log and summary (see
@@ -234,11 +251,11 @@ away. A1 and A2 will change accordingly; each institution chooses its login meth
 |---|---|---|
 | **B1 Overview** | `overview_*` | Metrics: operational carts, needing replenishment, expiring within 30 days (and in how many carts), overdue checks, emergencies this month. "Carrinhos que precisam de atenção" list and recent activity (stock events + reports). PDF of the overview |
 | **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers, responsible now. Filters and search. **New cart**, from scratch or **from a template** |
-| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete), drawers list and **add drawer** |
-| **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, minimum, expiry warning ("Aplicar à posição"), "Limpar posição". Handles **orphaned assignments** (a product whose slot disappeared): reassign or remove |
+| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
+| **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, expiry warning ("Aplicar à posição"), "Limpar posição". A target below the current stock is refused. **Once the drawer has History** (P1/P2) the layout is locked (steppers, merge, split disabled; a warning replaces the hint), used slots keep their product and can't be cleared; targets can still change. **Orphaned assignments** (old data): reassign, or remove only when unused (Q7) |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
-| **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture, delete; create a cart from it. Templates never carry stock, lots or history. **Database model (P3):** templates are archived, never deleted |
-| **B7 Users & permissions** | `users_*` | Members with name, e-mail, role, status. **Invite** (name + e-mail + role): the account gets a random password nobody sees and a reset e-mail, so the person picks their own. Resend invite, change role, enable/disable (not yourself). Permission toggles per role (§2) |
+| **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture; create a cart from it. Templates never carry stock, lots or history. **Archived, never deleted** (P3): tabs "Ativos / Arquivados", "Arquivar modelo" and "Restaurar"; archived templates aren't offered for new carts but can still be edited (local stub) |
+| **B7 Users & permissions** | `users_*` | Members with name, e-mail, role, status. **Criar utilizador** (DB3): name, e-mail, role, **password** (min. 8) and **PIN** (4 digits), each typed twice; the administrator hands them over. Per member: change role, enable/disable, **Definir novo PIN**, **Redefinir palavra-passe** (shows "peça ao suporte técnico": the app can't change another user's Firebase password; IT uses `firebase/tools/set_password.mjs`). Never on yourself. Permission toggles per role (§2) |
 | **B8 Shifts** | `shifts_*` | Decision D8: **one responsible health professional per cart per shift**. Week view by cart or by person. Shifts: morning 08–16, afternoon 16–24, night 00–08. "Copiar semana anterior" fills empty slots |
 | **B9 Reports & history** | `reports_history_*` | Tabs for reports and events. Filter by cart and month. Totals (consumed, replenished, checks, emergencies, pending signatures), most consumed products, per-cart summary. Event rows show when, where (cart › drawer › position), what and who. CSV export (currently a copy dialog). Reads the latest N events and says when it hits the cap |
 
@@ -254,12 +271,16 @@ In short:
 
 - **Institution → Cart → Drawer → Slot.** A slot is a rectangle of grid cells (it can
   span rows and columns).
-- **Assignment** = one product in one slot of one cart. It holds `currentQuantity`
-  (live stock), `targetQuantity`, optional `minimumQuantity` and `earliestKnownExpiry`.
-- **Batches** (lots) hang under the assignment: lot number, expiry, optional quantity,
-  GTIN, source (manual / GS1 scan / audit).
-- **Usage events** are an append-only log: consumption, replenishment, correction,
-  audit reconciliation.
+- **Drawer** has a **number** (unique in its cart) and a grid; its slots are created
+  with it. **Assignment** = one product in one slot (`drawerId` + `slotId`) of one cart.
+  It holds `currentQuantity` (live stock, always `0 ≤ current ≤ target`),
+  `targetQuantity` and `earliestKnownExpiry`. No minimum (D10).
+- **Batches** hang under the assignment: expiry, quantity, optional lot number, GTIN,
+  source (manual / GS1 scan / audit), and `removedAt` once confirmed gone (never deleted).
+- **Usage events** are an append-only log: consumption, replenishment (with the batch it
+  created), correction (with an optional reason), audit reconciliation.
+- **Structure lock (P1/P2):** the first event of a placement marks it, its slot and its
+  drawer with `usedAt`; from then on they can't be deleted or reshaped.
 
 **In the relational model** ([DATABASE.md](DATABASE.md)) the same ideas have these names:
 assignment → **SlotCC** (`currNumberCC`, `maxNumberCC`; no minimum), batches → **Batch**
@@ -338,8 +359,15 @@ app/lib/
 
 | Repository | Implementation today |
 |---|---|
-| Auth, Institution (+ members), Cart, Drawer, Product, Inventory, Usage, Audit | Firestore / Firebase Auth |
-| DeviceSession (remembered user, PIN), Report (+ check drafts, signatures), Emergency, Template, Shift, Permission, CartSettings (D7 switch) | **Local** (`data/local/`), one device only |
+| Auth, Institution (+ members), Cart, Drawer, Product, Inventory, Usage, Audit, Credential (PIN hash, DB3) | Firestore / Firebase Auth |
+| DeviceSession (remembered user, cached PIN hash), Report (+ check drafts, signatures), Emergency, Template, Shift, Permission, CartSettings (D7 switch) | **Local** (`data/local/`), one device only |
+
+- **Business-rule codes:** rules in `domain/inventory_rules.dart` throw
+  `StockRuleViolation(code)`; repositories pass them on as `RepositoryFailure(code:)`;
+  `run()` turns either into `ActionResult.code`, and `showResult` shows the shared PT/EN
+  text from `actionCodeText` (`ui/core/widgets/dialogs.dart`): `exceedsTarget`,
+  `belowZero`, `targetBelowCurrent`, `invalidTarget`, `slotTaken`, `slotInUse`,
+  `drawerInUse`, `drawerNumberTaken`, `quantityRequired`.
 
 ### Layout rule (no sideways scrolling, ever)
 
@@ -377,9 +405,10 @@ app/lib/
 ### Tests (`app/test/`)
 | Folder | Covers |
 |---|---|
-| `domain/` | Inventory rules, history summaries, CSV export |
-| `services/` | GS1 Data Matrix parser, HID scanner, internal QR payload |
-| `ui/` | Dashboard ViewModels, layout fit at three screen sizes |
+| `domain/` | Inventory rules (stock bounds, slot-state priority), history summaries, CSV export |
+| `services/` | GS1 Data Matrix parser, HID scanner, internal QR payload, PIN hasher |
+| `data/` | Local device session (cached PIN hash) |
+| `ui/` | ViewModels (dashboard, A6 drawer, A9 report, app root), layout fit at three screen sizes |
 | `fakes/` | In-memory repositories for tests |
 
 Run with `flutter test` in `app/`.
@@ -391,9 +420,10 @@ Run with `flutter test` in `app/`.
 1. **Offline stock writes fail:** consumption, replenishment and correction use
    Firestore transactions, which need the server. They should become batched
    increments plus an immutable event, so they queue offline.
-2. **Slot ids repeat across drawers** (`r{row}c{col}`), so an assignment's `slotId` is
-   ambiguous between drawers. The assignment needs a `drawerId`. (In the relational model
-   a slot's key includes its drawer and cart, so this can't happen there.)
+2. **Old placements without `drawerId`** (created before 29 Oct 2026): slot ids repeat
+   across drawers, so the app puts such a placement in the first drawer, in number
+   order, that has its slot id. New placements store `drawerId`. A migration would add it
+   (see FIREBASE.md §11).
 3. **Rules vs permissions:** health professionals can't replenish under the current
    rules (only `currentQuantity` may change). The rules must follow the confirmed D2
    permission set.
@@ -401,3 +431,9 @@ Run with `flutter test` in `app/`.
    D7 switch) live on one device until they get Firestore implementations.
 5. CSV export is a copy dialog (no file saver yet). CSV import is by paste. NFC is a stub.
 6. iOS doesn't run yet.
+7. **Uniqueness the rules can't check:** a drawer number per cart, one product per slot
+   and one slot per product are checked by the app with queries (two devices could race).
+   The database enforces them with UNIQUE constraints later.
+8. **PIN under Firebase is a prototype measure:** see FIREBASE.md §9. The PBKDF2
+   iteration count (`PinHasher.defaultIterations`) still has to be measured on a cart
+   tablet (aim: about 0.2 s per check).

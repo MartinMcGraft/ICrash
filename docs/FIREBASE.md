@@ -4,7 +4,9 @@ Everything about the backend: what exists, how to run it locally, how to work wi
 cloud project, how to set one up from zero, the data model and the security rules.
 This document replaces `FIREBASE_MODEL.md`.
 
-Updated 18 Oct 2026. Files live in [`firebase/`](../firebase); app-side code is in
+Updated 29 Oct 2026 (database decisions of 28 Oct: no overfill, drawer numbers and slot
+documents, `drawerId`, batches never deleted, the `usedAt` structure lock, admin-set PIN and
+password). Files live in [`firebase/`](../firebase); app-side code is in
 `app/lib/src/data/firebase/`.
 
 > **New direction (18 Oct 2026):** each institution is to run I-Crash on **its own local
@@ -81,18 +83,21 @@ cd app
 flutter run
 ```
 
-`seed_qa_run.mjs` creates these accounts (the shared emulator-only password is in the
-script):
+`seed_qa_run.mjs` creates these accounts. Emulator-only credentials: password
+**`icrash-teste-123`**, PIN **`1234`** (set the way B7 sets it, DB3):
 
-| E-mail | Role |
-|---|---|
-| `enfermeira.teste@icrash.pt` | institutionAdmin |
-| `gestor.teste@icrash.pt` | manager |
-| `utilizador.teste@icrash.pt` | user |
-| `super.teste@icrash.pt` | platform super admin, no institution |
+| E-mail | Role | PIN |
+|---|---|---|
+| `enfermeira.teste@icrash.pt` | institutionAdmin (also in "Hospital Teste B") | 1234 |
+| `gestor.teste@icrash.pt` | manager | 1234 |
+| `utilizador.teste@icrash.pt` | user | 1234 |
+| `super.teste@icrash.pt` | platform super admin, no institution | none (no membership) |
 
-It also creates two institutions: one with two carts and crafted expiry, lot and
-minimum-stock cases, and one bare one for isolation tests.
+It also creates two institutions: one with two carts and crafted expiry, lot (one batch
+without a lot number) and below-target cases, and one bare one for isolation tests. In
+`carro-1`, **drawer 1 has history** (a replenishment of Adrenalina), so it shows the
+structure lock; drawer 2 is unused and editable. `npm run seed` (`seed_emulator.mjs`)
+creates only `enfermeira.teste@icrash.pt` with the same password and PIN.
 
 ### How the app finds the emulator
 `app/lib/src/common/app_environment.dart` and
@@ -167,6 +172,14 @@ created with the **Admin SDK**, which bypasses the rules.
 
 Everything else (members, carts, products) is then created from inside the app.
 
+4. **PINs for the first administrators.** Nobody can set their own PIN, not even an
+   admin (DB3), and these first admins have no other admin to do it. Set it with the same
+   key, only with a project owner's explicit OK:
+   ```sh
+   node set_password.mjs --cloud ~/keys/i-crash-key.json --email a@example.com --pin 1234 --institution icrash-hq
+   ```
+   After that, each administrator sets the others' PINs in B7.
+
 ### Release builds
 A release build talks to the cloud by default. Never point a release build at the
 emulator. Signing and store steps are in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
@@ -215,23 +228,25 @@ platformAdmins/{uid}                         marker: platform super admin (Engin
 
 institutions/{institutionId}                 name, expiryWarningDays, createdBy
   memberships/{uid}                          uid, role, status, displayName, email, service
+    private/credentials                      pinHash (DB3; see §9)
   memberIndex/{uid}                          uid, status  (copy for the "my institutions" query)
   products/{productId}                       name, unitDescription, description, gtin,
                                              category, expiryWarningDays
   carts/{cartId}                             name, status, service, location, archived,
                                              layoutVersion, templateId, responsibleUserIds[]
     responsibleUsers/{uid}                   who may access the cart (non-managers)
-    drawers/{drawerId}                       name, rows, columns
-      slots/{slotId}                         row, column, rowSpan, columnSpan, label
-    assignments/{assignmentId}               institutionId, cartId, slotId, productId,
-                                             currentQuantity, targetQuantity, minimumQuantity?,
-                                             earliestKnownExpiry?, status, updatedAt/By
-      batches/{batchId}                      lotNumber, expiryDate, quantity?, gtin?,
-                                             source (manual | gs1DataMatrix | periodicAudit), createdBy
+    drawers/{drawerId}                       number, rows, columns, usedAt?
+      slots/{slotId}                         row, column, rowSpan, columnSpan, label?, usedAt?
+    assignments/{assignmentId}               institutionId, cartId, drawerId, slotId, productId,
+                                             currentQuantity, targetQuantity,
+                                             earliestKnownExpiry?, usedAt?, updatedAt/By
+      batches/{batchId}                      expiryDate, quantity, lotNumber?, gtin?,
+                                             source (manual | gs1DataMatrix | periodicAudit),
+                                             removedAt?, createdBy
   usageEvents/{eventId}      IMMUTABLE       type (consumption | replenishment | correction |
                                              auditReconciliation), cartId, assignmentId,
                                              productId, amount (signed), actorUid,
-                                             correctsEventId?, localTimestamp, serverTimestamp
+                                             correctsEventId?, reason?, batchId?, serverTimestamp
   auditEvents/{eventId}      IMMUTABLE       type, actorUid, cartId?, drawerId?, slotId?,
                                              productId?, previousValue, newValue,
                                              correctionRef?, metadata
@@ -241,12 +256,34 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
 - **Entities:** the Dart versions are in `app/lib/src/domain/entities/`.
 - **New in design v2 (Oct 2026):** cart `service`, `location` and `archived`; membership
   `displayName`, `email` and `service`; product `category` and `expiryWarningDays`.
+- **Changed 29 Oct 2026 (database decisions of 28 Oct):**
+  - Drawers have a **`number`** (unique in the cart, checked by the app) and no `name`
+    (P17). A drawer is created **together with its slot documents** (one per cell, or a
+    template's layout), in one batch.
+  - Slot **rows and columns stay 0-based in Firestore** (`r0c0` is the top-left cell).
+    DATABASE.md counts from 1; add 1 when the data moves to PostgreSQL.
+  - Assignments store **`drawerId`**: slot ids repeat in every drawer, so a slot is only
+    unambiguous with its drawer. `minimumQuantity` (D10) and the stale `status` are no
+    longer written; old documents may still have them and they're ignored.
+  - Batches are **never deleted** (DB1): a batch confirmed gone gets `removedAt`. The
+    lot number is optional (P9); a new batch needs `quantity > 0` and `expiryDate`.
+  - Events: corrections may carry a `reason` (≤ 500 characters); replenishments store
+    the `batchId` they created. `localTimestamp` is declared but never written.
+  - GTINs are stored padded to **14 digits** (P16); lookups also match older unpadded
+    values.
+- **Firestore-only helper field `usedAt`** (no column in DATABASE.md): the first History
+  event of a placement (consumption, replenishment, correction or reconciliation) sets
+  `usedAt` on the placement, its slot and its drawer, in the same transaction as the
+  event. The rules can't query `usageEvents`, so this marker is what lets them refuse to
+  delete or reshape a used structure (P1/P2). In the relational model the same rule comes
+  from the foreign keys and the trigger in DATABASE.md §2.3. Placements used before
+  29 Oct 2026 have no marker; the app also reads the cart's history
+  (`UsageRepository.watchUsedAssignmentIds`), so the UI blocks them anyway.
 - **Values:**
   - Roles: `platformSuperAdmin`, `institutionAdmin`, `manager`, `user`.
   - Membership status: `active`, `invited`, `disabled`.
   - Cart status: `operational`, `replenishmentRequired`, `auditRequired`,
     `outOfService`.
-  - Assignment status: `ok`, `replenishmentRequired`, `expiringSoon`, `expired`.
 
 ### Fields that are copies on purpose
 Firestore rules can only check what a query filters on, so a few values are stored twice.
@@ -263,8 +300,9 @@ The app already does this in `FirestoreInstitutionRepository` (members) and
 
 ### Not in Firestore yet (local stubs on the device)
 Reports and signatures, monthly-check drafts, emergency sessions, cart templates,
-shifts, permission toggles, the per-cart automatic-state switch, and the device session
-and PIN. They live in SharedPreferences (`app/lib/src/data/local/`, keys prefixed
+shifts, permission toggles, the per-cart automatic-state switch, and the saved device
+session with its cached copy of the PIN hash (the PIN itself is set in Firestore, §9).
+They live in SharedPreferences (`app/lib/src/data/local/`, keys prefixed
 `icrash.local.`).
 
 The proposed Firestore shape for them (`reports/…/signatures`, `shifts`, `templates`,
@@ -296,12 +334,17 @@ it.
 | `platformAdmins/{uid}` | Only your own document | **Nobody** (Admin SDK only) |
 | `institutions/{i}` | Members | Create: platform admin. Update: institution admin (name, expiry warning only). Delete: nobody |
 | `memberships/{uid}` | Members | Institution admin, **never your own document** (no self-escalation or self-reactivation) |
+| `memberships/{uid}/private/credentials` | That user (active) and institution admins | Institution admin, **never for yourself**, only a `pbkdf2-sha256$…` hash. Delete: nobody |
 | `memberIndex/{uid}` | Only your own entry | Institution admin |
 | `products` | Members | Manager+ |
 | `carts/{c}` | Get: `canAccessCart`. List: manager+ unfiltered; others must filter `responsibleUserIds array-contains <uid>` | Create/update: manager+. **Delete: nobody** (archive instead) |
-| `responsibleUsers`, `drawers`, `slots`, `batches` | `canAccessCart` | Manager+ |
-| `assignments` | `canAccessCart` | Manager+. An assigned non-manager may change **only** `currentQuantity`, `updatedAt` and `updatedBy`. `institutionId`/`cartId` must match the path and never change |
-| `usageEvents` | Members | Create only, as yourself, for a cart you can access. **Update and delete: nobody, not even admins** |
+| `responsibleUsers` | `canAccessCart` | Manager+ |
+| `drawers` | `canAccessCart` | Create/update: manager+. **Delete: nobody.** A used drawer keeps `rows`, `columns` and `number` (a used drawer that never had a number may get one, Q8). Anyone who can access the cart may set `usedAt` once |
+| `slots` | `canAccessCart` | Create/update: manager+; a used slot keeps `row`, `column` and spans. **Delete: manager+, only while unused.** Anyone who can access the cart may set `usedAt` once |
+| `assignments` | `canAccessCart` | Manager+. An assigned non-manager may change **only** `currentQuantity`, `updatedAt`, `updatedBy` and `usedAt`. Always `0 ≤ currentQuantity ≤ targetQuantity` and `targetQuantity > 0` (P5); an old overfilled placement may still be lowered. A used placement keeps `slotId`, `drawerId` and `productId`. **Delete: manager+, only while unused.** `institutionId`/`cartId` must match the path and never change |
+| `batches` | `canAccessCart` | Create: manager+, with `quantity > 0` and `expiryDate`. Update: manager+ (e.g. `removedAt`). **Delete: nobody** (DB1) |
+| `usedAt` (drawers, slots, assignments) | — | May only go from absent to the request time; never changes or disappears afterwards |
+| `usageEvents` | Members | Create only, as yourself, for a cart you can access; `reason` optional, ≤ 500 characters. **Update and delete: nobody, not even admins** |
 | `auditEvents` | Manager+ | Create only, as yourself. **Update and delete: nobody** |
 | Collection group `assignments` | Manager+ only (cross-cart alerts) | — |
 
@@ -348,10 +391,13 @@ Enforced in `app/lib/src/domain/inventory_rules.dart`, tested in
 
 | Operation | Changes | Never |
 |---|---|---|
-| **Consumption** | Lowers `currentQuantity`; appends a `consumption` event | Never touches batches or `earliestKnownExpiry`; never guesses which lot (no FIFO/FEFO) |
-| **Replenishment** | Raises `currentQuantity`; adds a batch; moves `earliestKnownExpiry` **earlier** if the new lot expires sooner | Never moves the expiry later |
-| **Reconciliation** (after a physical audit) | Replaces the batch set with the confirmed lots; recomputes quantity and expiry from them | The only operation allowed to do this |
-| **Correction** | Appends a compensating event with `correctsEventId` | Never edits or deletes the original event |
+| **Consumption** | Lowers `currentQuantity`; appends a `consumption` event | Never touches batches or `earliestKnownExpiry`; never guesses which lot (no FIFO/FEFO); never below 0 |
+| **Replenishment** | Raises `currentQuantity` up to the target; adds a batch (lot optional); moves `earliestKnownExpiry` **earlier** if the new batch expires sooner; the event stores `batchId` | Never moves the expiry later; never above the target (P5) |
+| **Reconciliation** (after a physical audit) | One transaction: sets the confirmed quantity, recomputes the expiry from the confirmed batches, marks the other batches `removedAt`, appends the event | The only operation allowed to do this; never deletes a batch |
+| **Correction** | Appends a compensating event with `correctsEventId` and an optional `reason`; stays within `0 … target` | Never edits or deletes the original event |
+
+Every one of these sets the `usedAt` marker on the placement, slot and drawer the first
+time (§5).
 
 `currentQuantity` is allowed to differ from the sum of the lots between an emergency and
 the next audit.
@@ -366,18 +412,52 @@ the next audit.
 
 ## 9. Authentication details
 
-- **Sign-in:** e-mail and password. Password reset uses Firebase's reset e-mail.
-- **Inviting a member (B7):** the app creates the Auth account on a **throwaway
-  secondary `FirebaseApp`** (`createIsolatedAccountCreationAuth`). Creating a user signs
-  in as that user on whichever app runs it, and this keeps the admin signed in. It uses a
-  random password nobody sees, writes `memberships` + `memberIndex` in one batch, and
-  sends the reset e-mail so the person chooses their own password. Replace this with a
-  Cloud Function if billing is ever enabled.
-- **PIN:** local only (salted SHA-256 in SharedPreferences). It unlocks the session
-  already saved on the device; Firebase isn't involved.
-- **Changed direction (18 Oct, D3):** in the relational model the institution issues each
-  employee a `userNumber`, password and PIN, and the server checks the PIN, so it works on
-  any cart tablet. Only the administration can change or reset credentials (DB3, 28 Oct).
+**DB3 (28 Oct): the administration sets credentials; users can't change their own.**
+Implemented 29 Oct 2026 as an interim under Firebase:
+
+- **Sign-in:** e-mail and password (unchanged; each institution's login method is
+  defined last). There is **no password-reset e-mail** and no "forgot password" in A1.
+- **Creating a member (B7 "Criar utilizador"):** the administrator types the person's
+  password (at least 8 characters) and PIN. The app creates the Auth account with that
+  password on a **throwaway secondary `FirebaseApp`** (`createIsolatedAccountCreationAuth`;
+  creating a user signs in as that user on whichever app runs it, and this keeps the admin
+  signed in), then writes `memberships` + `memberIndex` + `private/credentials` in one
+  batch. The member is created `active`; the administrator hands over both credentials.
+- **PIN:** a salted, slow hash, `pbkdf2-sha256$<iterations>$<salt>$<hash>`
+  (PBKDF2-HMAC-SHA256, 16-byte salt, 32-byte key; `app/lib/src/services/pin_hasher.dart`
+  with package `cryptography`; the Node scripts use `crypto.pbkdf2Sync`,
+  `firebase/firestore-tests/pin_hash.mjs`). It's stored in
+  `memberships/{uid}/private/credentials`, not on the membership, because every member can
+  read memberships. Only institution admins write it (never their own); only that user and
+  admins read it. After each online sign-in the device copies the hash
+  (`AppRootViewModel._refreshPin`) and checks A2 unlock and A9 signing against it,
+  offline too; five wrong tries still drop the saved session. An administrator changes a
+  PIN in B7 ("Definir novo PIN"); it takes effect on a tablet at the next online sign-in
+  there. The iteration count travels with each hash, so `PinHasher.defaultIterations`
+  (60 000) can be tuned to about 0.2 s on a cart tablet without invalidating PINs.
+- **⚠ Prototype measure.** The user's device can read their own PIN hash, and a 4-digit
+  PIN has only 10 000 values: anyone who gets the hash can brute-force it offline, slow
+  hash or not. This is acceptable only for the prototype. The real check moves to the
+  institution's server (DATABASE.md USER `pinHash`), which never hands out the hash and
+  limits attempts.
+- **Resetting another user's password:** on the Spark plan a client can't change
+  **another** user's Firebase password (that needs the Admin SDK, i.e. Cloud Functions,
+  which need billing). So B7's "Redefinir palavra-passe" only tells the administrator to
+  ask technical support, and IT runs `firebase/tools/set_password.mjs` (Admin SDK) on
+  their own computer:
+  ```sh
+  cd firebase/tools && npm install
+  # emulator (default):
+  node set_password.mjs --email gestor.teste@icrash.pt --password 'nova-palavra-1' --pin 4321 --institution hospital-teste
+  # cloud, only with a project owner's explicit OK and a key kept outside the repo:
+  node set_password.mjs --cloud ~/keys/i-crash-key.json --email … --password …
+  ```
+- **⚠ Users can still change their own password through the SDK.** The app offers no
+  way to, but Firebase Auth lets any signed-in user call `updatePassword` on their own
+  account from a modified client, and on Spark this can't be blocked. Under the
+  institution's own login (DATABASE.md) only the administration can change credentials.
+- **First administrators:** see §3 "Creating the first administrators" (their PIN is set
+  with `set_password.mjs`).
 
 ---
 
@@ -395,14 +475,39 @@ version. Table names are those of DATABASE.md part 2.
 | `products/{p}` | CLINICALCONSUMABLE + CATEGORY | `unitDescription` → `weight` / `volume`. `category` is a lookup table. The per-product `expiryWarningDays` isn't modelled (DB12) |
 | `carts/{c}` | CRASHCART + CARTSTATE | `status` → CARTSTATE. `service` → DEPARTMENT (with `floor`). `templateId` → `idCrashCartTemplate`. `layoutVersion` isn't modelled (DB12). The auto-state switch (local stub) → `autoState` |
 | `carts/{c}/responsibleUsers`, `responsibleUserIds[]` | CRASHCARTUSER | One table instead of a subcollection plus a copied array. Shifts (local stub) aren't modelled yet (DB5) |
-| `drawers/{d}` | DRAWER | `name` → `number` |
-| `slots/{s}` | SLOT | `label` isn't stored (calculated). The key includes the drawer and cart, so slot ids no longer clash between drawers (APP.md known issue 2) |
-| `assignments/{a}` | SLOTCC + SLOTSTATE | `currentQuantity` → `currNumberCC`, `targetQuantity` → `maxNumberCC`. `minimumQuantity` is dropped (D10). `earliestKnownExpiry` → `earliestExpirationDate`, **derived** from the batches. `status` → SLOTSTATE. The copied `institutionId`/`cartId` aren't needed |
-| `assignments/{a}/batches/{b}` | BATCH | One batch per **expiry date** in the slot. `lotNumber` optional; `removedAt` added (batches are never deleted). `gtin`, `source` and `createdBy` aren't stored on the batch; who created it is on the History row |
-| `usageEvents/{e}` | HISTORY + HISTORYTYPE | `type` → HISTORYTYPE (Consumption, Replenishment, Discard, Correction, Count). `correctsEventId` → `idHistoryCorrection`. `actorUid` → `idUser`. One `createdAt` instead of local and server timestamps. Adds the batch affected and the report the row belongs to |
+| `drawers/{d}` | DRAWER | `number` → `number` (UNIQUE per cart there; checked by the app here). No name (P17). `usedAt` isn't a column: a used drawer is one whose slots History points to |
+| `slots/{s}` | SLOT | Rows and columns are **0-based here, 1-based there: add 1 at migration**. `label` isn't stored (calculated). The key includes the drawer and cart, so slot ids no longer clash between drawers. `usedAt` isn't a column |
+| `assignments/{a}` | SLOTCC + SLOTSTATE | `currentQuantity` → `currNumberCC`, `targetQuantity` → `maxNumberCC` (`0 ≤ curr ≤ max`, enforced here too). `drawerId` + `slotId` → (`idSlot`, `idDrawer`). `minimumQuantity` is gone (D10). `earliestKnownExpiry` → `earliestExpirationDate`, **derived** from the batches. Slot state is computed by the app (DB9 storage open). `usedAt` isn't a column (the FKs + §2.3 trigger do its job). The copied `institutionId`/`cartId` aren't needed |
+| `assignments/{a}/batches/{b}` | BATCH | `expiryDate` → `expirationDate` (month-only dates = last day, P11), `quantity` (> 0), `lotNumber` optional, `removedAt` (never deleted) — all as in the design. Not yet one batch per expiry date: same-date batches aren't merged (P10 open). `gtin`, `source` and `createdBy` aren't stored on the batch there; who created it is on the History row |
+| `usageEvents/{e}` | HISTORY + HISTORYTYPE | `type` → HISTORYTYPE (Consumption, Replenishment, Discard, Correction, Count; Discard/Count wait on P7). `correctsEventId` → `idHistoryCorrection`. `actorUid` → `idUser`. `reason` → `reason`. `batchId` → `idBatch` (replenishments). One `createdAt` instead of local and server timestamps. The report link (R28) isn't written yet |
+| `memberships/{uid}/private/credentials` | USER `pinHash` | Same encoded-hash idea. There the server checks the PIN and never returns the hash |
 | `auditEvents/{e}` | — | The administrative log isn't modelled; left to the security phase (DB12) |
 | Reports, signatures, check drafts (local stubs) | REPORT, REPORTSTATUS, REPORTITEM, RESULTITEM | A monthly check lists only expired and expiring batches (D4). The signer is the user who performed the check (DB4) |
 | Emergency sessions (local stub) | REPORT with `isEmergency` = true | The consumption rows recorded during it point to the report |
 | Cart templates (local stub) | CRASHCART with `isTemplate` = true | Same tables as a real cart |
 | Device session and PIN (local stub) | USER `pinHash`, `passwordHash` | Checked by the server, not the device |
 | Firestore Rules (§6) | — | Security on the local server (database privileges, triggers, API) is designed in the security phase |
+
+---
+
+## 11. Migrating existing data in `i-crash-pt-2026` (not done)
+
+The 29 Oct 2026 changes were made **without migrating** the cloud project; the app reads
+old documents tolerantly. A migration (Admin SDK script, run only with a project owner's
+OK) would need:
+
+| What | Why | Until then |
+|---|---|---|
+| **Drawer `number`** for every drawer | P17; UNIQUE per cart | The app shows the creation-order position. A manager can set it in B3 ("Alterar número"), even on a used drawer that never had one |
+| Remove drawer `name` | P17 | Ignored |
+| **`drawerId`** on every assignment | Slot ids repeat across drawers | The app puts the placement in the first drawer (in number order) with that slot id |
+| **Slot documents** for drawers whose layout was never edited | Every drawer has slots | The app draws one slot per cell; saving the grid in B4 creates them |
+| **`usedAt`** on assignments, slots and drawers that already have usage events | Lets the rules block deleting/reshaping them | The app's history query blocks it in the UI; the rules don't |
+| **PIN hashes** (`private/credentials`) for every member | DB3 | **Existing users have no PIN** until an administrator sets one in B7 (or IT with `set_password.mjs`): they sign in with the password only, can't unlock with a PIN and can't sign reports |
+| PINs for the platform admins and the first institution admins | Nobody sets their own | `set_password.mjs --cloud …` |
+| GTINs padded to 14 digits | P16 | Lookups match both forms |
+| Overfilled assignments (`currentQuantity > targetQuantity`), if any | P5 | They can still be lowered; a manager raises the target or records a correction |
+| Remove `minimumQuantity` and `status` from assignments | D10, stale field | Ignored |
+| Batches: `removedAt: null`, `quantity` where missing | DB1 | Missing `removedAt` counts as active |
+| Local data on each tablet (reports, templates) | Templates now store drawer numbers, no minimum | Old templates are read with their drawers numbered by position |
+
