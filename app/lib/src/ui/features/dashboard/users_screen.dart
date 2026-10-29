@@ -109,7 +109,9 @@ class UsersScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: IcSpace.s20),
-                    SidePanel(width: 320, child: _PermissionsPanel(vm: vm)),
+                    // 380 px: at 320 the role tabs needed a sideways scroll and the
+                    // wrapped permission labels overflowed on a tablet.
+                    SidePanel(width: 380, child: _PermissionsPanel(vm: vm)),
                   ],
                 ),
               ),
