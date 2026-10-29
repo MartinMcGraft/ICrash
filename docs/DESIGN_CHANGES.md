@@ -564,6 +564,17 @@ check the node again before editing it.
 - **Why:** DATABASE.md HISTORY `reason`.
 - **Status:** to do
 
+### DC-40 · B7: permissions panel 380 px wide
+- **Where:** B7 right-hand "Permissões" panel: p21 `456:1969` → `456:2187` and its
+  checkboxes (`I456:2199;442:640` …); p20 `458:1346`. Tablet and desktop.
+- **What:** the panel is **380 px** wide in code (was 320). At 320 px the "Profissional
+  de saúde / Gestor" tabs needed a sideways scroll, and the wrapped labels overflowed on a
+  tablet (found by the layout test). The users table takes the remaining width.
+- **Copy:** unchanged.
+- **Components:** Separador `442:680`, Caixa de verificação `442:648` (frame only).
+- **Why:** layout rule (no scrolling on tablet or desktop). `users_screen.dart`.
+- **Status:** to do
+
 ---
 
 ## Not changed in code yet, but will affect the design later
@@ -603,5 +614,5 @@ check the node again before editing it.
 | B5 | 1 (DC-31) |
 | B6 | 3 (DC-32 … DC-34) |
 | B2/B6 | 1 (DC-35) |
-| B7 | 3 (DC-36 … DC-38) |
+| B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
