@@ -56,8 +56,8 @@ class CartViewModel extends ViewModel {
   int get _warningDays => session.institution.expiryWarningDays;
 
   List<DrawerRowModel> get drawers => [
-        for (final (i, drawer) in data.drawers.indexed)
-          DrawerRowModel(number: i + 1, drawer: drawer, health: data.healthOf(drawer, expiryWarningDays: _warningDays)),
+        for (final drawer in data.drawers)
+          DrawerRowModel(number: data.numberOf(drawer), drawer: drawer, health: data.healthOf(drawer, expiryWarningDays: _warningDays)),
       ];
 
   /// "Responsável no turno: Ana Silva" (proposal D8), or null.

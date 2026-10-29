@@ -33,7 +33,7 @@ class GridEditorViewModel extends ViewModel {
   bool dirty = false;
 
   CartDrawer? get drawer => data.drawers.where((d) => d.id == drawerId).firstOrNull;
-  int get drawerNumber => data.drawers.indexWhere((d) => d.id == drawerId) + 1;
+  int get drawerNumber => drawer == null ? 0 : data.numberOf(drawer!);
   bool get ready => _slots != null && data.ready;
   List<Slot> get slots => _slots ?? const [];
 
@@ -48,7 +48,7 @@ class GridEditorViewModel extends ViewModel {
   }
 
   List<SlotCellData> get cells {
-    final bySlot = data.assignmentsBySlot;
+    final bySlot = data.assignmentsIn(drawerId);
     final now = DateTime.now();
     return [
       for (final slot in slots)
@@ -64,21 +64,19 @@ class GridEditorViewModel extends ViewModel {
   }
 
   Slot? get selectedSlot => selected.length == 1 ? slots.where((s) => s.id == selected.single).firstOrNull : null;
-  CartProductAssignment? get selectedAssignment => selectedSlot == null ? null : data.assignmentsBySlot[selectedSlot!.id];
+  CartProductAssignment? get selectedAssignment => selectedSlot == null ? null : data.assignmentsIn(drawerId)[selectedSlot!.id];
 
   List<Product> get catalog => data.products.values.toList()..sort((a, b) => a.name.compareTo(b.name));
 
   /// Products already used elsewhere in this cart (one slot per product).
   Set<String> get usedProductIds => {
         for (final a in data.assignments)
-          if (a.slotId != selectedSlot?.id) a.productId,
+          if (a.id != selectedAssignment?.id) a.productId,
       };
 
-  /// Assignments whose slot no longer exists in any saved drawer layout.
-  List<CartProductAssignment> get orphans {
-    final ids = {for (final d in data.drawers) ...data.slotsOf(d).map((s) => s.id)};
-    return data.assignments.where((a) => !ids.contains(a.slotId)).toList();
-  }
+  /// Assignments whose slot no longer exists in their drawer's saved layout
+  /// (an old placement without `drawerId`: in any drawer).
+  List<CartProductAssignment> get orphans => data.assignments.where((a) => data.locate(a) == null).toList();
 
   void toggle(String slotId) {
     final next = {...selected};
@@ -209,7 +207,7 @@ class GridEditorViewModel extends ViewModel {
         await services.drawers.updateDrawer(
           institutionId,
           cartId,
-          CartDrawer(id: d.id, cartId: cartId, name: d.name, rows: rows, columns: columns),
+          d.copyWith(rows: rows, columns: columns),
         );
       }
       await services.drawers.replaceSlots(institutionId, cartId, drawerId, next);
@@ -248,6 +246,7 @@ class GridEditorViewModel extends ViewModel {
           CartProductAssignment(
             id: '',
             cartId: cartId,
+            drawerId: drawerId,
             slotId: slot.id,
             productId: product.id,
             currentQuantity: 0,
@@ -278,6 +277,7 @@ class GridEditorViewModel extends ViewModel {
         institutionId: session.institution.id,
         cartId: cartId,
         assignmentId: orphan.id,
+        newDrawerId: drawerId,
         newSlotId: slot.id,
         actorUid: session.user.uid,
       );

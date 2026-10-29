@@ -35,9 +35,17 @@ class CartConfigViewModel extends ViewModel {
   String? get templateName => _templates.where((t) => t.id == cart?.templateId).firstOrNull?.name;
 
   List<(int number, CartDrawer drawer, DrawerHealth health)> get drawers => [
-        for (final (i, d) in data.drawers.indexed)
-          (i + 1, d, data.healthOf(d, expiryWarningDays: session.institution.expiryWarningDays)),
+        for (final d in data.drawers)
+          (data.numberOf(d), d, data.healthOf(d, expiryWarningDays: session.institution.expiryWarningDays)),
       ];
+
+  /// Default number for "Adicionar gaveta": the lowest one not in use.
+  int get nextDrawerNumber => data.nextFreeNumber;
+
+  /// Whether a manager may change this drawer's number (Q8, 29 Oct): only a
+  /// drawer created before numbers were stored, or one never used. "Used"
+  /// (`usedAt`) arrives with the structure lock (P1/P2).
+  bool canEditNumber(CartDrawer drawer) => true;
 
   Future<ActionResult<void>> save({required String name, String? service, String? location}) {
     final current = cart;
@@ -80,18 +88,34 @@ class CartConfigViewModel extends ViewModel {
     });
   }
 
-  Future<ActionResult<void>> addDrawer({required String name, required int rows, required int columns}) {
+  /// "Adicionar gaveta". The drawer gets its slots (one per cell) in the same
+  /// write. Error code `drawerNumberTaken` (P17: number unique in the cart).
+  Future<ActionResult<void>> addDrawer({required int number, required int rows, required int columns}) {
     final current = cart;
     return run(() async {
       if (current == null) return;
+      if (number < 1) throw const ActionError('drawerNumberInvalid');
+      if (data.usedNumbers.contains(number)) throw const ActionError('drawerNumberTaken');
       await services.drawers.createDrawer(
         session.institution.id,
         cartId,
-        CartDrawer(id: '', cartId: cartId, name: name, rows: rows, columns: columns),
+        CartDrawer(id: '', cartId: cartId, number: number, rows: rows, columns: columns),
       );
       await services.carts.updateCart(session.institution.id, current.copyWith(layoutVersion: current.layoutVersion + 1));
     });
   }
+
+  /// "Alterar número" on a drawer row (Q8). Error codes `drawerNumberTaken`,
+  /// `drawerInUse`.
+  Future<ActionResult<void>> setDrawerNumber(CartDrawer drawer, int number) => run(() async {
+        if (!canEditNumber(drawer)) throw const ActionError('drawerInUse');
+        if (number < 1) throw const ActionError('drawerNumberInvalid');
+        if (number == data.numberOf(drawer) && drawer.number != null) return;
+        if (data.drawers.any((d) => d.id != drawer.id && data.numberOf(d) == number)) {
+          throw const ActionError('drawerNumberTaken');
+        }
+        await services.drawers.updateDrawer(session.institution.id, cartId, drawer.copyWith(number: number));
+      });
 
   @override
   void dispose() {

@@ -6,38 +6,47 @@ import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/layout.dart';
 
 class DrawerFormResult {
-  const DrawerFormResult({required this.name, required this.rows, required this.columns});
-  final String name;
+  const DrawerFormResult({required this.number, required this.rows, required this.columns});
+  final int number;
   final int rows;
   final int columns;
 }
 
-/// "Adicionar gaveta".
-Future<DrawerFormResult?> showDrawerFormDialog(BuildContext context) {
+/// "Adicionar gaveta": the drawer's number (P17: drawers have a number, no
+/// name) and its grid size. [initialNumber] is the lowest free number;
+/// [takenNumbers] are refused here and again by the ViewModel.
+Future<DrawerFormResult?> showDrawerFormDialog(
+  BuildContext context, {
+  required int initialNumber,
+  required Set<int> takenNumbers,
+}) {
   final l10n = AppLocalizations.of(context);
-  final name = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+  var number = initialNumber;
   var rows = 5;
   var columns = 6;
   return showDialog<DrawerFormResult>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text(l10n.addDrawer),
-        content: SizedBox(
-          width: 420,
-          child: Form(
-            key: formKey,
+      builder: (context, setState) {
+        final taken = takenNumbers.contains(number);
+        return AlertDialog(
+          title: Text(l10n.addDrawer),
+          content: SizedBox(
+            width: 420,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                LabeledField(
-                  label: l10n.fieldName,
-                  controller: name,
-                  autofocus: true,
-                  hint: l10n.drawerNameHint,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? l10n.validationEnterName : null,
+                Row(
+                  children: [
+                    Expanded(child: Text(l10n.drawerNumberLabel, style: IcText.bodyM)),
+                    QuantityStepper(label: l10n.drawerNumberLabel, value: number, min: 1, max: 99, onChanged: (v) => setState(() => number = v)),
+                  ],
+                ),
+                const SizedBox(height: IcSpace.s4),
+                Text(
+                  taken ? l10n.drawerNumberTaken : l10n.drawerNumberHelp,
+                  style: IcText.bodyS.copyWith(color: taken ? IcColors.dangerFg : IcColors.textMuted),
                 ),
                 const SizedBox(height: IcSpace.s16),
                 Row(
@@ -56,19 +65,60 @@ Future<DrawerFormResult?> showDrawerFormDialog(BuildContext context) {
               ],
             ),
           ),
-        ),
-        actions: [
-          IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
-          IcButton(
-            label: l10n.actionCreate,
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop(DrawerFormResult(name: name.text.trim(), rows: rows, columns: columns));
-              }
-            },
+          actions: [
+            IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
+            IcButton(
+              label: l10n.actionCreate,
+              onPressed: taken ? null : () => Navigator.of(context).pop(DrawerFormResult(number: number, rows: rows, columns: columns)),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+/// "Alterar número" on a drawer row in B3 (Q8). Returns the new number.
+Future<int?> showDrawerNumberDialog(
+  BuildContext context, {
+  required int currentNumber,
+  required Set<int> takenNumbers,
+}) {
+  final l10n = AppLocalizations.of(context);
+  var number = currentNumber;
+  return showDialog<int>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) {
+        final taken = number != currentNumber && takenNumbers.contains(number);
+        return AlertDialog(
+          title: Text(l10n.editDrawerNumber),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text(l10n.drawerNumberLabel, style: IcText.bodyM)),
+                    QuantityStepper(label: l10n.drawerNumberLabel, value: number, min: 1, max: 99, onChanged: (v) => setState(() => number = v)),
+                  ],
+                ),
+                const SizedBox(height: IcSpace.s4),
+                Text(
+                  taken ? l10n.drawerNumberTaken : l10n.drawerNumberHelp,
+                  style: IcText.bodyS.copyWith(color: taken ? IcColors.dangerFg : IcColors.textMuted),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+          actions: [
+            IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
+            IcButton(label: l10n.actionSave, onPressed: taken ? null : () => Navigator.of(context).pop(number)),
+          ],
+        );
+      },
     ),
   );
 }

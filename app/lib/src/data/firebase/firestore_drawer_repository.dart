@@ -24,14 +24,21 @@ class FirestoreDrawerRepository implements DrawerRepository {
   }
 
   @override
-  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer) async {
+  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer, {List<Slot>? slots}) async {
     try {
       final ref = _firestore.collection(FirestorePaths.drawers(institutionId, cartId)).doc();
-      await ref.set({
+      final layout = slots ?? Slot.unitGrid(ref.id, drawer.rows, drawer.columns);
+      final batch = _firestore.batch();
+      batch.set(ref, {
         ...drawer.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      final slotsCollection = _firestore.collection(FirestorePaths.slots(institutionId, cartId, ref.id));
+      for (final slot in layout) {
+        batch.set(slotsCollection.doc(slot.id), slot.toMap());
+      }
+      await batch.commit();
       final created = await ref.get();
       return CartDrawer.fromMap(ref.id, cartId, normalizeTimestamps(created.data()!, const ['createdAt', 'updatedAt']));
     } catch (error) {

@@ -54,7 +54,7 @@ class EmergencyViewModel extends ViewModel {
   List<SlotCellData> get cells {
     final d = drawer;
     if (d == null) return const [];
-    final bySlot = data.assignmentsBySlot;
+    final bySlot = data.assignmentsIn(d.id);
     final now = DateTime.now();
     return [
       for (final slot in data.slotsOf(d))
@@ -72,7 +72,7 @@ class EmergencyViewModel extends ViewModel {
 
   /// Error code `empty` when there is nothing left to take.
   Future<ActionResult<void>> consume(SlotCellData cell, int units) {
-    final a = data.assignmentsBySlot[cell.slot.id];
+    final a = data.assignmentsIn(cell.slot.drawerId)[cell.slot.id];
     return run(() async {
       if (a == null) return;
       if (a.currentQuantity < units || units <= 0) throw const ActionError('empty');

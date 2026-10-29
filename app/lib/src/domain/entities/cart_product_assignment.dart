@@ -11,6 +11,7 @@ class CartProductAssignment {
   const CartProductAssignment({
     required this.id,
     required this.cartId,
+    this.drawerId,
     required this.slotId,
     required this.productId,
     required this.currentQuantity,
@@ -22,6 +23,12 @@ class CartProductAssignment {
 
   final String id;
   final String cartId;
+
+  /// The drawer of [slotId]. Slot ids (`r{row}c{col}`) repeat in every
+  /// drawer, so the slot is only unambiguous with its drawer. `null` only on
+  /// placements created before 29 Oct 2026; `CartLiveData.drawerOf` then
+  /// falls back to the first drawer that has a slot with that id.
+  final String? drawerId;
   final String slotId;
   final String productId;
 
@@ -45,6 +52,7 @@ class CartProductAssignment {
     return CartProductAssignment(
       id: id,
       cartId: cartId,
+      drawerId: map['drawerId'] as String?,
       slotId: map['slotId'] as String? ?? '',
       productId: map['productId'] as String? ?? '',
       currentQuantity: (map['currentQuantity'] as num?)?.toInt() ?? 0,
@@ -58,6 +66,7 @@ class CartProductAssignment {
   }
 
   Map<String, Object?> toMap() => {
+        if (drawerId != null) 'drawerId': drawerId,
         'slotId': slotId,
         'productId': productId,
         'currentQuantity': currentQuantity,
@@ -67,6 +76,7 @@ class CartProductAssignment {
 
   CartProductAssignment copyWith({
     String? id,
+    String? drawerId,
     String? slotId,
     String? productId,
     int? currentQuantity,
@@ -77,6 +87,7 @@ class CartProductAssignment {
       CartProductAssignment(
         id: id ?? this.id,
         cartId: cartId,
+        drawerId: drawerId ?? this.drawerId,
         slotId: slotId ?? this.slotId,
         productId: productId ?? this.productId,
         currentQuantity: currentQuantity ?? this.currentQuantity,

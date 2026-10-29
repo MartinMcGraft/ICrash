@@ -46,7 +46,8 @@ class CartTemplate {
         institutionId: json['institutionId'] as String,
         name: json['name'] as String? ?? '',
         drawers: [
-          for (final d in (json['drawers'] as List? ?? const [])) TemplateDrawer.fromJson((d as Map).cast<String, Object?>()),
+          for (final (i, d) in (json['drawers'] as List? ?? const []).indexed)
+            TemplateDrawer.fromJson((d as Map).cast<String, Object?>(), fallbackNumber: i + 1),
         ],
         updatedAt: DateTime.parse(json['updatedAt'] as String),
         updatedByName: json['updatedByName'] as String? ?? '',
@@ -54,9 +55,10 @@ class CartTemplate {
 }
 
 class TemplateDrawer {
-  const TemplateDrawer({required this.name, required this.rows, required this.columns, this.slots = const [], this.products = const []});
+  const TemplateDrawer({required this.number, required this.rows, required this.columns, this.slots = const [], this.products = const []});
 
-  final String name;
+  /// The drawer's number in carts made from this template (P17: no name).
+  final int number;
   final int rows;
   final int columns;
 
@@ -69,7 +71,7 @@ class TemplateDrawer {
   int get positionCount => slots.isEmpty ? rows * columns : slots.length;
 
   Map<String, Object?> toJson() => {
-        'name': name,
+        'number': number,
         'rows': rows,
         'columns': columns,
         'slots': [
@@ -78,8 +80,10 @@ class TemplateDrawer {
         'products': [for (final p in products) p.toJson()],
       };
 
-  factory TemplateDrawer.fromJson(Map<String, Object?> json) => TemplateDrawer(
-        name: json['name'] as String? ?? '',
+  /// Templates saved before 29 Oct 2026 have a `name` and no `number`: the
+  /// name is ignored and the drawer's position is used ([fallbackNumber]).
+  factory TemplateDrawer.fromJson(Map<String, Object?> json, {int fallbackNumber = 1}) => TemplateDrawer(
+        number: (json['number'] as num?)?.toInt() ?? fallbackNumber,
         rows: (json['rows'] as num?)?.toInt() ?? 1,
         columns: (json['columns'] as num?)?.toInt() ?? 1,
         slots: (json['slots'] as List? ?? const []).map((s) {

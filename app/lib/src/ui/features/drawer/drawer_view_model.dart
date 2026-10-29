@@ -59,11 +59,11 @@ class DrawerViewModel extends ViewModel {
   bool get drawerMissing => data.ready && data.drawersLoaded && drawer == null;
 
   CartDrawer? get drawer => data.drawers.where((d) => d.id == drawerId).firstOrNull;
-  int get drawerNumber => data.drawers.indexWhere((d) => d.id == drawerId) + 1;
+  int get drawerNumber => drawer == null ? 0 : data.numberOf(drawer!);
   List<Slot> get slots => drawer == null ? const [] : data.slotsOf(drawer!);
 
   List<SlotCellData> get cells {
-    final bySlot = data.assignmentsBySlot;
+    final bySlot = data.assignmentsIn(drawerId);
     final now = DateTime.now();
     SlotCellData cell(Slot slot) {
       final a = bySlot[slot.id];
@@ -81,7 +81,7 @@ class DrawerViewModel extends ViewModel {
   }
 
   Slot? get selectedSlot => slots.where((s) => s.id == selectedSlotId).firstOrNull;
-  CartProductAssignment? get selectedAssignment => selectedSlotId == null ? null : data.assignmentsBySlot[selectedSlotId];
+  CartProductAssignment? get selectedAssignment => selectedSlotId == null ? null : data.assignmentsIn(drawerId)[selectedSlotId];
   Product? get selectedProduct => selectedAssignment == null ? null : data.products[selectedAssignment!.productId];
   SlotHealth get selectedHealth =>
       InventoryHealth.slotHealth(selectedAssignment, expiryWarningDays: _warningDays, now: DateTime.now());
@@ -269,6 +269,7 @@ class DrawerViewModel extends ViewModel {
         CartProductAssignment(
           id: '',
           cartId: cartId,
+          drawerId: drawerId,
           slotId: slotId,
           productId: product.id,
           currentQuantity: initial,
@@ -305,7 +306,7 @@ class DrawerViewModel extends ViewModel {
     if (parsed.gtin != null) {
       final productId = data.products.values.where((p) => p.gtin == parsed.gtin).firstOrNull?.id;
       final assignment = productId == null ? null : data.assignments.where((a) => a.productId == productId).firstOrNull;
-      final inThisDrawer = assignment != null && slots.any((s) => s.id == assignment.slotId);
+      final inThisDrawer = assignment != null && data.drawerOf(assignment) == drawerId;
       if (inThisDrawer) {
         selectedSlotId = assignment.slotId;
         _ensureBatches();

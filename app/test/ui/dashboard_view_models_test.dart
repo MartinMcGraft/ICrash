@@ -12,7 +12,9 @@ import 'package:icrash_app/src/domain/entities/shift.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
+import 'package:icrash_app/src/ui/features/dashboard/cart_config_view_model.dart';
 import 'package:icrash_app/src/ui/features/dashboard/catalog_view_model.dart';
+import 'package:icrash_app/src/ui/features/drawer/drawer_view_model.dart';
 import 'package:icrash_app/src/ui/features/dashboard/grid_editor_view_model.dart';
 import 'package:icrash_app/src/ui/features/dashboard/reports_history_view_model.dart';
 import 'package:icrash_app/src/ui/features/dashboard/shifts_view_model.dart';
@@ -42,7 +44,7 @@ void main() {
     late GridEditorViewModel vm;
 
     setUp(() async {
-      drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', name: 'Fármacos', rows: 2, columns: 3)]);
+      drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', number: 2, rows: 2, columns: 3)]);
       carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1', layoutVersion: 4)]);
       inventory = FakeInventoryRepository(assignments: [
         const CartProductAssignment(id: 'a1', cartId: 'c1', slotId: 'r0c1', productId: 'p1', currentQuantity: 2, targetQuantity: 4),
@@ -57,7 +59,7 @@ void main() {
     test('starts from the unit grid when no layout was saved', () {
       expect(vm.ready, isTrue);
       expect(vm.slots, hasLength(6));
-      expect(vm.drawerNumber, 1);
+      expect(vm.drawerNumber, 2, reason: 'the stored number, not the position');
     });
 
     test('merges a rectangular selection and keeps the top-left id', () {
@@ -268,7 +270,7 @@ void main() {
 
   group('B6 TemplatesViewModel', () {
     test('creates a template from a cart and duplicates it', () async {
-      final drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', name: 'Via aérea', rows: 2, columns: 2)]);
+      final drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 2, columns: 2)]);
       final carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]);
       final inventory = FakeInventoryRepository(assignments: [
         const CartProductAssignment(id: 'a1', cartId: 'c1', slotId: 'r0c0', productId: 'p1', currentQuantity: 1, targetQuantity: 5),
@@ -322,6 +324,92 @@ void main() {
       expect(vm.reports.single.cartId, 'c1');
       expect(vm.pendingSignatures, 1);
       vm.dispose();
+    });
+  });
+
+  group('B3 CartConfigViewModel: drawer numbers (P17)', () {
+    late FakeDrawerRepository drawers;
+    late CartConfigViewModel vm;
+
+    setUp(() async {
+      drawers = FakeDrawerRepository(drawers: [
+        const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 2, columns: 2),
+        const CartDrawer(id: 'd3', cartId: 'c1', number: 3, rows: 1, columns: 1),
+      ]);
+      final carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]);
+      final services = buildTestServices(drawers: drawers, carts: carts);
+      vm = CartConfigViewModel(services, _session(services), 'c1');
+      await _settle();
+    });
+
+    tearDown(() => vm.dispose());
+
+    test('drawers are listed by their stored number; the default is the lowest free one', () {
+      expect(vm.drawers.map((d) => d.$1), [1, 3]);
+      expect(vm.nextDrawerNumber, 2);
+    });
+
+    test('a new drawer stores its number and gets one slot per cell', () async {
+      final result = await vm.addDrawer(number: 2, rows: 2, columns: 3);
+      expect(result.isOk, isTrue);
+      final created = drawers.lastCreatedDrawer!;
+      expect(created.number, 2);
+      expect(drawers.slotsByDrawer[created.id], hasLength(6));
+    });
+
+    test('a number already used in the cart is refused', () async {
+      final result = await vm.addDrawer(number: 3, rows: 1, columns: 1);
+      expect(result.code, 'drawerNumberTaken');
+      expect(drawers.drawers, hasLength(2));
+    });
+
+    test('a drawer number can be changed to a free one, not to a taken one', () async {
+      final d3 = drawers.drawers.last;
+      expect((await vm.setDrawerNumber(d3, 1)).code, 'drawerNumberTaken');
+      expect((await vm.setDrawerNumber(d3, 4)).isOk, isTrue);
+      expect(drawers.drawers.last.number, 4);
+    });
+  });
+
+  group('A6 DrawerViewModel: placement and stock bounds', () {
+    late FakeInventoryRepository inventory;
+    late DrawerViewModel vm;
+
+    setUp(() async {
+      final drawers = FakeDrawerRepository(drawers: [
+        const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 1, columns: 2),
+        const CartDrawer(id: 'd2', cartId: 'c1', number: 2, rows: 1, columns: 2),
+      ]);
+      final carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]);
+      inventory = FakeInventoryRepository(assignments: [
+        const CartProductAssignment(
+            id: 'a1', cartId: 'c1', drawerId: 'd1', slotId: 'r0c0', productId: 'p1', currentQuantity: 3, targetQuantity: 4),
+      ]);
+      final products = FakeProductRepository(products: [
+        const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina'),
+        const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'),
+      ]);
+      final services = buildTestServices(drawers: drawers, carts: carts, inventory: inventory, products: products);
+      vm = DrawerViewModel(services, _session(services), cartId: 'c1', drawerId: 'd2');
+      await _settle();
+    });
+
+    tearDown(() => vm.dispose());
+
+    test('the same slot id in another drawer is a different, free slot', () async {
+      vm.select('r0c0');
+      expect(vm.selectedAssignment, isNull);
+      final result = await vm.assign(const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'), target: 2, initial: 1);
+      expect(result.isOk, isTrue);
+      expect(inventory.lastCreated!.drawerId, 'd2');
+      expect(inventory.lastCreated!.slotId, 'r0c0');
+    });
+
+    test('the initial quantity can\'t exceed the target (P5)', () async {
+      vm.select('r0c1');
+      final result = await vm.assign(const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'), target: 2, initial: 3);
+      expect(result.code, 'exceedsTarget');
+      expect(inventory.assignments, hasLength(1));
     });
   });
 }

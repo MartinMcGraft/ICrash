@@ -61,10 +61,44 @@ class CartLiveData {
 
   bool get ready => cart != null && drawersLoaded && assignmentsLoaded;
 
-  Map<String, CartProductAssignment> get assignmentsBySlot => {for (final a in assignments) a.slotId: a};
+  /// The drawer's number as shown ("Gaveta N"): its stored [CartDrawer.number],
+  /// or, for a drawer created before numbers were stored, its position in
+  /// [drawers] (the old creation-order rule).
+  int numberOf(CartDrawer drawer) => drawer.number ?? (drawers.indexWhere((d) => d.id == drawer.id) + 1);
 
-  /// Saved slots, or one slot per grid cell when the drawer layout was never
-  /// edited (ids `r{row}c{col}`, the convention of the original editor).
+  /// Numbers already used by the cart's drawers (as shown), for the
+  /// "unique within its cart" check in B3.
+  Set<int> get usedNumbers => {for (final d in drawers) numberOf(d)};
+
+  /// Lowest number not used yet (the default in "Adicionar gaveta").
+  int get nextFreeNumber {
+    var n = 1;
+    while (usedNumbers.contains(n)) {
+      n++;
+    }
+    return n;
+  }
+
+  /// The drawer a placement is in. New placements store `drawerId`. An old
+  /// one without it (slot ids repeat in every drawer) goes to the first
+  /// drawer, in number order, that has a slot with its id, as before.
+  String? drawerOf(CartProductAssignment assignment) {
+    if (assignment.drawerId != null) return assignment.drawerId;
+    for (final drawer in drawers) {
+      if (slotsOf(drawer).any((s) => s.id == assignment.slotId)) return drawer.id;
+    }
+    return null;
+  }
+
+  /// Placements of one drawer, keyed by slot id.
+  Map<String, CartProductAssignment> assignmentsIn(String drawerId) => {
+        for (final a in assignments)
+          if (drawerOf(a) == drawerId) a.slotId: a,
+      };
+
+  /// Saved slots. Every drawer created since 29 Oct 2026 has slot documents;
+  /// an older drawer whose layout was never edited has none, and gets one
+  /// slot per grid cell here (ids `r{row}c{col}`), as before.
   List<Slot> slotsOf(CartDrawer drawer) {
     final saved = _slots[drawer.id];
     if (saved != null && saved.isNotEmpty) return saved;
@@ -73,25 +107,21 @@ class CartLiveData {
 
   bool slotsLoaded(String drawerId) => _slots.containsKey(drawerId);
 
-  static List<Slot> unitGrid(CartDrawer drawer) => [
-        for (var r = 0; r < drawer.rows; r++)
-          for (var c = 0; c < drawer.columns; c++) Slot(id: 'r${r}c$c', drawerId: drawer.id, row: r, column: c),
-      ];
+  static List<Slot> unitGrid(CartDrawer drawer) => Slot.unitGrid(drawer.id, drawer.rows, drawer.columns);
 
   /// Which drawer + slot an assignment sits in, if any.
-  (CartDrawer, Slot)? locate(String slotId) {
-    for (final drawer in drawers) {
-      for (final slot in slotsOf(drawer)) {
-        if (slot.id == slotId) return (drawer, slot);
-      }
-    }
-    return null;
+  (CartDrawer, Slot)? locate(CartProductAssignment assignment) {
+    final drawerId = drawerOf(assignment);
+    final drawer = drawers.where((d) => d.id == drawerId).firstOrNull;
+    if (drawer == null) return null;
+    final slot = slotsOf(drawer).where((s) => s.id == assignment.slotId).firstOrNull;
+    return slot == null ? null : (drawer, slot);
   }
 
   DrawerHealth healthOf(CartDrawer drawer, {required int expiryWarningDays, DateTime? now}) => InventoryHealth.drawerHealth(
         drawer,
         slotsOf(drawer),
-        assignmentsBySlot,
+        assignmentsIn(drawer.id),
         expiryWarningDays: expiryWarningDays,
         now: now ?? DateTime.now(),
       );
@@ -117,10 +147,16 @@ class CartLiveData {
   }
 
   void _onDrawers(List<CartDrawer> list) {
+    // By number (P17); drawers without one (created before numbers were
+    // stored) keep the old creation order, after the numbered ones.
     final sorted = List.of(list)
       ..sort((a, b) {
+        final an = a.number, bn = b.number;
+        if (an != null && bn != null && an != bn) return an.compareTo(bn);
+        if (an != null && bn == null) return -1;
+        if (an == null && bn != null) return 1;
         final byDate = (a.createdAt ?? DateTime(2000)).compareTo(b.createdAt ?? DateTime(2000));
-        return byDate != 0 ? byDate : a.name.compareTo(b.name);
+        return byDate != 0 ? byDate : a.id.compareTo(b.id);
       });
     drawers = sorted;
     drawersLoaded = true;

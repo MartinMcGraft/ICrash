@@ -705,27 +705,13 @@
   "@autoStateRule": {},
   "printLabel": "Imprimir etiqueta",
   "@printLabel": {},
-  "productLocation": "Gaveta {number} · {drawer} · posição {position}",
+  "productLocation": "Gaveta {number} · posição {position}",
   "@productLocation": {
     "placeholders": {
       "number": {
         "type": "int"
       },
-      "drawer": {
-        "type": "String"
-      },
       "position": {
-        "type": "String"
-      }
-    }
-  },
-  "drawerTitle": "Gaveta {number} · {name}",
-  "@drawerTitle": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      },
-      "name": {
         "type": "String"
       }
     }
@@ -857,20 +843,20 @@
   "@reconcileRecorded": {},
   "catalogSearchHint": "Pesquisar no catálogo",
   "@catalogSearchHint": {},
-  "monthlyCheckSubtitle": "{cart} · Gaveta {index} de {total} · {drawer}",
+  "monthlyCheckSubtitle": "{cart} · Gaveta {number} ({index} de {total})",
   "@monthlyCheckSubtitle": {
     "placeholders": {
       "cart": {
         "type": "String"
+      },
+      "number": {
+        "type": "int"
       },
       "index": {
         "type": "int"
       },
       "total": {
         "type": "int"
-      },
-      "drawer": {
-        "type": "String"
       }
     }
   },
@@ -1278,19 +1264,6 @@
   "@columnWithProduct": {},
   "editGrid": "Editar grelha",
   "@editGrid": {},
-  "drawerNameHint": "ex.: Fármacos",
-  "@drawerNameHint": {},
-  "gridEditorTitle": "Gaveta {number} · {name}",
-  "@gridEditorTitle": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "gridEditorSubtitle": "{cart} · editar grelha e posições",
   "@gridEditorSubtitle": {
     "placeholders": {
@@ -1825,5 +1798,17 @@
   "errorTargetBelowCurrent": "A quantidade alvo não pode ser inferior ao stock atual. Registe primeiro o consumo ou uma correção.",
   "@errorTargetBelowCurrent": {},
   "errorInvalidTarget": "A quantidade alvo tem de ser maior do que 0.",
-  "@errorInvalidTarget": {}
+  "@errorInvalidTarget": {},
+  "drawerNumberLabel": "Número da gaveta",
+  "@drawerNumberLabel": {},
+  "drawerNumberHelp": "O número impresso no carrinho (1 = em cima). Não pode repetir-se no mesmo carrinho.",
+  "@drawerNumberHelp": {},
+  "drawerNumberTaken": "Já existe uma gaveta com este número neste carrinho.",
+  "@drawerNumberTaken": {},
+  "editDrawerNumber": "Alterar número",
+  "@editDrawerNumber": {},
+  "drawerNumberSaved": "Número da gaveta alterado.",
+  "@drawerNumberSaved": {},
+  "slotTaken": "Esta posição já tem um produto.",
+  "@slotTaken": {}
 }

@@ -48,7 +48,7 @@ class MonthlyCheckViewModel extends ViewModel {
   bool get isLastDrawer => drawerIndex >= drawers.length - 1;
 
   List<CheckRowModel> rowsOf(CartDrawer drawer) {
-    final bySlot = data.assignmentsBySlot;
+    final bySlot = data.assignmentsIn(drawer.id);
     final now = DateTime.now();
     final rows = <CheckRowModel>[];
     for (final slot in data.slotsOf(drawer)) {

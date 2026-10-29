@@ -53,14 +53,14 @@ class ProductSearchViewModel extends ViewModel {
       final name = data.productName(assignment.productId);
       final gtin = data.products[assignment.productId]?.gtin ?? '';
       if (!name.toLowerCase().contains(q) && !gtin.contains(q)) continue;
-      final located = data.locate(assignment.slotId);
+      final located = data.locate(assignment);
       if (located == null) continue;
       final (drawer, slot) = located;
       result.add(ProductHit(
         productName: name,
         assignment: assignment,
         drawer: drawer,
-        drawerNumber: data.drawers.indexOf(drawer) + 1,
+        drawerNumber: data.numberOf(drawer),
         position: slotPositionLabel(slot),
         health: InventoryHealth.slotHealth(assignment, expiryWarningDays: expiryWarningDays, now: now),
       ));
@@ -141,7 +141,7 @@ class _ProductSearchDialogState extends State<_ProductSearchDialog> {
                                                 Text(hit.productName, style: IcText.labelM),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  l10n.productLocation(hit.drawerNumber, hit.drawer.name, hit.position),
+                                                  l10n.productLocation(hit.drawerNumber, hit.position),
                                                   style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
                                                 ),
                                               ],

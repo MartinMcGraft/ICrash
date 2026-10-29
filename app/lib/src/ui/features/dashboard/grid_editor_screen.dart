@@ -55,7 +55,7 @@ class GridEditorScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PageHeader(
-                  title: l10n.gridEditorTitle(vm.drawerNumber, drawer.name),
+                  title: l10n.drawerShort(vm.drawerNumber),
                   subtitle: l10n.gridEditorSubtitle(vm.data.cart?.name ?? ''),
                   onBack: () => Navigator.of(context).maybePop(),
                   trailing: [
@@ -186,7 +186,7 @@ class _GridArea extends StatelessWidget {
     if (!vm.canMerge) return showMessage(context, l10n.slotSelectionNotRectangle);
     // Only the top-left position keeps its product; the others' products
     // become "sem posição" until reassigned.
-    final bySlot = vm.data.assignmentsBySlot;
+    final bySlot = vm.data.assignmentsIn(vm.drawerId);
     final selectedSlots = vm.slots.where((s) => vm.selected.contains(s.id)).toList()
       ..sort((a, b) => a.row != b.row ? a.row.compareTo(b.row) : a.column.compareTo(b.column));
     final losing = selectedSlots.skip(1).where((s) => bySlot.containsKey(s.id)).length;

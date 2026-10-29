@@ -83,6 +83,20 @@ class FirestoreInventoryRepository implements InventoryRepository {
       if (duplicate.docs.isNotEmpty) {
         throw const RepositoryFailure(RepositoryFailureReason.conflict);
       }
+      // One product per slot (DATABASE.md UNIQUE on SLOTCC's slot). Slot ids
+      // repeat in every drawer, so the drawer is part of the check.
+      final drawerId = assignment.drawerId;
+      if (drawerId != null) {
+        final occupied = await _firestore
+            .collection(FirestorePaths.assignments(institutionId, cartId))
+            .where('drawerId', isEqualTo: drawerId)
+            .where('slotId', isEqualTo: assignment.slotId)
+            .limit(1)
+            .get();
+        if (occupied.docs.isNotEmpty) {
+          throw const RepositoryFailure(RepositoryFailureReason.conflict, code: 'slotTaken');
+        }
+      }
 
       final ref = _firestore.collection(FirestorePaths.assignments(institutionId, cartId)).doc();
       await ref.set({
@@ -114,11 +128,13 @@ class FirestoreInventoryRepository implements InventoryRepository {
     required String institutionId,
     required String cartId,
     required String assignmentId,
+    required String newDrawerId,
     required String newSlotId,
     required String actorUid,
   }) async {
     try {
       await _assignmentRef(institutionId, cartId, assignmentId).update({
+        'drawerId': newDrawerId,
         'slotId': newSlotId,
         'updatedAt': FieldValue.serverTimestamp(),
         'updatedBy': actorUid,

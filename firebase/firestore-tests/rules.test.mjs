@@ -191,7 +191,7 @@ describe('drawer/slot structure changes (spec section 38)', () => {
     await seedBaseline();
     const db = testEnv.authenticatedContext(USER_UID).firestore();
     await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/drawers/drawer-1`), {
-      name: 'Gaveta 1', rows: 2, columns: 2,
+      number: 1, rows: 2, columns: 2,
     }));
   });
 
@@ -199,7 +199,7 @@ describe('drawer/slot structure changes (spec section 38)', () => {
     await seedBaseline();
     const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
     await assertSucceeds(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/drawers/drawer-1`), {
-      name: 'Gaveta 1', rows: 2, columns: 2,
+      number: 1, rows: 2, columns: 2,
     }));
   });
 });

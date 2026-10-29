@@ -49,7 +49,7 @@ class MonthlyCheckScreen extends StatelessWidget {
             children: [
               PageHeader(
                 title: l10n.monthlyCheckTitle,
-                subtitle: l10n.monthlyCheckSubtitle(cart.name, vm.drawerIndex + 1, vm.drawers.length, drawer.name),
+                subtitle: l10n.monthlyCheckSubtitle(cart.name, vm.data.numberOf(drawer), vm.drawerIndex + 1, vm.drawers.length),
                 onBack: () => Navigator.of(context).maybePop(),
                 trailing: [
                   IcButton(
@@ -77,7 +77,7 @@ class MonthlyCheckScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
-                    SidePanel(child: _Summary(vm: vm, drawerLabel: l10n.drawerTitle(vm.drawerIndex + 1, drawer.name))),
+                    SidePanel(child: _Summary(vm: vm, drawerLabel: l10n.drawerShort(vm.data.numberOf(drawer)))),
                   ],
                 ),
               ),

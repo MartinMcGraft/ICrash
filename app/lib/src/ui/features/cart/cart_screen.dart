@@ -119,7 +119,7 @@ class _Drawers extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(row.drawer.name, style: IcText.labelL, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Text(l10n.drawerShort(row.number), style: IcText.labelL, maxLines: 1, overflow: TextOverflow.ellipsis),
                                 const SizedBox(height: 2),
                                 Text(
                                   compact

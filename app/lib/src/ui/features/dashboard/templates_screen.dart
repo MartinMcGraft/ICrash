@@ -184,7 +184,7 @@ class _Preview extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: Text('${i + 1} · ${drawer.name}', style: IcText.labelM, overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text(l10n.drawerShort(drawer.number), style: IcText.labelM, overflow: TextOverflow.ellipsis)),
                     Text(
                       l10n.templateDrawerSize(drawer.rows, drawer.columns, drawer.positionCount),
                       style: IcText.bodyS.copyWith(color: IcColors.textSecondary),

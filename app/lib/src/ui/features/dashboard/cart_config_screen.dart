@@ -195,9 +195,13 @@ class _Drawers extends StatelessWidget {
                   icon: IcIcon.mais,
                   style: IcButtonStyle.secondary,
                   onPressed: () async {
-                    final input = await showDrawerFormDialog(context);
+                    final input = await showDrawerFormDialog(
+                      context,
+                      initialNumber: vm.nextDrawerNumber,
+                      takenNumbers: vm.data.usedNumbers,
+                    );
                     if (input == null || !context.mounted) return;
-                    final result = await vm.addDrawer(name: input.name, rows: input.rows, columns: input.columns);
+                    final result = await vm.addDrawer(number: input.number, rows: input.rows, columns: input.columns);
                     if (!context.mounted) return;
                     showResult(context, result);
                   },
@@ -208,29 +212,51 @@ class _Drawers extends StatelessWidget {
         Expanded(
           child: FitDataTable(
             columns: [
-              TableColumnSpec(l10n.columnNumber, width: 40),
-              TableColumnSpec(l10n.fieldName, flex: 4),
+              // P17: drawers have a number and no name.
+              TableColumnSpec(l10n.columnNumber, flex: 3),
               TableColumnSpec(l10n.columnSize, flex: 2),
               TableColumnSpec(l10n.columnPositions, flex: 2),
               TableColumnSpec(l10n.columnWithProduct, flex: 2),
-              TableColumnSpec('', width: 150, alignEnd: true),
+              TableColumnSpec('', width: 200, alignEnd: true),
             ],
             emptyText: l10n.cartDetailDrawersEmpty,
             rows: [
               for (final (number, drawer, health) in drawers)
                 [
-                  CellText('$number', primary: true),
-                  CellText(drawer.name),
+                  CellText(l10n.drawerShort(number), primary: true),
                   CellText('${drawer.rows} × ${drawer.columns}'),
                   CellText('${health.positions}'),
                   CellText('${health.withProduct}'),
-                  IcButton(
-                    label: l10n.editGrid,
-                    icon: IcIcon.grelha,
-                    style: IcButtonStyle.secondary,
-                    onPressed: () => Navigator.of(context).push(
-                      sectionRoute((_) => GridEditorScreen(cartId: vm.cartId, drawerId: drawer.id)),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (canEdit)
+                        IcIconButton(
+                          icon: IcIcon.editar,
+                          tooltip: l10n.editDrawerNumber,
+                          onPressed: vm.canEditNumber(drawer)
+                              ? () async {
+                                  final picked = await showDrawerNumberDialog(
+                                    context,
+                                    currentNumber: number,
+                                    takenNumbers: vm.data.usedNumbers,
+                                  );
+                                  if (picked == null || !context.mounted) return;
+                                  final result = await vm.setDrawerNumber(drawer, picked);
+                                  if (context.mounted) showResult(context, result, success: l10n.drawerNumberSaved);
+                                }
+                              : null,
+                        ),
+                      const SizedBox(width: IcSpace.s8),
+                      IcButton(
+                        label: l10n.editGrid,
+                        icon: IcIcon.grelha,
+                        style: IcButtonStyle.secondary,
+                        onPressed: () => Navigator.of(context).push(
+                          sectionRoute((_) => GridEditorScreen(cartId: vm.cartId, drawerId: drawer.id)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
             ],

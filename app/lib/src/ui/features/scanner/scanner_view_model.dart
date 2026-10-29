@@ -113,6 +113,11 @@ class ScannerViewModel extends ViewModel {
             .where((a) => a.productId == product.id && (session.scopedCartId == null || a.cartId == session.scopedCartId))
             .toList();
         for (final a in assignments) {
+          // Placements store their drawer since 29 Oct 2026.
+          if (a.drawerId case final drawerId?) {
+            return ProductLocation(cartId: a.cartId, drawerId: drawerId, slotId: a.slotId);
+          }
+          // Older placements: search the cart's drawers for the slot id.
           final drawers = await services.drawers.watchDrawers(institutionId, a.cartId).first;
           for (final drawer in drawers) {
             final slots = await services.drawers.watchSlots(institutionId, a.cartId, drawer.id).first;

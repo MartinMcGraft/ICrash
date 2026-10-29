@@ -21,6 +21,11 @@ abstract class InventoryRepository {
 
   Future<CartProductAssignment?> getAssignment(String institutionId, String cartId, String assignmentId);
 
+  /// Places a product in a slot. Throws [RepositoryFailure] with
+  /// [RepositoryFailureReason.conflict] when the product is already in this
+  /// cart, or with code `slotTaken` when the slot (drawer + slot id) already
+  /// holds a product. Both checks are best-effort queries (Firestore rules
+  /// can't express uniqueness); the database enforces them later.
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment);
 
   /// Moves an assignment onto a different slot within the same cart, without
@@ -32,6 +37,7 @@ abstract class InventoryRepository {
     required String institutionId,
     required String cartId,
     required String assignmentId,
+    required String newDrawerId,
     required String newSlotId,
     required String actorUid,
   });

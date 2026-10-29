@@ -34,6 +34,14 @@ class Slot {
     );
   }
 
+  /// One 1×1 slot per grid cell, ids `r{row}c{col}`, rows and columns
+  /// 0-based (they become 1-based when the data moves to PostgreSQL). Used
+  /// when a drawer is created, so every drawer has slot documents.
+  static List<Slot> unitGrid(String drawerId, int rows, int columns) => [
+        for (var r = 0; r < rows; r++)
+          for (var c = 0; c < columns; c++) Slot(id: 'r${r}c$c', drawerId: drawerId, row: r, column: c),
+      ];
+
   Map<String, Object?> toMap() => {
         'row': row,
         'column': column,

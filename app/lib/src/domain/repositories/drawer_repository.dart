@@ -4,8 +4,12 @@ import '../entities/slot.dart';
 abstract class DrawerRepository {
   Stream<List<CartDrawer>> watchDrawers(String institutionId, String cartId);
 
-  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer);
+  /// Creates the drawer and its slots in one write: [slots] (a template's
+  /// layout), or one slot per grid cell when omitted. A drawer never exists
+  /// without slot documents.
+  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer, {List<Slot>? slots});
 
+  /// Writes the drawer's number and grid size.
   Future<void> updateDrawer(String institutionId, String cartId, CartDrawer drawer);
 
   Stream<List<Slot>> watchSlots(String institutionId, String cartId, String drawerId);

@@ -253,12 +253,17 @@ class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository
   }
 
   @override
-  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer) async {
-    final created =
-        CartDrawer(id: 'drawer-${_nextId++}', cartId: cartId, name: drawer.name, rows: drawer.rows, columns: drawer.columns);
+  Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer, {List<Slot>? slots}) async {
+    final id = 'drawer-${_nextId++}';
+    final created = CartDrawer(id: id, cartId: cartId, number: drawer.number, rows: drawer.rows, columns: drawer.columns);
     lastCreatedDrawer = created;
     drawers.add(created);
+    slotsByDrawer[id] = [
+      for (final s in slots ?? Slot.unitGrid(id, drawer.rows, drawer.columns))
+        Slot(id: s.id, drawerId: id, row: s.row, column: s.column, rowSpan: s.rowSpan, columnSpan: s.columnSpan, label: s.label),
+    ];
     _emitDrawers();
+    _emitSlots(id);
     return created;
   }
 
@@ -386,6 +391,10 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     if (assignments.any((a) => a.productId == assignment.productId)) {
       throw const RepositoryFailure(RepositoryFailureReason.conflict);
     }
+    if (assignment.drawerId != null &&
+        assignments.any((a) => a.drawerId == assignment.drawerId && a.slotId == assignment.slotId)) {
+      throw const RepositoryFailure(RepositoryFailureReason.conflict, code: 'slotTaken');
+    }
     try {
       InventoryRules.checkStock(assignment.currentQuantity, assignment.targetQuantity);
     } on StockRuleViolation catch (v) {
@@ -394,6 +403,7 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     final created = CartProductAssignment(
       id: 'assignment-${_nextId++}',
       cartId: cartId,
+      drawerId: assignment.drawerId,
       slotId: assignment.slotId,
       productId: assignment.productId,
       currentQuantity: assignment.currentQuantity,
@@ -410,10 +420,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String institutionId,
     required String cartId,
     required String assignmentId,
+    required String newDrawerId,
     required String newSlotId,
     required String actorUid,
   }) async =>
-      _update(assignmentId, (a) => a.copyWith(slotId: newSlotId));
+      _update(assignmentId, (a) => a.copyWith(drawerId: newDrawerId, slotId: newSlotId));
 
   @override
   Future<void> deleteAssignment({

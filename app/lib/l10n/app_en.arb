@@ -627,27 +627,13 @@
   "emergencyResume": "Back to emergency mode",
   "autoStateRule": "Automatic rule (when on): expired or missing product → Replenishment required; monthly check older than 31 days → Check overdue.",
   "printLabel": "Print label",
-  "productLocation": "Drawer {number} · {drawer} · position {position}",
+  "productLocation": "Drawer {number} · position {position}",
   "@productLocation": {
     "placeholders": {
       "number": {
         "type": "int"
       },
-      "drawer": {
-        "type": "String"
-      },
       "position": {
-        "type": "String"
-      }
-    }
-  },
-  "drawerTitle": "Drawer {number} · {name}",
-  "@drawerTitle": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      },
-      "name": {
         "type": "String"
       }
     }
@@ -764,20 +750,20 @@
   "correctionRecorded": "Correction recorded.",
   "reconcileRecorded": "Reconciliation recorded.",
   "catalogSearchHint": "Search the catalogue",
-  "monthlyCheckSubtitle": "{cart} · Drawer {index} of {total} · {drawer}",
+  "monthlyCheckSubtitle": "{cart} · Drawer {number} ({index} of {total})",
   "@monthlyCheckSubtitle": {
     "placeholders": {
       "cart": {
         "type": "String"
+      },
+      "number": {
+        "type": "int"
       },
       "index": {
         "type": "int"
       },
       "total": {
         "type": "int"
-      },
-      "drawer": {
-        "type": "String"
       }
     }
   },
@@ -1096,18 +1082,6 @@
   "columnPositions": "Positions",
   "columnWithProduct": "With product",
   "editGrid": "Edit grid",
-  "drawerNameHint": "e.g. Drugs",
-  "gridEditorTitle": "Drawer {number} · {name}",
-  "@gridEditorTitle": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "gridEditorSubtitle": "{cart} · edit grid and positions",
   "@gridEditorSubtitle": {
     "placeholders": {
@@ -1507,5 +1481,11 @@
   "errorExceedsTarget": "A position can't hold more units than its target quantity.",
   "errorBelowZero": "The quantity can't go below 0.",
   "errorTargetBelowCurrent": "The target can't be lower than the current stock. Record the consumption or a correction first.",
-  "errorInvalidTarget": "The target must be greater than 0."
+  "errorInvalidTarget": "The target must be greater than 0.",
+  "drawerNumberLabel": "Drawer number",
+  "drawerNumberHelp": "The number printed on the cart (1 = top). It can't repeat within a cart.",
+  "drawerNumberTaken": "This cart already has a drawer with this number.",
+  "editDrawerNumber": "Change number",
+  "drawerNumberSaved": "Drawer number changed.",
+  "slotTaken": "This position already has a product."
 }

@@ -139,21 +139,25 @@ async function main() {
     for (const uid of [uids.admin, uids.manager, uids.user]) {
       await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/responsibleUsers/${uid}`), { uid });
     }
-    await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-1'), {
-      name: 'Gaveta 1',
-      rows: 2,
-      columns: 3,
-    });
-    await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-2'), {
-      name: 'Gaveta 2',
-      rows: 1,
-      columns: 2,
-    });
+    // Drawers have a number and no name (P17). Every drawer has its slot
+    // documents (one per cell, rows/columns 0-based in Firestore).
+    const drawers = { 'gaveta-1': { number: 1, rows: 2, columns: 3 }, 'gaveta-2': { number: 2, rows: 1, columns: 2 } };
+    for (const [drawerId, drawer] of Object.entries(drawers)) {
+      await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/drawers/${drawerId}`), drawer);
+      for (let row = 0; row < drawer.rows; row++) {
+        for (let column = 0; column < drawer.columns; column++) {
+          await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/drawers/${drawerId}/slots/r${row}c${column}`), {
+            row, column, rowSpan: 1, columnSpan: 1,
+          });
+        }
+      }
+    }
 
     // Assignment 1: Adrenalina, two lots, earlier lot governs earliestKnownExpiry (2026-10-15).
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-adrenalina'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
+      drawerId: 'gaveta-1',
       slotId: 'r0c0',
       productId: 'adrenalina',
       currentQuantity: 5,
@@ -173,6 +177,7 @@ async function main() {
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-atropina'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
+      drawerId: 'gaveta-1',
       slotId: 'r0c1',
       productId: 'atropina',
       currentQuantity: 2,
@@ -188,6 +193,7 @@ async function main() {
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-seringa'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
+      drawerId: 'gaveta-1',
       slotId: 'r0c2',
       productId: 'seringa',
       currentQuantity: 20,
@@ -203,6 +209,7 @@ async function main() {
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-expirado'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
+      drawerId: 'gaveta-1',
       slotId: 'r1c0',
       productId: 'expirado',
       currentQuantity: 3,

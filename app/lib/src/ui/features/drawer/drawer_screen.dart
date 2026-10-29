@@ -47,7 +47,7 @@ class DrawerScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
-                title: l10n.drawerTitle(vm.drawerNumber, drawer.name),
+                title: l10n.drawerShort(vm.drawerNumber),
                 subtitle: compact
                     ? l10n.drawerSubtitleShort(cart.name, drawer.rows, drawer.columns)
                     : l10n.drawerSubtitle(cart.name, drawer.rows, drawer.columns, vm.slots.length),
@@ -564,7 +564,11 @@ class _AssignPanelState extends State<_AssignPanel> {
               }
               final result = await vm.assign(_product!, target: _target, initial: _initial);
               if (!context.mounted) return;
-              showResult(context, result, failure: result.failure == RepositoryFailureReason.conflict ? l10n.assignConflictError : null);
+              showResult(
+                context,
+                result,
+                failure: result.failure == RepositoryFailureReason.conflict && result.code == null ? l10n.assignConflictError : null,
+              );
             },
       children: [
         SearchField(hint: l10n.catalogSearchHint, width: null, onChanged: (v) => setState(() => _query = v)),

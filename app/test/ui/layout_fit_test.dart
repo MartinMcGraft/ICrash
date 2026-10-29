@@ -99,7 +99,7 @@ AppServices _services({int carts = 1, int rows = 5, int columns = 6, int product
         Cart(id: 'c$i', institutionId: 'inst', name: 'Carro de Urgência $i', service: 'Urgência', location: 'Piso 0 · Sala $i'),
     ]),
     drawers: FakeDrawerRepository(drawers: [
-      for (var d = 0; d < drawers; d++) CartDrawer(id: 'd$d', cartId: 'c0', name: 'Gaveta de fármacos $d', rows: rows, columns: columns),
+      for (var d = 0; d < drawers; d++) CartDrawer(id: 'd$d', cartId: 'c0', number: d + 1, rows: rows, columns: columns),
     ]),
     inventory: FakeInventoryRepository(assignments: assignments),
     products: FakeProductRepository(products: productList),
