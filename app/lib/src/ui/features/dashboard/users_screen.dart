@@ -255,7 +255,20 @@ class _PermissionsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.permissionsTitle, style: IcText.titleS),
+          // The note sits in a tooltip so the panel fits a tablet without scrolling.
+          Row(
+            children: [
+              Expanded(child: Text(l10n.permissionsTitle, style: IcText.titleS)),
+              Tooltip(
+                message: l10n.permissionsNote,
+                triggerMode: TooltipTriggerMode.tap,
+                child: const Padding(
+                  padding: EdgeInsets.all(IcSpace.s4),
+                  child: IcIconView(IcIcon.info, size: 20, color: IcColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: IcSpace.s12),
           SegmentedTabs<Role>(
             selected: vm.permissionRole,
@@ -272,8 +285,6 @@ class _PermissionsPanel extends StatelessWidget {
               value: granted.contains(p),
               onChanged: editable ? (v) => vm.togglePermission(p, v) : null,
             ),
-          const SizedBox(height: IcSpace.s12),
-          Text(l10n.permissionsNote, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
         ],
       ),
     );

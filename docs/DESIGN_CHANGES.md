@@ -567,10 +567,15 @@ check the node again before editing it.
 ### DC-40 · B7: permissions panel 380 px wide
 - **Where:** B7 right-hand "Permissões" panel: p21 `456:1969` → `456:2187` and its
   checkboxes (`I456:2199;442:640` …); p20 `458:1346`. Tablet and desktop.
-- **What:** the panel is **380 px** wide in code (was 320). At 320 px the "Profissional
-  de saúde / Gestor" tabs needed a sideways scroll, and the wrapped labels overflowed on a
-  tablet (found by the layout test). The users table takes the remaining width.
-- **Copy:** unchanged.
+- **What:**
+  - The panel is **380 px** wide in code (was 320). At 320 px the "Profissional de
+    saúde / Gestor" tabs needed a sideways scroll and the wrapped labels overflowed
+    (found by the layout test). The users table takes the remaining width.
+  - The grey note under the checkboxes moved into an **info icon tooltip** next to the
+    "Permissões" title, so the panel fits a 1280 × 800 tablet without scrolling.
+- **Copy:** unchanged (`permissionsNote` "Proposta (D2). As permissões ficam guardadas
+  neste dispositivo até existir suporte no servidor." / "Proposal (D2). Permissions are
+  stored on this device until the server supports them.").
 - **Components:** Separador `442:680`, Caixa de verificação `442:648` (frame only).
 - **Why:** layout rule (no scrolling on tablet or desktop). `users_screen.dart`.
 - **Status:** to do
