@@ -10,10 +10,8 @@ class TemplatesViewModel extends ViewModel {
   TemplatesViewModel(this.services, this.session) {
     final id = session.institution.id;
     listen(services.templates.watchTemplates(id), (v) {
-      templates = List.of(v)..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      if (selectedId == null || !templates.any((t) => t.id == selectedId)) {
-        selectedId = templates.firstOrNull?.id;
-      }
+      _all = List.of(v)..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      _keepSelection();
       state = LoadState.ready;
       notify();
     }, onError: (_) {
@@ -30,9 +28,34 @@ class TemplatesViewModel extends ViewModel {
   final SessionController session;
 
   LoadState state = LoadState.loading;
-  List<CartTemplate> templates = const [];
+  List<CartTemplate> _all = const [];
   List<Cart> carts = const [];
   String? selectedId;
+
+  /// P3: "Ativos" or "Arquivados".
+  bool showArchived = false;
+
+  /// The templates in the current tab.
+  List<CartTemplate> get templates => _all.where((t) => t.archived == showArchived).toList();
+
+  /// Templates offered when creating a cart (archived ones never are).
+  List<CartTemplate> get activeTemplates => _all.where((t) => !t.archived).toList();
+
+  int get archivedCount => _all.where((t) => t.archived).length;
+
+  void _keepSelection() {
+    final visible = templates;
+    if (selectedId == null || !visible.any((t) => t.id == selectedId)) {
+      selectedId = visible.firstOrNull?.id;
+    }
+  }
+
+  void setShowArchived(bool value) {
+    showArchived = value;
+    selectedId = null;
+    _keepSelection();
+    notify();
+  }
 
   CartTemplateUseCases get _useCases =>
       CartTemplateUseCases(carts: services.carts, drawers: services.drawers, inventory: services.inventory);
@@ -82,9 +105,19 @@ class TemplatesViewModel extends ViewModel {
         await services.templates.saveTemplate(next);
       });
 
-  Future<ActionResult<void>> delete(CartTemplate template) =>
-      run(() => services.templates.deleteTemplate(session.institution.id, template.id));
+  /// "Arquivar modelo" (P3: never deleted). Carts already made from it keep
+  /// their structure.
+  Future<ActionResult<void>> archive(CartTemplate template) =>
+      run(() => services.templates.setArchived(session.institution.id, template.id, archived: true));
 
+  /// "Restaurar modelo".
+  Future<ActionResult<void>> restore(CartTemplate template) =>
+      run(() => services.templates.setArchived(session.institution.id, template.id, archived: false));
+
+  /// Error code `templateArchived`: an archived template can't make new carts.
   Future<ActionResult<Cart>> createCart(CartTemplate template, {required String name, String? service, String? location}) =>
-      run(() => _useCases.createCartFromTemplate(template: template, name: name, service: service, location: location));
+      run(() async {
+        if (template.archived) throw const ActionError('templateArchived');
+        return _useCases.createCartFromTemplate(template: template, name: name, service: service, location: location);
+      });
 }

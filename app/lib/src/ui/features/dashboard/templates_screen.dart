@@ -12,6 +12,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/fit.dart';
 import '../../core/widgets/layout.dart';
+import '../../core/widgets/status.dart';
 import '../../shells/shell_navigation.dart';
 import 'cart_config_screen.dart';
 import 'cart_form_dialog.dart';
@@ -47,13 +48,28 @@ class TemplatesScreen extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: IcSpace.s20),
+              const SizedBox(height: IcSpace.s16),
+              // P3: templates are archived, never deleted.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedTabs<bool>(
+                  items: [
+                    TabItem(false, l10n.templatesTabActive(vm.activeTemplates.length)),
+                    TabItem(true, l10n.templatesTabArchived(vm.archivedCount)),
+                  ],
+                  selected: vm.showArchived,
+                  onChanged: vm.setShowArchived,
+                ),
+              ),
+              const SizedBox(height: IcSpace.s16),
               Expanded(
                 child: switch (vm.state) {
                   LoadState.loading => const StateView.loading(),
                   LoadState.error => StateView.message(message: l10n.stateLoadError),
-                  LoadState.ready when vm.templates.isEmpty =>
-                    StateView.message(message: l10n.templatesEmptyDashboard, icon: IcIcon.modelo),
+                  LoadState.ready when vm.templates.isEmpty => StateView.message(
+                      message: vm.showArchived ? l10n.templatesArchivedEmpty : l10n.templatesEmptyDashboard,
+                      icon: IcIcon.modelo,
+                    ),
                   LoadState.ready => Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -198,7 +214,10 @@ class _Preview extends StatelessWidget {
         const SizedBox(height: IcSpace.s8),
         Text(l10n.templateCopyNote, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
         const SizedBox(height: IcSpace.s16),
-        if (SessionScope.of(context).isManager)
+        if (template.archived) ...[
+          Notice(kind: NoticeKind.info, title: l10n.templateArchivedTitle, message: l10n.templateArchivedMessage),
+          const SizedBox(height: IcSpace.s8),
+        ] else if (SessionScope.of(context).isManager)
           IcButton(
             label: l10n.createCartFromThisTemplate,
             icon: IcIcon.mais,
@@ -220,7 +239,15 @@ class _Preview extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: IcSpace.s8),
-              IcIconButton(icon: IcIcon.apagar, tooltip: l10n.deleteTemplate, onPressed: () => _delete(context)),
+              if (template.archived)
+                IcButton(
+                  label: l10n.restoreTemplate,
+                  icon: IcIcon.arquivar,
+                  style: IcButtonStyle.secondary,
+                  onPressed: () => _restore(context),
+                )
+              else
+                IcIconButton(icon: IcIcon.arquivar, tooltip: l10n.archiveTemplate, onPressed: () => _archive(context)),
             ],
           ),
         ],
@@ -230,7 +257,7 @@ class _Preview extends StatelessWidget {
 
   Future<void> _createCart(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
-    final input = await showCartFormDialog(context, title: l10n.createFromTemplate, templates: vm.templates, initialTemplate: template);
+    final input = await showCartFormDialog(context, title: l10n.createFromTemplate, templates: vm.activeTemplates, initialTemplate: template);
     if (input == null || !context.mounted) return;
     final result = await vm.createCart(input.template ?? template, name: input.name, service: input.service, location: input.location);
     if (!context.mounted) return;
@@ -248,19 +275,25 @@ class _Preview extends StatelessWidget {
     showResult(context, result, success: l10n.templateSaved);
   }
 
-  Future<void> _delete(BuildContext context) async {
+  Future<void> _archive(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final ok = await confirmAction(
       context,
-      title: l10n.deleteTemplate,
-      message: l10n.deleteTemplateConfirm(template.name),
-      confirmLabel: l10n.deleteTemplate,
-      destructive: true,
+      title: l10n.archiveTemplate,
+      message: l10n.archiveTemplateConfirm(template.name),
+      confirmLabel: l10n.archiveTemplate,
     );
     if (!ok || !context.mounted) return;
-    final result = await vm.delete(template);
+    final result = await vm.archive(template);
     if (!context.mounted) return;
-    showResult(context, result, success: l10n.templateDeleted);
+    showResult(context, result, success: l10n.templateArchived);
+  }
+
+  Future<void> _restore(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final result = await vm.restore(template);
+    if (!context.mounted) return;
+    showResult(context, result, success: l10n.templateRestored);
   }
 }
 

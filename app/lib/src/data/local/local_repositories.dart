@@ -234,8 +234,10 @@ class LocalTemplateRepository implements TemplateRepository {
   }
 
   @override
-  Future<void> deleteTemplate(String institutionId, String templateId) =>
-      _list(institutionId).update((current) => [for (final t in current) if (t.id != templateId) t]);
+  Future<void> setArchived(String institutionId, String templateId, {required bool archived}) =>
+      _list(institutionId).update((current) => [
+            for (final t in current) t.id == templateId ? t.copyWith(archived: archived) : t,
+          ]);
 }
 
 // ---------------------------------------------------------------------------

@@ -1216,16 +1216,6 @@
   "templatesEmptyDashboard": "No templates yet. Create one from a configured cart.",
   "newTemplate": "New template",
   "editTemplate": "Edit template",
-  "deleteTemplate": "Delete template",
-  "deleteTemplateConfirm": "Delete the template “{name}”? Carts already created from it are not changed.",
-  "@deleteTemplateConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "templateDeleted": "Template deleted.",
   "templateSaved": "Template saved.",
   "templateSummary": "{drawers, plural, =1{1 drawer} other{{drawers} drawers}} · {positions} positions · used in {carts, plural, =1{1 cart} other{{carts} carts}}",
   "@templateSummary": {
@@ -1503,5 +1493,36 @@
   "correctionReasonHint": "e.g. recorded in the wrong position",
   "slotInUse": "Position in use",
   "slotInUseHint": "This position already has history: it keeps its product and can't be cleared. The structure of a cart in use can't be changed.",
-  "drawerInUseHint": "This drawer already has history: its grid can't be resized, merged or split. You can still change the positions' target quantities."
+  "drawerInUseHint": "This drawer already has history: its grid can't be resized, merged or split. You can still change the positions' target quantities.",
+  "templatesTabActive": "Active ({count})",
+  "@templatesTabActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesTabArchived": "Archived ({count})",
+  "@templatesTabArchived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesArchivedEmpty": "There are no archived templates.",
+  "archiveTemplate": "Archive template",
+  "archiveTemplateConfirm": "Archive the template “{name}”? It won't be offered when creating carts; carts already created don't change. You can restore it later.",
+  "@archiveTemplateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateArchived": "Template archived.",
+  "restoreTemplate": "Restore",
+  "templateRestored": "Template restored.",
+  "templateArchivedTitle": "Template archived",
+  "templateArchivedMessage": "It can't be used to create carts. Restore it to use it again."
 }

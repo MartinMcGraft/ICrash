@@ -1444,18 +1444,6 @@
   "@newTemplate": {},
   "editTemplate": "Editar modelo",
   "@editTemplate": {},
-  "deleteTemplate": "Eliminar modelo",
-  "@deleteTemplate": {},
-  "deleteTemplateConfirm": "Eliminar o modelo “{name}”? Os carrinhos já criados a partir dele não são alterados.",
-  "@deleteTemplateConfirm": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "templateDeleted": "Modelo eliminado.",
-  "@templateDeleted": {},
   "templateSaved": "Modelo guardado.",
   "@templateSaved": {},
   "templateSummary": "{drawers, plural, =1{1 gaveta} other{{drawers} gavetas}} · {positions} posições · usado em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}",
@@ -1835,5 +1823,43 @@
   "slotInUseHint": "Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.",
   "@slotInUseHint": {},
   "drawerInUseHint": "Esta gaveta já tem histórico: a grelha não pode ser redimensionada, fundida nem dividida. Pode alterar a quantidade alvo das posições.",
-  "@drawerInUseHint": {}
+  "@drawerInUseHint": {},
+  "templatesTabActive": "Ativos ({count})",
+  "@templatesTabActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesTabArchived": "Arquivados ({count})",
+  "@templatesTabArchived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesArchivedEmpty": "Não há modelos arquivados.",
+  "@templatesArchivedEmpty": {},
+  "archiveTemplate": "Arquivar modelo",
+  "@archiveTemplate": {},
+  "archiveTemplateConfirm": "Arquivar o modelo “{name}”? Deixa de aparecer ao criar carrinhos; os carrinhos já criados não mudam. Pode restaurá-lo mais tarde.",
+  "@archiveTemplateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateArchived": "Modelo arquivado.",
+  "@templateArchived": {},
+  "restoreTemplate": "Restaurar",
+  "@restoreTemplate": {},
+  "templateRestored": "Modelo restaurado.",
+  "@templateRestored": {},
+  "templateArchivedTitle": "Modelo arquivado",
+  "@templateArchivedTitle": {},
+  "templateArchivedMessage": "Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.",
+  "@templateArchivedMessage": {}
 }

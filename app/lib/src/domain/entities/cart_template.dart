@@ -11,6 +11,7 @@ class CartTemplate {
     required this.drawers,
     required this.updatedAt,
     required this.updatedByName,
+    this.archived = false,
   });
 
   final String id;
@@ -20,9 +21,20 @@ class CartTemplate {
   final DateTime updatedAt;
   final String updatedByName;
 
+  /// P3 (28 Oct): templates are edited or archived, never deleted. An
+  /// archived template isn't offered for new carts and can be restored.
+  final bool archived;
+
   int get positionCount => drawers.fold(0, (sum, d) => sum + d.positionCount);
 
-  CartTemplate copyWith({String? id, String? name, List<TemplateDrawer>? drawers, DateTime? updatedAt, String? updatedByName}) =>
+  CartTemplate copyWith({
+    String? id,
+    String? name,
+    List<TemplateDrawer>? drawers,
+    DateTime? updatedAt,
+    String? updatedByName,
+    bool? archived,
+  }) =>
       CartTemplate(
         id: id ?? this.id,
         institutionId: institutionId,
@@ -30,6 +42,7 @@ class CartTemplate {
         drawers: drawers ?? this.drawers,
         updatedAt: updatedAt ?? this.updatedAt,
         updatedByName: updatedByName ?? this.updatedByName,
+        archived: archived ?? this.archived,
       );
 
   Map<String, Object?> toJson() => {
@@ -39,6 +52,7 @@ class CartTemplate {
         'drawers': [for (final d in drawers) d.toJson()],
         'updatedAt': updatedAt.toIso8601String(),
         'updatedByName': updatedByName,
+        if (archived) 'archived': true,
       };
 
   factory CartTemplate.fromJson(Map<String, Object?> json) => CartTemplate(
@@ -51,6 +65,7 @@ class CartTemplate {
         ],
         updatedAt: DateTime.parse(json['updatedAt'] as String),
         updatedByName: json['updatedByName'] as String? ?? '',
+        archived: json['archived'] as bool? ?? false,
       );
 }
 

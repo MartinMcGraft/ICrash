@@ -316,6 +316,31 @@ void main() {
       expect(vm.templates, hasLength(2));
       vm.dispose();
     });
+
+    test('templates are archived and restored, never deleted (P3)', () async {
+      final drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 1, columns: 1)]);
+      final carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]);
+      final services = buildTestServices(drawers: drawers, carts: carts);
+      final vm = TemplatesViewModel(services, _session(services));
+      await _settle();
+      await vm.createFromCart(cartId: 'c1', name: 'Adulto');
+      await _settle();
+      final template = vm.templates.single;
+
+      expect((await vm.archive(template)).isOk, isTrue);
+      await _settle();
+      expect(vm.templates, isEmpty, reason: 'the active tab no longer lists it');
+      expect(vm.activeTemplates, isEmpty);
+      vm.setShowArchived(true);
+      expect(vm.templates.single.archived, isTrue);
+      expect((await vm.createCart(vm.templates.single, name: 'Carro 2')).code, 'templateArchived');
+
+      expect((await vm.restore(vm.templates.single)).isOk, isTrue);
+      await _settle();
+      vm.setShowArchived(false);
+      expect(vm.templates.single.id, template.id);
+      vm.dispose();
+    });
   });
 
   group('B9 ReportsHistoryViewModel', () {

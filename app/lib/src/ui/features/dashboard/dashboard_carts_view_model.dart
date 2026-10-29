@@ -41,7 +41,8 @@ class DashboardCartsViewModel extends ViewModel {
       _rebuild();
     });
     listen(services.templates.watchTemplates(id), (v) {
-      templates = v;
+      // P3: archived templates aren't offered for new carts.
+      templates = v.where((t) => !t.archived).toList();
       notify();
     });
   }
