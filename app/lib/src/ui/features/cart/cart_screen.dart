@@ -20,6 +20,10 @@ import 'cart_dialogs.dart';
 import 'cart_view_model.dart';
 import 'product_search_dialog.dart';
 
+/// P12 (28 Oct): emergency mode is set aside. While false, the cart menu doesn't
+/// offer "Modo de emergência" (A10's code stays). Flip to bring it back.
+const kEmergencyModeEnabled = false;
+
 /// A5 · Carrinho — drawers on the left, "Menu do carro" on the right.
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key, required this.cartId, this.isRoot = false});
@@ -219,7 +223,10 @@ class _CartMenu extends StatelessWidget {
             ),
           ),
         ),
-        if (session.canUseEmergency) ...[
+        // P12: no emergency mode for now. The entry point is hidden; an
+        // emergency session already open on this device can still be resumed
+        // and ended. A10's code is kept.
+        if (session.canUseEmergency && (kEmergencyModeEnabled || vm.emergencyActive)) ...[
           if (!compact) ...[
             Text(l10n.emergencyHint, style: IcText.bodyS.copyWith(color: IcColors.textSecondary)),
             const SizedBox(height: IcSpace.s12),
