@@ -199,10 +199,7 @@ class _DetailPanel extends StatelessWidget {
           value: expiry == null ? '—' : (compact ? format.dayMonth(expiry) : '${format.date(expiry)} (${l10n.daysCount(daysLeft!)})'),
           valueColor: expiryColor,
         ),
-        if (!compact) ...[
-          InfoRow(label: l10n.lotLabel, value: lot),
-          InfoRow(label: l10n.minimumLabel, value: assignment.minimumQuantity?.toString() ?? '—'),
-        ],
+        if (!compact) InfoRow(label: l10n.lotLabel, value: lot),
         const Spacer(),
         if (session.canConsume)
           IcButton(
@@ -219,7 +216,8 @@ class _DetailPanel extends StatelessWidget {
             icon: IcIcon.mais,
             style: IcButtonStyle.secondary,
             expand: true,
-            onPressed: () => vm.showPanel(DrawerPanel.replenish),
+            // P5: a full slot can't take more units.
+            onPressed: vm.replenishMax > 0 ? () => vm.showPanel(DrawerPanel.replenish) : null,
           ),
         ],
         if (!compact) ...[
@@ -405,7 +403,7 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
       children: [
         _labeledRow(
           l10n.quantityLabel,
-          QuantityStepper(label: l10n.quantityLabel, value: vm.amount, min: 1, onChanged: vm.setAmount),
+          QuantityStepper(label: l10n.quantityLabel, value: vm.amount, min: 1, max: vm.replenishMax.clamp(1, 9999), onChanged: vm.setAmount),
         ),
         LabeledField(
           label: l10n.lotLabel,
@@ -490,7 +488,7 @@ class _CorrectPanelState extends State<_CorrectPanel> {
               borderRadius: BorderRadius.circular(IcRadius.sm),
               onTap: () => setState(() {
                 _event = event;
-                _adjust = -event.amount;
+                _adjust = (-event.amount).clamp(vm.correctionMin, vm.correctionMax);
               }),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -509,7 +507,14 @@ class _CorrectPanelState extends State<_CorrectPanel> {
           const SizedBox(height: IcSpace.s12),
           _labeledRow(
             l10n.adjustmentLabel,
-            QuantityStepper(label: l10n.adjustmentLabel, value: _adjust, min: -999, max: 999, onChanged: (v) => setState(() => _adjust = v)),
+            // P5: a correction keeps the slot within 0 … target.
+            QuantityStepper(
+              label: l10n.adjustmentLabel,
+              value: _adjust.clamp(vm.correctionMin, vm.correctionMax),
+              min: vm.correctionMin,
+              max: vm.correctionMax,
+              onChanged: (v) => setState(() => _adjust = v),
+            ),
           ),
         ],
       ],
@@ -583,8 +588,23 @@ class _AssignPanelState extends State<_AssignPanel> {
               ),
             ),
         const SizedBox(height: IcSpace.s12),
-        _labeledRow(l10n.targetQuantityLabel, QuantityStepper(label: l10n.targetQuantityLabel, value: _target, min: 1, onChanged: (v) => setState(() => _target = v))),
-        _labeledRow(l10n.initialQuantityLabel, QuantityStepper(label: l10n.initialQuantityLabel, value: _initial, onChanged: (v) => setState(() => _initial = v))),
+        _labeledRow(
+          l10n.targetQuantityLabel,
+          QuantityStepper(
+            label: l10n.targetQuantityLabel,
+            value: _target,
+            min: 1,
+            onChanged: (v) => setState(() {
+              _target = v;
+              if (_initial > v) _initial = v;
+            }),
+          ),
+        ),
+        // P5: the initial quantity can't exceed the target.
+        _labeledRow(
+          l10n.initialQuantityLabel,
+          QuantityStepper(label: l10n.initialQuantityLabel, value: _initial, max: _target, onChanged: (v) => setState(() => _initial = v)),
+        ),
       ],
     );
   }
@@ -620,7 +640,15 @@ class _ReconcilePanelState extends State<_ReconcilePanel> {
         showResult(context, result, success: l10n.reconcileRecorded);
       },
       children: [
-        _labeledRow(l10n.confirmedQuantityLabel, QuantityStepper(label: l10n.confirmedQuantityLabel, value: _quantity, onChanged: (v) => setState(() => _quantity = v))),
+        _labeledRow(
+          l10n.confirmedQuantityLabel,
+          QuantityStepper(
+            label: l10n.confirmedQuantityLabel,
+            value: _quantity,
+            max: vm.selectedAssignment?.targetQuantity ?? 9999,
+            onChanged: (v) => setState(() => _quantity = v),
+          ),
+        ),
         if (vm.batches.isEmpty)
           Text(l10n.noBatchesMessage, style: IcText.bodyS.copyWith(color: IcColors.textSecondary))
         else ...[

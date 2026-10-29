@@ -90,7 +90,6 @@ AppServices _services({int carts = 1, int rows = 5, int columns = 6, int product
             productId: 'p${r * columns + c}',
             currentQuantity: (r + c) % 4,
             targetQuantity: 4,
-            minimumQuantity: 2,
             earliestKnownExpiry: now.add(Duration(days: (r * 7 + c * 3) % 90 - 10)),
           ),
   ];

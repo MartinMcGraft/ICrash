@@ -68,6 +68,9 @@ class FirestoreInventoryRepository implements InventoryRepository {
   @override
   Future<CartProductAssignment> createAssignment(String institutionId, String cartId, CartProductAssignment assignment) async {
     try {
+      // P5: the initial quantity can't exceed the target (no first-stock
+      // event is written; P6/P19 are open).
+      InventoryRules.checkStock(assignment.currentQuantity, assignment.targetQuantity);
       // Spec section 20: a given product may only exist in one slot within a
       // single cart (a different cart, or a different slot's history, is
       // unaffected). Enforced here rather than only in the UI, since Rules
@@ -99,6 +102,8 @@ class FirestoreInventoryRepository implements InventoryRepository {
       return CartProductAssignment.fromMap(ref.id, cartId, normalizeTimestamps(created.data()!, _assignmentTimestampFields));
     } on RepositoryFailure {
       rethrow;
+    } on StockRuleViolation catch (violation) {
+      throw _ruleFailure(violation);
     } catch (error) {
       throw mapFirebaseException(error);
     }
@@ -148,18 +153,37 @@ class FirestoreInventoryRepository implements InventoryRepository {
     required String cartId,
     required String assignmentId,
     required int targetQuantity,
-    int? minimumQuantity,
   }) async {
+    StockRuleViolation? violation;
     try {
-      await _assignmentRef(institutionId, cartId, assignmentId).update({
-        'targetQuantity': targetQuantity,
-        'minimumQuantity': minimumQuantity,
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final ref = _assignmentRef(institutionId, cartId, assignmentId);
+        final data = (await transaction.get(ref)).data();
+        if (data == null) throw StateError('Assignment $assignmentId not found');
+        final current = (data['currentQuantity'] as num?)?.toInt() ?? 0;
+        try {
+          InventoryRules.checkNewTarget(current: current, newTarget: targetQuantity);
+        } on StockRuleViolation catch (v) {
+          violation = v;
+          return;
+        }
+        transaction.update(ref, {
+          'targetQuantity': targetQuantity,
+          // D10: there is no minimum stock; drop the field from old documents.
+          'minimumQuantity': FieldValue.delete(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
     } catch (error) {
       throw mapFirebaseException(error);
     }
+    if (violation != null) throw _ruleFailure(violation!);
   }
+
+  /// Business-rule refusals travel as a [RepositoryFailure] with a code, so
+  /// ViewModels and the View handle them like any other failure.
+  static RepositoryFailure _ruleFailure(StockRuleViolation violation) =>
+      RepositoryFailure(RepositoryFailureReason.invalidInput, cause: violation, code: violation.code);
 
   @override
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
@@ -235,6 +259,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
     if (amount <= 0) {
       throw ArgumentError.value(amount, 'amount', 'Replenishment amount must be positive');
     }
+    StockRuleViolation? violation;
     try {
       await _firestore.runTransaction((transaction) async {
         final ref = _assignmentRef(institutionId, cartId, assignmentId);
@@ -244,6 +269,14 @@ class FirestoreInventoryRepository implements InventoryRepository {
           throw StateError('Assignment $assignmentId not found');
         }
         final currentQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
+        final target = (data['targetQuantity'] as num?)?.toInt() ?? 0;
+        final int updatedQuantity;
+        try {
+          updatedQuantity = InventoryRules.applyReplenishment(currentQuantity, amount, target: target);
+        } on StockRuleViolation catch (v) {
+          violation = v;
+          return;
+        }
         final currentEarliestExpiry = timestampToDateTime(data['earliestKnownExpiry']);
         final newEarliestExpiry = InventoryRules.conservativeEarliestExpiryAfterReplenishment(
           currentEarliestKnownExpiry: currentEarliestExpiry,
@@ -251,7 +284,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
         );
 
         transaction.update(ref, {
-          'currentQuantity': currentQuantity + amount,
+          'currentQuantity': updatedQuantity,
           'earliestKnownExpiry': Timestamp.fromDate(newEarliestExpiry),
           'updatedAt': FieldValue.serverTimestamp(),
           'updatedBy': actorUid,
@@ -283,6 +316,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
     } catch (error) {
       throw mapFirebaseException(error);
     }
+    if (violation != null) throw _ruleFailure(violation!);
   }
 
   @override
@@ -297,6 +331,8 @@ class FirestoreInventoryRepository implements InventoryRepository {
     try {
       final batchesCollection = _firestore.collection(FirestorePaths.batches(institutionId, cartId, assignmentId));
       final ref = _assignmentRef(institutionId, cartId, assignmentId);
+      final before = await ref.get();
+      InventoryRules.checkStock(confirmedQuantity, (before.data()?['targetQuantity'] as num?)?.toInt() ?? 0);
 
       // Batch-collection replacement can outgrow a single transaction's
       // document limit for a heavily audited slot, so it runs as a plain
@@ -343,6 +379,8 @@ class FirestoreInventoryRepository implements InventoryRepository {
             ).toMap()
               ..['serverTimestamp'] = FieldValue.serverTimestamp(),
           );
+    } on StockRuleViolation catch (violation) {
+      throw _ruleFailure(violation);
     } catch (error) {
       throw mapFirebaseException(error);
     }
@@ -360,6 +398,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
     if (amount == 0) {
       throw ArgumentError.value(amount, 'amount', 'Correction amount must not be zero');
     }
+    StockRuleViolation? violation;
     try {
       await _firestore.runTransaction((transaction) async {
         final ref = _assignmentRef(institutionId, cartId, assignmentId);
@@ -369,9 +408,13 @@ class FirestoreInventoryRepository implements InventoryRepository {
           throw StateError('Assignment $assignmentId not found');
         }
         final currentQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
-        final updated = currentQuantity + amount;
-        if (updated < 0) {
-          throw StateError('Correction of $amount would take assignment $assignmentId below zero');
+        final target = (data['targetQuantity'] as num?)?.toInt() ?? 0;
+        final int updated;
+        try {
+          updated = InventoryRules.applyCorrection(currentQuantity, amount, target: target);
+        } on StockRuleViolation catch (v) {
+          violation = v;
+          return;
         }
         transaction.update(ref, {
           'currentQuantity': updated,
@@ -397,5 +440,6 @@ class FirestoreInventoryRepository implements InventoryRepository {
     } catch (error) {
       throw mapFirebaseException(error);
     }
+    if (violation != null) throw _ruleFailure(violation!);
   }
 }

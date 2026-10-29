@@ -717,7 +717,6 @@
   },
   "expiryLabel": "Expiry",
   "lotLabel": "Lot",
-  "minimumLabel": "Minimum",
   "lotWithUnits": "{lot} · {units} units",
   "@lotWithUnits": {
     "placeholders": {
@@ -1173,7 +1172,6 @@
   "gridUnsavedHint": "Save the grid before configuring positions.",
   "chooseProduct": "Choose product",
   "catalogNoMatches": "No product matches the search.",
-  "minimumQuantityLabel": "Minimum quantity",
   "expiryWarningDaysLabel": "Expiry warning (days)",
   "askLotOnReplenish": "Ask for lot and expiry on replenishment",
   "applyToPosition": "Apply to position",
@@ -1505,5 +1503,9 @@
   "pagerNext": "Next page",
   "closePanel": "Close panel",
   "viewAsApp": "View as App (testing)",
-  "viewAsDashboard": "View as Dashboard (testing)"
+  "viewAsDashboard": "View as Dashboard (testing)",
+  "errorExceedsTarget": "A position can't hold more units than its target quantity.",
+  "errorBelowZero": "The quantity can't go below 0.",
+  "errorTargetBelowCurrent": "The target can't be lower than the current stock. Record the consumption or a correction first.",
+  "errorInvalidTarget": "The target must be greater than 0."
 }

@@ -6,13 +6,14 @@ import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/entities/slot.dart';
 import '../../../domain/inventory_health.dart';
+import '../../../domain/inventory_rules.dart';
 import '../../core/cart_live_data.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/widgets/slot_grid.dart';
 
 /// B4 · Editor de grelha — layout (rows/columns, merge, split) and slot
-/// configuration (product, target, minimum, expiry warning).
+/// configuration (product, target, expiry warning). No minimum stock (D10).
 class GridEditorViewModel extends ViewModel {
   GridEditorViewModel(this.services, this.session, {required this.cartId, required this.drawerId, String? initialSlotId}) {
     if (initialSlotId != null) selected = {initialSlotId};
@@ -221,7 +222,6 @@ class GridEditorViewModel extends ViewModel {
   Future<ActionResult<void>> apply({
     required Product product,
     required int target,
-    int? minimum,
     int? expiryWarningDays,
   }) {
     final slot = selectedSlot;
@@ -230,12 +230,13 @@ class GridEditorViewModel extends ViewModel {
       if (slot == null) return;
       final institutionId = session.institution.id;
       if (existing != null && existing.productId == product.id) {
+        // Q6: a target below the units already in the slot is refused.
+        InventoryRules.checkNewTarget(current: existing.currentQuantity, newTarget: target);
         await services.inventory.updateAssignmentSettings(
           institutionId: institutionId,
           cartId: cartId,
           assignmentId: existing.id,
           targetQuantity: target,
-          minimumQuantity: minimum,
         );
       } else {
         if (existing != null) {
@@ -251,7 +252,6 @@ class GridEditorViewModel extends ViewModel {
             productId: product.id,
             currentQuantity: 0,
             targetQuantity: target,
-            minimumQuantity: minimum,
           ),
         );
       }

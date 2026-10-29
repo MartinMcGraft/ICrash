@@ -65,6 +65,25 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
 
+    // P5 (no overfill) and DATABASE.md `0 ≤ currNumberCC ≤ maxNumberCC`,
+    // `maxNumberCC > 0`. Mirrors InventoryRules.checkStock in the app.
+    function stockWithinTarget(data) {
+      return data.targetQuantity > 0 &&
+        data.currentQuantity >= 0 &&
+        data.currentQuantity <= data.targetQuantity;
+    }
+
+    // An update must leave the stock within its target, except that a
+    // placement already overfilled before P5 (old data in the cloud
+    // project) may still have its stock lowered, with the target unchanged.
+    function stockUpdateAllowed() {
+      return stockWithinTarget(request.resource.data) || (
+        request.resource.data.currentQuantity >= 0 &&
+        request.resource.data.currentQuantity < resource.data.currentQuantity &&
+        request.resource.data.targetQuantity == resource.data.targetQuantity
+      );
+    }
+
     // Marker collection for platform-wide super admins. No Cloud Function
     // exists yet to manage it (spec section 7: Phase 1 has no Functions), so
     // it is provisioned manually via the Firebase console/Admin SDK and is
@@ -198,7 +217,8 @@ service cloud.firestore {
           // via the collection-group rule above, which trusts these fields.
           allow create: if isManagerOrAbove(institutionId) &&
             request.resource.data.institutionId == institutionId &&
-            request.resource.data.cartId == cartId;
+            request.resource.data.cartId == cartId &&
+            stockWithinTarget(request.resource.data);
           allow delete: if isManagerOrAbove(institutionId);
           // A normal assigned user may only ever move currentQuantity during
           // daily consumption; every structural field stays manager+ only
@@ -207,7 +227,8 @@ service cloud.firestore {
               (canAccessCart(institutionId, cartId) &&
                 onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy']))) &&
             request.resource.data.institutionId == resource.data.institutionId &&
-            request.resource.data.cartId == resource.data.cartId;
+            request.resource.data.cartId == resource.data.cartId &&
+            stockUpdateAllowed();
 
           match /batches/{batchId} {
             allow read: if canAccessCart(institutionId, cartId);

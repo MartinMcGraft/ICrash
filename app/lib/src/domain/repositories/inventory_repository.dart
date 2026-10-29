@@ -13,8 +13,8 @@ abstract class InventoryRepository {
 
   /// Every assignment across every cart in [institutionId] the current user
   /// can access (spec section 49: cross-cart dashboard alerts — expiring/
-  /// expired products and stock below its minimum, computed at read-time
-  /// via `InventoryRules.computeAlert` rather than stored). Rules gate each
+  /// expired products and slots below their target, computed at read-time
+  /// via `InventoryHealth.slotHealth` rather than stored). Rules gate each
   /// cart exactly as [watchAssignments] does per-cart, so a normal user only
   /// ever sees assignments in carts they're responsible for.
   Stream<List<CartProductAssignment>> watchAllAssignments(String institutionId);
@@ -47,15 +47,16 @@ abstract class InventoryRepository {
     required String assignmentId,
   });
 
-  /// Changes the slot's configuration (target and minimum quantity) without
-  /// touching stock or history. Manager+ only (Rules: structural fields).
-  /// Used by the dashboard grid editor (design v2, B4 "Posição").
+  /// Changes the slot's target quantity without touching stock or history.
+  /// Manager+ only (Rules: structural fields). Used by the dashboard grid
+  /// editor (design v2, B4 "Posição"). Throws [RepositoryFailure] with code
+  /// `targetBelowCurrent` when the new target is below the current stock.
+  /// There is no minimum quantity (D10).
   Future<void> updateAssignmentSettings({
     required String institutionId,
     required String cartId,
     required String assignmentId,
     required int targetQuantity,
-    int? minimumQuantity,
   });
 
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId);

@@ -39,11 +39,23 @@ String failureText(AppLocalizations l10n, RepositoryFailureReason? reason) => sw
       _ => l10n.actionGenericError,
     };
 
-/// Shows [success] (if any) or the failure message for [result].
+/// Message for a business-rule code shared by several screens (see
+/// `StockRuleViolation` and the ViewModels' `ActionError` codes), or null
+/// when the code has no shared message.
+String? actionCodeText(AppLocalizations l10n, String? code) => switch (code) {
+      'exceedsTarget' => l10n.errorExceedsTarget,
+      'belowZero' => l10n.errorBelowZero,
+      'targetBelowCurrent' => l10n.errorTargetBelowCurrent,
+      'invalidTarget' => l10n.errorInvalidTarget,
+      _ => null,
+    };
+
+/// Shows [success] (if any) or the failure message for [result]: [failure]
+/// if given, else the shared message for its code, else the generic one.
 void showResult(BuildContext context, ActionResult<Object?> result, {String? success, String? failure}) {
   if (!context.mounted) return;
   final l10n = AppLocalizations.of(context);
-  final text = result.isOk ? success : (failure ?? failureText(l10n, result.failure));
+  final text = result.isOk ? success : (failure ?? actionCodeText(l10n, result.code) ?? failureText(l10n, result.failure));
   if (text == null) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 }

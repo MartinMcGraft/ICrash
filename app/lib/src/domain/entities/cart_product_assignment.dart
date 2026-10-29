@@ -15,9 +15,7 @@ class CartProductAssignment {
     required this.productId,
     required this.currentQuantity,
     required this.targetQuantity,
-    this.minimumQuantity,
     this.earliestKnownExpiry,
-    this.status = AssignmentStatus.ok,
     this.updatedAt,
     this.updatedBy,
   });
@@ -29,15 +27,17 @@ class CartProductAssignment {
 
   /// Authoritative operational aggregate. Decremented directly by daily
   /// consumption without touching batch records (spec section 24).
+  /// Always `0 ≤ currentQuantity ≤ targetQuantity` (P5: no overfill).
   final int currentQuantity;
+
+  /// The full quantity the slot should hold (DATABASE.md `maxNumberCC`).
+  /// There is no minimum stock (D10): below this, the slot needs replenishing.
   final int targetQuantity;
-  final int? minimumQuantity;
 
   /// Conservative nearest known expiry across all batches ever recorded for
   /// this assignment that have not been physically confirmed absent
   /// (spec sections 25-28). Only reconciliation may advance it.
   final DateTime? earliestKnownExpiry;
-  final AssignmentStatus status;
   final DateTime? updatedAt;
   final String? updatedBy;
 
@@ -49,8 +49,8 @@ class CartProductAssignment {
       productId: map['productId'] as String? ?? '',
       currentQuantity: (map['currentQuantity'] as num?)?.toInt() ?? 0,
       targetQuantity: (map['targetQuantity'] as num?)?.toInt() ?? 0,
-      minimumQuantity: (map['minimumQuantity'] as num?)?.toInt(),
-      status: AssignmentStatusCodec.fromId(map['status'] as String? ?? AssignmentStatus.ok.id),
+      // Old documents may still carry `minimumQuantity` (D10) and a stale
+      // `status` that was written once and never updated; both are ignored.
       updatedBy: map['updatedBy'] as String?,
       earliestKnownExpiry: map['earliestKnownExpiry'] as DateTime?,
       updatedAt: map['updatedAt'] as DateTime?,
@@ -62,19 +62,27 @@ class CartProductAssignment {
         'productId': productId,
         'currentQuantity': currentQuantity,
         'targetQuantity': targetQuantity,
-        if (minimumQuantity != null) 'minimumQuantity': minimumQuantity,
-        'status': status.id,
         if (updatedBy != null) 'updatedBy': updatedBy,
       };
-}
 
-enum AssignmentStatus { ok, replenishmentRequired, expiringSoon, expired }
-
-extension AssignmentStatusCodec on AssignmentStatus {
-  String get id => name;
-
-  static AssignmentStatus fromId(String id) => AssignmentStatus.values.firstWhere(
-        (status) => status.name == id,
-        orElse: () => AssignmentStatus.ok,
+  CartProductAssignment copyWith({
+    String? id,
+    String? slotId,
+    String? productId,
+    int? currentQuantity,
+    int? targetQuantity,
+    DateTime? earliestKnownExpiry,
+    bool clearEarliestKnownExpiry = false,
+  }) =>
+      CartProductAssignment(
+        id: id ?? this.id,
+        cartId: cartId,
+        slotId: slotId ?? this.slotId,
+        productId: productId ?? this.productId,
+        currentQuantity: currentQuantity ?? this.currentQuantity,
+        targetQuantity: targetQuantity ?? this.targetQuantity,
+        earliestKnownExpiry: clearEarliestKnownExpiry ? null : (earliestKnownExpiry ?? this.earliestKnownExpiry),
+        updatedAt: updatedAt,
+        updatedBy: updatedBy,
       );
 }

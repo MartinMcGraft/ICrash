@@ -14,6 +14,7 @@ import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/entities/usage_event.dart';
+import 'package:icrash_app/src/domain/inventory_rules.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
@@ -346,6 +347,20 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
 
   void _emit() => _controller.add(List.unmodifiable(assignments));
 
+  /// Applies [change] to the assignment, mirroring the real repository's
+  /// business-rule failures (a [StockRuleViolation] becomes a coded
+  /// [RepositoryFailure]).
+  void _update(String assignmentId, CartProductAssignment Function(CartProductAssignment current) change) {
+    final index = assignments.indexWhere((a) => a.id == assignmentId);
+    if (index == -1) return;
+    try {
+      assignments[index] = change(assignments[index]);
+    } on StockRuleViolation catch (v) {
+      throw RepositoryFailure(RepositoryFailureReason.invalidInput, cause: v, code: v.code);
+    }
+    _emit();
+  }
+
   @override
   Stream<List<CartProductAssignment>> watchAssignments(String institutionId, String cartId) {
     scheduleMicrotask(_emit);
@@ -371,6 +386,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     if (assignments.any((a) => a.productId == assignment.productId)) {
       throw const RepositoryFailure(RepositoryFailureReason.conflict);
     }
+    try {
+      InventoryRules.checkStock(assignment.currentQuantity, assignment.targetQuantity);
+    } on StockRuleViolation catch (v) {
+      throw RepositoryFailure(RepositoryFailureReason.invalidInput, cause: v, code: v.code);
+    }
     final created = CartProductAssignment(
       id: 'assignment-${_nextId++}',
       cartId: cartId,
@@ -378,7 +398,6 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
       productId: assignment.productId,
       currentQuantity: assignment.currentQuantity,
       targetQuantity: assignment.targetQuantity,
-      minimumQuantity: assignment.minimumQuantity,
     );
     lastCreated = created;
     assignments.add(created);
@@ -393,23 +412,8 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String assignmentId,
     required String newSlotId,
     required String actorUid,
-  }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final current = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: current.id,
-      cartId: current.cartId,
-      slotId: newSlotId,
-      productId: current.productId,
-      currentQuantity: current.currentQuantity,
-      targetQuantity: current.targetQuantity,
-      minimumQuantity: current.minimumQuantity,
-      earliestKnownExpiry: current.earliestKnownExpiry,
-      status: current.status,
-    );
-    _emit();
-  }
+  }) async =>
+      _update(assignmentId, (a) => a.copyWith(slotId: newSlotId));
 
   @override
   Future<void> deleteAssignment({
@@ -428,24 +432,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String cartId,
     required String assignmentId,
     required int targetQuantity,
-    int? minimumQuantity,
-  }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final a = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: a.id,
-      cartId: a.cartId,
-      slotId: a.slotId,
-      productId: a.productId,
-      currentQuantity: a.currentQuantity,
-      targetQuantity: targetQuantity,
-      minimumQuantity: minimumQuantity,
-      earliestKnownExpiry: a.earliestKnownExpiry,
-      status: a.status,
-    );
-    _emit();
-  }
+  }) async =>
+      _update(assignmentId, (a) {
+        InventoryRules.checkNewTarget(current: a.currentQuantity, newTarget: targetQuantity);
+        return a.copyWith(targetQuantity: targetQuantity);
+      });
 
   @override
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
@@ -459,23 +450,8 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String assignmentId,
     required int amount,
     required String actorUid,
-  }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final current = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: current.id,
-      cartId: current.cartId,
-      slotId: current.slotId,
-      productId: current.productId,
-      currentQuantity: current.currentQuantity - amount,
-      targetQuantity: current.targetQuantity,
-      minimumQuantity: current.minimumQuantity,
-      earliestKnownExpiry: current.earliestKnownExpiry,
-      status: current.status,
-    );
-    _emit();
-  }
+  }) async =>
+      _update(assignmentId, (a) => a.copyWith(currentQuantity: InventoryRules.applyConsumption(a.currentQuantity, amount)));
 
   @override
   Future<void> recordReplenishment({
@@ -486,19 +462,9 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required Batch batch,
     required String actorUid,
   }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final current = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: current.id,
-      cartId: current.cartId,
-      slotId: current.slotId,
-      productId: current.productId,
-      currentQuantity: current.currentQuantity + amount,
-      targetQuantity: current.targetQuantity,
-      minimumQuantity: current.minimumQuantity,
-      earliestKnownExpiry: current.earliestKnownExpiry,
-      status: current.status,
+    _update(
+      assignmentId,
+      (a) => a.copyWith(currentQuantity: InventoryRules.applyReplenishment(a.currentQuantity, amount, target: a.targetQuantity)),
     );
     final storedBatch = Batch(
       id: 'batch-${_nextBatchId++}',
@@ -522,20 +488,10 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required List<Batch> confirmedBatches,
     required String actorUid,
   }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final current = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: current.id,
-      cartId: current.cartId,
-      slotId: current.slotId,
-      productId: current.productId,
-      currentQuantity: confirmedQuantity,
-      targetQuantity: current.targetQuantity,
-      minimumQuantity: current.minimumQuantity,
-      earliestKnownExpiry: current.earliestKnownExpiry,
-      status: current.status,
-    );
+    _update(assignmentId, (a) {
+      InventoryRules.checkStock(confirmedQuantity, a.targetQuantity);
+      return a.copyWith(currentQuantity: confirmedQuantity);
+    });
     batchesByAssignment[assignmentId] = List.of(confirmedBatches);
     _emit();
   }
@@ -549,22 +505,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String correctsEventId,
     required String actorUid,
   }) async {
-    final index = assignments.indexWhere((a) => a.id == assignmentId);
-    if (index == -1) return;
-    final current = assignments[index];
-    assignments[index] = CartProductAssignment(
-      id: current.id,
-      cartId: current.cartId,
-      slotId: current.slotId,
-      productId: current.productId,
-      currentQuantity: current.currentQuantity + amount,
-      targetQuantity: current.targetQuantity,
-      minimumQuantity: current.minimumQuantity,
-      earliestKnownExpiry: current.earliestKnownExpiry,
-      status: current.status,
+    _update(
+      assignmentId,
+      (a) => a.copyWith(currentQuantity: InventoryRules.applyCorrection(a.currentQuantity, amount, target: a.targetQuantity)),
     );
     lastCorrectedEventId = correctsEventId;
-    _emit();
   }
 }
 

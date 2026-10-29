@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
+import 'package:icrash_app/src/domain/inventory_health.dart';
 import 'package:icrash_app/src/domain/inventory_rules.dart';
 
 void main() {
@@ -104,106 +105,84 @@ void main() {
     });
   });
 
-  group('InventoryRules.computeAlert (spec section 49)', () {
+  group('stock bounds 0 ≤ current ≤ target (P5, D10)', () {
+    test('checkStock accepts the bounds themselves', () {
+      InventoryRules.checkStock(0, 5);
+      InventoryRules.checkStock(5, 5);
+    });
+
+    test('checkStock refuses overfill, negatives and a zero target', () {
+      expect(() => InventoryRules.checkStock(6, 5), _violation(StockRuleViolation.exceedsTarget));
+      expect(() => InventoryRules.checkStock(-1, 5), _violation(StockRuleViolation.belowZero));
+      expect(() => InventoryRules.checkStock(0, 0), _violation(StockRuleViolation.invalidTarget));
+    });
+
+    test('replenishment may fill the slot but never overfill it', () {
+      expect(InventoryRules.applyReplenishment(3, 2, target: 5), 5);
+      expect(() => InventoryRules.applyReplenishment(3, 3, target: 5), _violation(StockRuleViolation.exceedsTarget));
+    });
+
+    test('a correction stays within 0 … target', () {
+      expect(InventoryRules.applyCorrection(3, -3, target: 5), 0);
+      expect(InventoryRules.applyCorrection(3, 2, target: 5), 5);
+      expect(() => InventoryRules.applyCorrection(3, -4, target: 5), _violation(StockRuleViolation.belowZero));
+      expect(() => InventoryRules.applyCorrection(3, 3, target: 5), _violation(StockRuleViolation.exceedsTarget));
+    });
+
+    test('a new target below the current stock is refused (Q6)', () {
+      InventoryRules.checkNewTarget(current: 4, newTarget: 4);
+      expect(
+        () => InventoryRules.checkNewTarget(current: 4, newTarget: 3),
+        _violation(StockRuleViolation.targetBelowCurrent),
+      );
+      expect(() => InventoryRules.checkNewTarget(current: 0, newTarget: 0), _violation(StockRuleViolation.invalidTarget));
+    });
+  });
+
+  group('InventoryHealth.slotHealth: one state, highest priority wins (DB9)', () {
     const base = CartProductAssignment(
       id: 'a1',
       cartId: 'cart-1',
       slotId: 'r0c0',
       productId: 'p1',
-      currentQuantity: 5,
+      currentQuantity: 10,
       targetQuantity: 10,
     );
     final now = DateTime(2026, 9, 10);
+    SlotHealth health(CartProductAssignment a) => InventoryHealth.slotHealth(a, expiryWarningDays: 30, now: now);
 
-    test('returns null when nothing needs attention', () {
-      final assignment = base.copyWithExpiry(now.add(const Duration(days: 90)));
-      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
+    test('no placement is free; a full slot with a far expiry is ok', () {
+      expect(InventoryHealth.slotHealth(null, expiryWarningDays: 30, now: now), SlotHealth.free);
+      expect(health(base.copyWith(earliestKnownExpiry: now.add(const Duration(days: 90)))), SlotHealth.ok);
     });
 
-    test('flags an assignment whose earliestKnownExpiry has already passed', () {
-      final assignment = base.copyWithExpiry(now.subtract(const Duration(days: 1)));
+    test('below target but not empty is low stock; there is no minimum (D10)', () {
+      expect(health(base.copyWith(currentQuantity: 9)), SlotHealth.lowStock);
+    });
+
+    test('an expiry of exactly today counts as expired', () {
+      expect(health(base.copyWith(earliestKnownExpiry: now)), SlotHealth.expired);
+    });
+
+    test('the order is expired > missing > expiring > low stock > ok', () {
+      final expired = now.subtract(const Duration(days: 1));
+      final expiring = now.add(const Duration(days: 10));
+      expect(health(base.copyWith(currentQuantity: 0, earliestKnownExpiry: expired)), SlotHealth.expired);
+      expect(health(base.copyWith(currentQuantity: 0, earliestKnownExpiry: expiring)), SlotHealth.missing);
+      expect(health(base.copyWith(currentQuantity: 9, earliestKnownExpiry: expiring)), SlotHealth.expiring);
       expect(
-        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
-        AssignmentAlert.expired,
+        InventoryHealth.applicableStates(base.copyWith(currentQuantity: 9, earliestKnownExpiry: expiring),
+            expiryWarningDays: 30, now: now),
+        {SlotHealth.expiring, SlotHealth.lowStock},
       );
     });
 
-    test('treats an expiry of exactly today as expired', () {
-      final assignment = base.copyWithExpiry(now);
-      expect(
-        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
-        AssignmentAlert.expired,
-      );
-    });
-
-    test('flags an assignment expiring within the warning horizon', () {
-      final assignment = base.copyWithExpiry(now.add(const Duration(days: 10)));
-      expect(
-        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
-        AssignmentAlert.expiringSoon,
-      );
-    });
-
-    test('does not flag an assignment expiring just beyond the warning horizon', () {
-      final assignment = base.copyWithExpiry(now.add(const Duration(days: 31)));
-      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
-    });
-
-    test('flags stock at or below its explicit minimum quantity', () {
-      const assignment = CartProductAssignment(
-        id: 'a1',
-        cartId: 'cart-1',
-        slotId: 'r0c0',
-        productId: 'p1',
-        currentQuantity: 2,
-        targetQuantity: 10,
-        minimumQuantity: 2,
-      );
-      expect(
-        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
-        AssignmentAlert.belowMinimum,
-      );
-    });
-
-    test('never flags being below target alone when no minimum is set', () {
-      const assignment = CartProductAssignment(
-        id: 'a1',
-        cartId: 'cart-1',
-        slotId: 'r0c0',
-        productId: 'p1',
-        currentQuantity: 1,
-        targetQuantity: 10,
-      );
-      expect(InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now), isNull);
-    });
-
-    test('expiry takes priority over a simultaneous below-minimum condition', () {
-      final assignment = CartProductAssignment(
-        id: 'a1',
-        cartId: 'cart-1',
-        slotId: 'r0c0',
-        productId: 'p1',
-        currentQuantity: 1,
-        targetQuantity: 10,
-        minimumQuantity: 2,
-        earliestKnownExpiry: now.subtract(const Duration(days: 1)),
-      );
-      expect(
-        InventoryRules.computeAlert(assignment, expiryWarningDays: 30, now: now),
-        AssignmentAlert.expired,
-      );
+    test('the priority table ranks every state except free, without ties', () {
+      final ranked = SlotHealth.values.where((s) => s != SlotHealth.free);
+      expect(slotStatePriority.keys.toSet(), ranked.toSet());
+      expect(slotStatePriority.values.toSet().length, slotStatePriority.length);
     });
   });
 }
 
-extension on CartProductAssignment {
-  CartProductAssignment copyWithExpiry(DateTime expiry) => CartProductAssignment(
-        id: id,
-        cartId: cartId,
-        slotId: slotId,
-        productId: productId,
-        currentQuantity: currentQuantity,
-        targetQuantity: targetQuantity,
-        earliestKnownExpiry: expiry,
-      );
-}
+Matcher _violation(String code) => throwsA(isA<StockRuleViolation>().having((v) => v.code, 'code', code));

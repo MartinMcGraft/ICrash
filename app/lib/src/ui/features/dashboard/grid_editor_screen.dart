@@ -89,7 +89,7 @@ class GridEditorScreen extends StatelessWidget {
 
   static String _panelKey(GridEditorViewModel vm) {
     final a = vm.selectedAssignment;
-    return '${vm.selected.join(',')}|${a?.id}|${a?.productId}|${a?.targetQuantity}|${a?.minimumQuantity}';
+    return '${vm.selected.join(',')}|${a?.id}|${a?.productId}|${a?.targetQuantity}';
   }
 }
 
@@ -298,7 +298,7 @@ class _Orphans extends StatelessWidget {
   }
 }
 
-/// Right panel "Posição C6": product, target, minimum, expiry warning.
+/// Right panel "Posição C6": product, target, expiry warning (no minimum, D10).
 class _PositionPanel extends StatefulWidget {
   const _PositionPanel({super.key, required this.vm});
   final GridEditorViewModel vm;
@@ -310,7 +310,6 @@ class _PositionPanel extends StatefulWidget {
 class _PositionPanelState extends State<_PositionPanel> {
   Product? _product;
   int _target = 1;
-  int _minimum = 0;
   int _expiryDays = 30;
 
   GridEditorViewModel get vm => widget.vm;
@@ -323,7 +322,6 @@ class _PositionPanelState extends State<_PositionPanel> {
     if (assignment != null) {
       _product = vm.data.products[assignment.productId];
       _target = assignment.targetQuantity;
-      _minimum = assignment.minimumQuantity ?? 0;
       _expiryDays = _product?.expiryWarningDays ?? _expiryDays;
     }
   }
@@ -378,12 +376,7 @@ class _PositionPanelState extends State<_PositionPanel> {
             ),
           ),
           const SizedBox(height: IcSpace.s16),
-          _StepperRow(label: l10n.targetQuantityLabel, value: _target, min: 1, onChanged: (v) => setState(() {
-                _target = v;
-                if (_minimum > v) _minimum = v;
-              })),
-          const SizedBox(height: IcSpace.s12),
-          _StepperRow(label: l10n.minimumQuantityLabel, value: _minimum, max: _target, onChanged: (v) => setState(() => _minimum = v)),
+          _StepperRow(label: l10n.targetQuantityLabel, value: _target, min: 1, onChanged: (v) => setState(() => _target = v)),
           const SizedBox(height: IcSpace.s12),
           _StepperRow(label: l10n.expiryWarningDaysLabel, value: _expiryDays, min: 1, max: 365, onChanged: (v) => setState(() => _expiryDays = v)),
           const SizedBox(height: IcSpace.s12),
@@ -401,7 +394,6 @@ class _PositionPanelState extends State<_PositionPanel> {
                     final result = await vm.apply(
                       product: _product!,
                       target: _target,
-                      minimum: _minimum == 0 ? null : _minimum,
                       expiryWarningDays: _expiryDays,
                     );
                     if (context.mounted) showResult(context, result, success: l10n.positionApplied);

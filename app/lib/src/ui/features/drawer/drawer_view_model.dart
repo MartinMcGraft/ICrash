@@ -9,6 +9,7 @@ import '../../../domain/entities/product.dart';
 import '../../../domain/entities/slot.dart';
 import '../../../domain/entities/usage_event.dart';
 import '../../../domain/inventory_health.dart';
+import '../../../domain/inventory_rules.dart';
 import '../../../services/gs1_data_matrix_parser.dart';
 import '../../core/cart_live_data.dart';
 import '../../core/mvvm/view_model.dart';
@@ -85,6 +86,18 @@ class DrawerViewModel extends ViewModel {
   SlotHealth get selectedHealth =>
       InventoryHealth.slotHealth(selectedAssignment, expiryWarningDays: _warningDays, now: DateTime.now());
 
+  /// Most units the selected slot can still take (P5: no overfill).
+  int get replenishMax {
+    final a = selectedAssignment;
+    if (a == null) return 0;
+    return (a.targetQuantity - a.currentQuantity).clamp(0, 9999);
+  }
+
+  /// Bounds for a correction's signed amount, so the slot stays within
+  /// `0 … target` (P5).
+  int get correctionMin => -(selectedAssignment?.currentQuantity ?? 0);
+  int get correctionMax => replenishMax;
+
   /// Products not yet in this cart (a product may only sit in one slot).
   List<Product> get assignableProducts {
     final used = data.assignments.map((a) => a.productId).toSet();
@@ -114,7 +127,7 @@ class DrawerViewModel extends ViewModel {
     panel = next;
     final a = selectedAssignment;
     if (next == DrawerPanel.replenish && a != null) {
-      amount = (a.targetQuantity - a.currentQuantity).clamp(1, 9999);
+      amount = replenishMax.clamp(1, 9999);
       if (scannedGtin == null) {
         lot = '';
         expiry = null;
@@ -195,6 +208,7 @@ class DrawerViewModel extends ViewModel {
       if (a == null) return;
       if (lotValue.isEmpty) throw const ActionError('lotRequired');
       if (expiryValue == null) throw const ActionError('expiryRequired');
+      InventoryRules.applyReplenishment(a.currentQuantity, amount, target: a.targetQuantity);
       await services.sync.track(services.inventory.recordReplenishment(
         institutionId: session.institution.id,
         cartId: cartId,
@@ -221,6 +235,7 @@ class DrawerViewModel extends ViewModel {
     return run(() async {
       if (a == null) return;
       if (adjustment == 0) throw const ActionError('zero');
+      InventoryRules.applyCorrection(a.currentQuantity, adjustment, target: a.targetQuantity);
       await services.sync.track(services.inventory.recordCorrection(
         institutionId: session.institution.id,
         cartId: cartId,
@@ -240,6 +255,7 @@ class DrawerViewModel extends ViewModel {
     final existing = selectedAssignment;
     return run(() async {
       if (slotId == null) return;
+      InventoryRules.checkStock(initial, target);
       if (existing != null) {
         await services.inventory.deleteAssignment(
           institutionId: session.institution.id,
@@ -268,6 +284,7 @@ class DrawerViewModel extends ViewModel {
     final confirmed = batches.where((b) => confirmedBatchIds.contains(b.id)).toList();
     return run(() async {
       if (a == null) return;
+      InventoryRules.checkStock(confirmedQuantity, a.targetQuantity);
       await services.sync.track(services.inventory.reconcileAfterAudit(
         institutionId: session.institution.id,
         cartId: cartId,
@@ -303,7 +320,7 @@ class DrawerViewModel extends ViewModel {
     if (parsed.expiryDate != null) expiry = parsed.expiryDate;
     if (selectedAssignment != null && session.canReplenish) {
       panel = DrawerPanel.replenish;
-      amount = (selectedAssignment!.targetQuantity - selectedAssignment!.currentQuantity).clamp(1, 9999);
+      amount = replenishMax.clamp(1, 9999);
     }
     notify();
   }

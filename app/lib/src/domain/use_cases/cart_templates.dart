@@ -41,7 +41,7 @@ class CartTemplateUseCases {
         products: [
           for (final id in ids)
             if (bySlot[id] case final a?)
-              TemplateSlotProduct(slotId: id, productId: a.productId, targetQuantity: a.targetQuantity, minimumQuantity: a.minimumQuantity),
+              TemplateSlotProduct(slotId: id, productId: a.productId, targetQuantity: a.targetQuantity),
         ],
       ));
     }
@@ -97,7 +97,6 @@ class CartTemplateUseCases {
             productId: p.productId,
             currentQuantity: 0,
             targetQuantity: p.targetQuantity,
-            minimumQuantity: p.minimumQuantity,
           ),
         );
       }

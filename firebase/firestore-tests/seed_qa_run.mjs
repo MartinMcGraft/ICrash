@@ -158,9 +158,7 @@ async function main() {
       productId: 'adrenalina',
       currentQuantity: 5,
       targetQuantity: 10,
-      minimumQuantity: 3,
       earliestKnownExpiry: ts('2026-10-15'),
-      status: 'ok',
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-adrenalina/batches/lote-a'),
@@ -171,7 +169,7 @@ async function main() {
       { lotNumber: 'LOTE-B', expiryDate: ts('2026-10-15'), source: 'manual' },
     );
 
-    // Assignment 2: Atropina, at minimum quantity, expiring soon (within the 30-day window).
+    // Assignment 2: Atropina, below target, expiring soon (within the 30-day window).
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-atropina'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
@@ -179,9 +177,7 @@ async function main() {
       productId: 'atropina',
       currentQuantity: 2,
       targetQuantity: 5,
-      minimumQuantity: 2,
       earliestKnownExpiry: ts('2026-09-25'),
-      status: 'ok',
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-atropina/batches/lote-c'),
@@ -197,7 +193,6 @@ async function main() {
       currentQuantity: 20,
       targetQuantity: 20,
       earliestKnownExpiry: ts('2028-01-01'),
-      status: 'ok',
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-seringa/batches/lote-d'),
@@ -213,7 +208,6 @@ async function main() {
       currentQuantity: 3,
       targetQuantity: 5,
       earliestKnownExpiry: ts('2026-08-01'),
-      status: 'ok',
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-expirado/batches/lote-e'),

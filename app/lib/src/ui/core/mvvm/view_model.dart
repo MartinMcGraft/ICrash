@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../../common/app_services.dart';
 import '../../../common/repository_failure.dart';
+import '../../../domain/inventory_rules.dart';
 
 /// Base class for every ViewModel (MVVM, following Flutter's official
 /// architecture guide: one View ↔ one ViewModel, ViewModels talk to
@@ -53,7 +54,9 @@ abstract class ViewModel extends ChangeNotifier {
       final value = await action();
       return ActionResult.ok(value);
     } on RepositoryFailure catch (failure) {
-      return ActionResult.failed(failure.reason);
+      return ActionResult.failed(failure.reason, code: failure.code);
+    } on StockRuleViolation catch (violation) {
+      return ActionResult.failed(RepositoryFailureReason.invalidInput, code: violation.code);
     } on ActionError catch (error) {
       return ActionResult.failed(RepositoryFailureReason.invalidInput, code: error.code);
     } finally {

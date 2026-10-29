@@ -94,19 +94,17 @@ class TemplateDrawer {
 }
 
 class TemplateSlotProduct {
-  const TemplateSlotProduct({required this.slotId, required this.productId, required this.targetQuantity, this.minimumQuantity});
+  const TemplateSlotProduct({required this.slotId, required this.productId, required this.targetQuantity});
   final String slotId;
   final String productId;
   final int targetQuantity;
-  final int? minimumQuantity;
 
-  Map<String, Object?> toJson() =>
-      {'slotId': slotId, 'productId': productId, 'targetQuantity': targetQuantity, 'minimumQuantity': minimumQuantity};
+  Map<String, Object?> toJson() => {'slotId': slotId, 'productId': productId, 'targetQuantity': targetQuantity};
 
+  /// Templates saved before D10 may carry `minimumQuantity`; it's ignored.
   factory TemplateSlotProduct.fromJson(Map<String, Object?> json) => TemplateSlotProduct(
         slotId: json['slotId'] as String,
         productId: json['productId'] as String,
         targetQuantity: (json['targetQuantity'] as num?)?.toInt() ?? 1,
-        minimumQuantity: (json['minimumQuantity'] as num?)?.toInt(),
       );
 }

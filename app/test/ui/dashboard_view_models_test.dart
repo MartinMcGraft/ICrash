@@ -110,10 +110,18 @@ void main() {
     test('apply updates the settings of the product already in the slot', () async {
       vm.selectOnly('r0c1');
       final product = const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina');
-      final result = await vm.apply(product: product, target: 6, minimum: 2);
+      final result = await vm.apply(product: product, target: 6);
       expect(result.isOk, isTrue);
       expect(inventory.assignments.single.targetQuantity, 6);
-      expect(inventory.assignments.single.minimumQuantity, 2);
+    });
+
+    test('apply refuses a target below the current stock (Q6)', () async {
+      vm.selectOnly('r0c1');
+      final product = const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina');
+      final result = await vm.apply(product: product, target: 1);
+      expect(result.isOk, isFalse);
+      expect(result.code, 'targetBelowCurrent');
+      expect(inventory.assignments.single.targetQuantity, 4);
     });
 
     test('apply places a new product in a free slot', () async {

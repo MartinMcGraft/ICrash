@@ -799,8 +799,6 @@
   "@expiryLabel": {},
   "lotLabel": "Lote",
   "@lotLabel": {},
-  "minimumLabel": "Mínimo",
-  "@minimumLabel": {},
   "lotWithUnits": "{lot} · {units} un.",
   "@lotWithUnits": {
     "placeholders": {
@@ -1370,8 +1368,6 @@
   "@chooseProduct": {},
   "catalogNoMatches": "Nenhum produto corresponde à pesquisa.",
   "@catalogNoMatches": {},
-  "minimumQuantityLabel": "Quantidade mínima",
-  "@minimumQuantityLabel": {},
   "expiryWarningDaysLabel": "Aviso de validade (dias)",
   "@expiryWarningDaysLabel": {},
   "askLotOnReplenish": "Pedir lote e validade na reposição",
@@ -1821,5 +1817,13 @@
   "viewAsApp": "Ver como App (teste)",
   "@viewAsApp": {},
   "viewAsDashboard": "Ver como Dashboard (teste)",
-  "@viewAsDashboard": {}
+  "@viewAsDashboard": {},
+  "errorExceedsTarget": "A posição não pode ter mais unidades do que a quantidade alvo.",
+  "@errorExceedsTarget": {},
+  "errorBelowZero": "A quantidade não pode ficar abaixo de 0.",
+  "@errorBelowZero": {},
+  "errorTargetBelowCurrent": "A quantidade alvo não pode ser inferior ao stock atual. Registe primeiro o consumo ou uma correção.",
+  "@errorTargetBelowCurrent": {},
+  "errorInvalidTarget": "A quantidade alvo tem de ser maior do que 0.",
+  "@errorInvalidTarget": {}
 }

@@ -82,7 +82,7 @@ async function seedBaseline() {
     });
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
       institutionId: INST_A, cartId: CART_ID,
-      slotId: 'slot-1', productId: 'product-1', currentQuantity: 5, targetQuantity: 10, status: 'ok',
+      slotId: 'slot-1', productId: 'product-1', currentQuantity: 5, targetQuantity: 10,
     });
   });
 }
@@ -330,7 +330,7 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
       });
       await setDoc(doc(db, `institutions/${INST_A}/carts/${CART2_ID}/assignments/${ASSIGNMENT2_ID}`), {
         institutionId: INST_A, cartId: CART2_ID,
-        slotId: 'slot-1', productId: 'product-2', currentQuantity: 1, targetQuantity: 5, status: 'ok',
+        slotId: 'slot-1', productId: 'product-2', currentQuantity: 1, targetQuantity: 5,
       });
     });
   }
@@ -374,7 +374,7 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
     const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
     await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/bad-1`), {
       institutionId: INST_B, cartId: CART_ID,
-      slotId: 'slot-2', productId: 'product-3', currentQuantity: 0, targetQuantity: 1, status: 'ok',
+      slotId: 'slot-2', productId: 'product-3', currentQuantity: 0, targetQuantity: 1,
     }));
   });
 
@@ -384,5 +384,54 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
     await assertFails(updateDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
       institutionId: INST_B,
     }));
+  });
+});
+
+describe('no overfill: 0 ≤ currentQuantity ≤ targetQuantity (P5)', () => {
+  const path = `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`;
+
+  test('an assigned user cannot raise the stock above the target', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertFails(updateDoc(doc(db, path), { currentQuantity: 11 }));
+  });
+
+  test('nobody can take the stock below zero', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, path), { currentQuantity: -1 }));
+  });
+
+  test('a manager cannot lower the target below the current stock', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, path), { targetQuantity: 4 }));
+    await assertSucceeds(updateDoc(doc(db, path), { targetQuantity: 5 }));
+  });
+
+  test('a manager cannot create a placement whose initial stock exceeds its target', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/over-1`), {
+      institutionId: INST_A, cartId: CART_ID, slotId: 'slot-2', productId: 'product-3', currentQuantity: 3, targetQuantity: 2,
+    }));
+    await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/over-2`), {
+      institutionId: INST_A, cartId: CART_ID, slotId: 'slot-3', productId: 'product-4', currentQuantity: 0, targetQuantity: 0,
+    }));
+  });
+
+  test('an old overfilled placement can still have its stock lowered', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}`), { uid: USER_UID, role: 'user', status: 'active' });
+      await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`), { name: 'Cart 1', responsibleUserIds: [USER_UID] });
+      await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/responsibleUsers/${USER_UID}`), { uid: USER_UID });
+      await setDoc(doc(db, path), {
+        institutionId: INST_A, cartId: CART_ID, slotId: 'slot-1', productId: 'product-1', currentQuantity: 12, targetQuantity: 10,
+      });
+    });
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertSucceeds(updateDoc(doc(db, path), { currentQuantity: 11 }));
+    await assertFails(updateDoc(doc(db, path), { currentQuantity: 12 }));
   });
 });

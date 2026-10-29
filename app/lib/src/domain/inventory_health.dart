@@ -14,7 +14,7 @@ enum SlotHealth {
   /// Earliest known expiry already passed.
   expired,
 
-  /// Below target (or at/below the configured minimum) but not empty.
+  /// Below target but not empty. There is no minimum stock (D10).
   lowStock,
 
   /// Assigned product with zero units.
@@ -27,27 +27,48 @@ enum SlotHealth {
 /// Overall tone of a cart, drawer or alert line.
 enum HealthTone { ok, warning, danger }
 
+/// The one place that decides which state a slot shows when several apply
+/// (DB9: "the highest priority wins"). Higher number = shown first. The
+/// relative order is the one the app has always used; the final values are
+/// set when the database design closes (P4), so change them only here.
+/// [SlotHealth.free] isn't ranked: it means "no product in the slot".
+const Map<SlotHealth, int> slotStatePriority = {
+  SlotHealth.expired: 5,
+  SlotHealth.missing: 4,
+  SlotHealth.expiring: 3,
+  SlotHealth.lowStock: 2,
+  SlotHealth.ok: 1,
+};
+
 abstract final class InventoryHealth {
-  /// Priority matters: the most urgent condition wins, matching the design's
-  /// single status badge per slot (expired > missing > expiring > low).
+  /// Every state that applies to [assignment] right now (several can, e.g.
+  /// expiring *and* short). [SlotHealth.ok] applies when nothing else does.
+  static Set<SlotHealth> applicableStates(
+    CartProductAssignment assignment, {
+    required int expiryWarningDays,
+    required DateTime now,
+  }) {
+    final expiry = assignment.earliestKnownExpiry;
+    final states = <SlotHealth>{
+      if (expiry != null && !expiry.isAfter(now)) SlotHealth.expired,
+      if (expiry != null && expiry.isAfter(now) && !expiry.isAfter(now.add(Duration(days: expiryWarningDays))))
+        SlotHealth.expiring,
+      if (assignment.currentQuantity <= 0) SlotHealth.missing,
+      if (assignment.currentQuantity > 0 && assignment.currentQuantity < assignment.targetQuantity) SlotHealth.lowStock,
+    };
+    return states.isEmpty ? {SlotHealth.ok} : states;
+  }
+
+  /// The single state the slot shows: the applicable state with the highest
+  /// [slotStatePriority] (DB9).
   static SlotHealth slotHealth(
     CartProductAssignment? assignment, {
     required int expiryWarningDays,
     required DateTime now,
   }) {
     if (assignment == null) return SlotHealth.free;
-    final expiry = assignment.earliestKnownExpiry;
-    if (expiry != null && !expiry.isAfter(now)) return SlotHealth.expired;
-    if (assignment.currentQuantity <= 0) return SlotHealth.missing;
-    if (expiry != null && !expiry.isAfter(now.add(Duration(days: expiryWarningDays)))) {
-      return SlotHealth.expiring;
-    }
-    final minimum = assignment.minimumQuantity;
-    if (assignment.currentQuantity < assignment.targetQuantity ||
-        (minimum != null && assignment.currentQuantity <= minimum)) {
-      return SlotHealth.lowStock;
-    }
-    return SlotHealth.ok;
+    final states = applicableStates(assignment, expiryWarningDays: expiryWarningDays, now: now);
+    return states.reduce((a, b) => slotStatePriority[a]! >= slotStatePriority[b]! ? a : b);
   }
 
   static HealthCounts count(
