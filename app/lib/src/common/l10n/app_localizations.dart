@@ -1907,14 +1907,8 @@ abstract class AppLocalizations {
   /// No description provided for @productLocation.
   ///
   /// In pt, this message translates to:
-  /// **'Gaveta {number} · {drawer} · posição {position}'**
-  String productLocation(int number, String drawer, String position);
-
-  /// No description provided for @drawerTitle.
-  ///
-  /// In pt, this message translates to:
-  /// **'Gaveta {number} · {name}'**
-  String drawerTitle(int number, String name);
+  /// **'Gaveta {number} · posição {position}'**
+  String productLocation(int number, String position);
 
   /// No description provided for @drawerSubtitle.
   ///
@@ -1969,12 +1963,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Lote'**
   String get lotLabel;
-
-  /// No description provided for @minimumLabel.
-  ///
-  /// In pt, this message translates to:
-  /// **'Mínimo'**
-  String get minimumLabel;
 
   /// No description provided for @lotWithUnits.
   ///
@@ -2068,8 +2056,8 @@ abstract class AppLocalizations {
   /// No description provided for @monthlyCheckSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'{cart} · Gaveta {index} de {total} · {drawer}'**
-  String monthlyCheckSubtitle(String cart, int index, int total, String drawer);
+  /// **'{cart} · Gaveta {number} ({index} de {total})'**
+  String monthlyCheckSubtitle(String cart, int number, int index, int total);
 
   /// No description provided for @saveAndExit.
   ///
@@ -2761,18 +2749,6 @@ abstract class AppLocalizations {
   /// **'Editar grelha'**
   String get editGrid;
 
-  /// No description provided for @drawerNameHint.
-  ///
-  /// In pt, this message translates to:
-  /// **'ex.: Fármacos'**
-  String get drawerNameHint;
-
-  /// No description provided for @gridEditorTitle.
-  ///
-  /// In pt, this message translates to:
-  /// **'Gaveta {number} · {name}'**
-  String gridEditorTitle(int number, String name);
-
   /// No description provided for @gridEditorSubtitle.
   ///
   /// In pt, this message translates to:
@@ -2886,12 +2862,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Nenhum produto corresponde à pesquisa.'**
   String get catalogNoMatches;
-
-  /// No description provided for @minimumQuantityLabel.
-  ///
-  /// In pt, this message translates to:
-  /// **'Quantidade mínima'**
-  String get minimumQuantityLabel;
 
   /// No description provided for @expiryWarningDaysLabel.
   ///
@@ -3738,6 +3708,78 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Ver como Dashboard (teste)'**
   String get viewAsDashboard;
+
+  /// No description provided for @errorExceedsTarget.
+  ///
+  /// In pt, this message translates to:
+  /// **'A posição não pode ter mais unidades do que a quantidade alvo.'**
+  String get errorExceedsTarget;
+
+  /// No description provided for @errorBelowZero.
+  ///
+  /// In pt, this message translates to:
+  /// **'A quantidade não pode ficar abaixo de 0.'**
+  String get errorBelowZero;
+
+  /// No description provided for @errorTargetBelowCurrent.
+  ///
+  /// In pt, this message translates to:
+  /// **'A quantidade alvo não pode ser inferior ao stock atual. Registe primeiro o consumo ou uma correção.'**
+  String get errorTargetBelowCurrent;
+
+  /// No description provided for @errorInvalidTarget.
+  ///
+  /// In pt, this message translates to:
+  /// **'A quantidade alvo tem de ser maior do que 0.'**
+  String get errorInvalidTarget;
+
+  /// No description provided for @drawerNumberLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Número da gaveta'**
+  String get drawerNumberLabel;
+
+  /// No description provided for @drawerNumberHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'O número impresso no carrinho (1 = em cima). Não pode repetir-se no mesmo carrinho.'**
+  String get drawerNumberHelp;
+
+  /// No description provided for @drawerNumberTaken.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já existe uma gaveta com este número neste carrinho.'**
+  String get drawerNumberTaken;
+
+  /// No description provided for @editDrawerNumber.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar número'**
+  String get editDrawerNumber;
+
+  /// No description provided for @drawerNumberSaved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Número da gaveta alterado.'**
+  String get drawerNumberSaved;
+
+  /// No description provided for @slotTaken.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta posição já tem um produto.'**
+  String get slotTaken;
+
+  /// No description provided for @signOnlyAuthorTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Só quem fez a verificação pode assinar'**
+  String get signOnlyAuthorTitle;
+
+  /// No description provided for @signOnlyAuthorMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este relatório é assinado por {name}, que fez a verificação.'**
+  String signOnlyAuthorMessage(String name);
 }
 
 class _AppLocalizationsDelegate

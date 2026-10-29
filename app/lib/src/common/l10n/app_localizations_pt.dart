@@ -1085,13 +1085,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get printLabel => 'Imprimir etiqueta';
 
   @override
-  String productLocation(int number, String drawer, String position) {
-    return 'Gaveta $number · $drawer · posição $position';
-  }
-
-  @override
-  String drawerTitle(int number, String name) {
-    return 'Gaveta $number · $name';
+  String productLocation(int number, String position) {
+    return 'Gaveta $number · posição $position';
   }
 
   @override
@@ -1131,9 +1126,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get lotLabel => 'Lote';
-
-  @override
-  String get minimumLabel => 'Mínimo';
 
   @override
   String lotWithUnits(String lot, int units) {
@@ -1197,13 +1189,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get catalogSearchHint => 'Pesquisar no catálogo';
 
   @override
-  String monthlyCheckSubtitle(
-    String cart,
-    int index,
-    int total,
-    String drawer,
-  ) {
-    return '$cart · Gaveta $index de $total · $drawer';
+  String monthlyCheckSubtitle(String cart, int number, int index, int total) {
+    return '$cart · Gaveta $number ($index de $total)';
   }
 
   @override
@@ -1660,14 +1647,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get editGrid => 'Editar grelha';
 
   @override
-  String get drawerNameHint => 'ex.: Fármacos';
-
-  @override
-  String gridEditorTitle(int number, String name) {
-    return 'Gaveta $number · $name';
-  }
-
-  @override
   String gridEditorSubtitle(String cart) {
     return '$cart · editar grelha e posições';
   }
@@ -1745,9 +1724,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get catalogNoMatches => 'Nenhum produto corresponde à pesquisa.';
-
-  @override
-  String get minimumQuantityLabel => 'Quantidade mínima';
 
   @override
   String get expiryWarningDaysLabel => 'Aviso de validade (dias)';
@@ -2280,4 +2256,47 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get viewAsDashboard => 'Ver como Dashboard (teste)';
+
+  @override
+  String get errorExceedsTarget =>
+      'A posição não pode ter mais unidades do que a quantidade alvo.';
+
+  @override
+  String get errorBelowZero => 'A quantidade não pode ficar abaixo de 0.';
+
+  @override
+  String get errorTargetBelowCurrent =>
+      'A quantidade alvo não pode ser inferior ao stock atual. Registe primeiro o consumo ou uma correção.';
+
+  @override
+  String get errorInvalidTarget =>
+      'A quantidade alvo tem de ser maior do que 0.';
+
+  @override
+  String get drawerNumberLabel => 'Número da gaveta';
+
+  @override
+  String get drawerNumberHelp =>
+      'O número impresso no carrinho (1 = em cima). Não pode repetir-se no mesmo carrinho.';
+
+  @override
+  String get drawerNumberTaken =>
+      'Já existe uma gaveta com este número neste carrinho.';
+
+  @override
+  String get editDrawerNumber => 'Alterar número';
+
+  @override
+  String get drawerNumberSaved => 'Número da gaveta alterado.';
+
+  @override
+  String get slotTaken => 'Esta posição já tem um produto.';
+
+  @override
+  String get signOnlyAuthorTitle => 'Só quem fez a verificação pode assinar';
+
+  @override
+  String signOnlyAuthorMessage(String name) {
+    return 'Este relatório é assinado por $name, que fez a verificação.';
+  }
 }

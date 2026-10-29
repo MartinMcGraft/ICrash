@@ -1,5 +1,5 @@
-/// GTIN helpers (P16: GTIN is unique when present and optional;
-/// DATABASE.md `gtin CHAR(14)`, digits only, EAN-13 padded to 14).
+// GTIN helpers (P16: GTIN is unique when present and optional;
+// DATABASE.md `gtin CHAR(14)`, digits only, EAN-13 padded to 14).
 
 /// The 14-digit form of a GTIN-8, UPC-A (12), EAN-13 or GTIN-14, the way a
 /// scan reads it (`scanned_product_code.dart`), so a code typed in B5 or

@@ -1066,13 +1066,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get printLabel => 'Print label';
 
   @override
-  String productLocation(int number, String drawer, String position) {
-    return 'Drawer $number · $drawer · position $position';
-  }
-
-  @override
-  String drawerTitle(int number, String name) {
-    return 'Drawer $number · $name';
+  String productLocation(int number, String position) {
+    return 'Drawer $number · position $position';
   }
 
   @override
@@ -1112,9 +1107,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lotLabel => 'Lot';
-
-  @override
-  String get minimumLabel => 'Minimum';
 
   @override
   String lotWithUnits(String lot, int units) {
@@ -1178,13 +1170,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogSearchHint => 'Search the catalogue';
 
   @override
-  String monthlyCheckSubtitle(
-    String cart,
-    int index,
-    int total,
-    String drawer,
-  ) {
-    return '$cart · Drawer $index of $total · $drawer';
+  String monthlyCheckSubtitle(String cart, int number, int index, int total) {
+    return '$cart · Drawer $number ($index of $total)';
   }
 
   @override
@@ -1633,14 +1620,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editGrid => 'Edit grid';
 
   @override
-  String get drawerNameHint => 'e.g. Drugs';
-
-  @override
-  String gridEditorTitle(int number, String name) {
-    return 'Drawer $number · $name';
-  }
-
-  @override
   String gridEditorSubtitle(String cart) {
     return '$cart · edit grid and positions';
   }
@@ -1718,9 +1697,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get catalogNoMatches => 'No product matches the search.';
-
-  @override
-  String get minimumQuantityLabel => 'Minimum quantity';
 
   @override
   String get expiryWarningDaysLabel => 'Expiry warning (days)';
@@ -2252,4 +2228,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewAsDashboard => 'View as Dashboard (testing)';
+
+  @override
+  String get errorExceedsTarget =>
+      'A position can\'t hold more units than its target quantity.';
+
+  @override
+  String get errorBelowZero => 'The quantity can\'t go below 0.';
+
+  @override
+  String get errorTargetBelowCurrent =>
+      'The target can\'t be lower than the current stock. Record the consumption or a correction first.';
+
+  @override
+  String get errorInvalidTarget => 'The target must be greater than 0.';
+
+  @override
+  String get drawerNumberLabel => 'Drawer number';
+
+  @override
+  String get drawerNumberHelp =>
+      'The number printed on the cart (1 = top). It can\'t repeat within a cart.';
+
+  @override
+  String get drawerNumberTaken =>
+      'This cart already has a drawer with this number.';
+
+  @override
+  String get editDrawerNumber => 'Change number';
+
+  @override
+  String get drawerNumberSaved => 'Drawer number changed.';
+
+  @override
+  String get slotTaken => 'This position already has a product.';
+
+  @override
+  String get signOnlyAuthorTitle =>
+      'Only the person who did the check can sign';
+
+  @override
+  String signOnlyAuthorMessage(String name) {
+    return 'This report is signed by $name, who did the check.';
+  }
 }

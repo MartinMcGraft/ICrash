@@ -32,8 +32,7 @@ class GridEditorScreen extends StatelessWidget {
       create: (services) => GridEditorViewModel(services, session, cartId: cartId, drawerId: drawerId, initialSlotId: initialSlotId),
       builder: (context, vm) {
         if (vm.data.cartMissing) return StateView.message(message: l10n.cartLoginNotFound, icon: IcIcon.carro);
-        if (!vm.ready) return const StateView.loading();
-        final drawer = vm.drawer!;
+        if (!vm.ready || vm.drawer == null) return const StateView.loading();
         return PopScope(
           canPop: !vm.dirty,
           onPopInvokedWithResult: (didPop, _) async {
