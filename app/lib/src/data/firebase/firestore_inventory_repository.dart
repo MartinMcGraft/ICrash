@@ -10,7 +10,7 @@ import 'firestore_codec.dart';
 import 'firestore_exception_mapper.dart';
 import 'firestore_paths.dart';
 
-const _assignmentTimestampFields = ['updatedAt', 'earliestKnownExpiry'];
+const _assignmentTimestampFields = ['updatedAt', 'earliestKnownExpiry', 'usedAt'];
 
 /// Firestore-backed [InventoryRepository].
 ///
@@ -201,6 +201,35 @@ class FirestoreInventoryRepository implements InventoryRepository {
     if (violation != null) throw _ruleFailure(violation!);
   }
 
+  /// P1/P2: the first History event for a placement marks the placement,
+  /// its slot and its drawer as used (`usedAt`), in the same transaction as
+  /// the event. Firestore rules can't query `usageEvents`, so this marker is
+  /// what lets them refuse deleting a used slot or placement. Reads only;
+  /// must run before the transaction's first write.
+  Future<_UseMarks> _readUseMarks(
+    Transaction transaction,
+    String institutionId,
+    String cartId,
+    Map<String, Object?> assignment,
+  ) async {
+    if (assignment['usedAt'] != null) return const _UseMarks();
+    final drawerId = assignment['drawerId'] as String?;
+    final slotId = assignment['slotId'] as String?;
+    // Old placements without drawerId: only the placement can be marked.
+    if (drawerId == null || slotId == null || slotId.isEmpty) return const _UseMarks(assignment: true);
+    final drawerRef = _firestore.collection(FirestorePaths.drawers(institutionId, cartId)).doc(drawerId);
+    final slotRef = _firestore.collection(FirestorePaths.slots(institutionId, cartId, drawerId)).doc(slotId);
+    final drawer = await transaction.get(drawerRef);
+    final slot = await transaction.get(slotRef);
+    return _UseMarks(
+      assignment: true,
+      others: [
+        if (drawer.exists && drawer.data()?['usedAt'] == null) drawerRef,
+        if (slot.exists && slot.data()?['usedAt'] == null) slotRef,
+      ],
+    );
+  }
+
   /// Business-rule refusals travel as a [RepositoryFailure] with a code, so
   /// ViewModels and the View handle them like any other failure.
   static RepositoryFailure _ruleFailure(StockRuleViolation violation) =>
@@ -252,9 +281,12 @@ class FirestoreInventoryRepository implements InventoryRepository {
         if (data == null) {
           throw StateError('Assignment $assignmentId not found');
         }
+        final marks = await _readUseMarks(transaction, institutionId, cartId, data);
         final currentQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
         final updatedQuantity = InventoryRules.applyConsumption(currentQuantity, amount);
+        marks.write(transaction);
         transaction.update(ref, {
+          ...marks.assignmentFields,
           'currentQuantity': updatedQuantity,
           'updatedAt': FieldValue.serverTimestamp(),
           'updatedBy': actorUid,
@@ -301,6 +333,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
         if (data == null) {
           throw StateError('Assignment $assignmentId not found');
         }
+        final marks = await _readUseMarks(transaction, institutionId, cartId, data);
         final currentQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
         final target = (data['targetQuantity'] as num?)?.toInt() ?? 0;
         final int updatedQuantity;
@@ -316,7 +349,9 @@ class FirestoreInventoryRepository implements InventoryRepository {
           newBatchExpiry: batch.expiryDate,
         );
 
+        marks.write(transaction);
         transaction.update(ref, {
+          ...marks.assignmentFields,
           'currentQuantity': updatedQuantity,
           'earliestKnownExpiry': Timestamp.fromDate(newEarliestExpiry),
           'updatedAt': FieldValue.serverTimestamp(),
@@ -378,6 +413,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
         final data = (await transaction.get(ref)).data();
         if (data == null) throw StateError('Assignment $assignmentId not found');
         final batchSnapshots = [for (final doc in listed.docs) await transaction.get(doc.reference)];
+        final marks = await _readUseMarks(transaction, institutionId, cartId, data);
         final previousQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
         try {
           InventoryRules.checkStock(confirmedQuantity, (data['targetQuantity'] as num?)?.toInt() ?? 0);
@@ -385,7 +421,9 @@ class FirestoreInventoryRepository implements InventoryRepository {
           violation = v;
           return;
         }
+        marks.write(transaction);
         transaction.update(ref, {
+          ...marks.assignmentFields,
           'currentQuantity': confirmedQuantity,
           'earliestKnownExpiry': earliestExpiry == null ? null : Timestamp.fromDate(earliestExpiry),
           'updatedAt': FieldValue.serverTimestamp(),
@@ -441,6 +479,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
         if (data == null) {
           throw StateError('Assignment $assignmentId not found');
         }
+        final marks = await _readUseMarks(transaction, institutionId, cartId, data);
         final currentQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
         final target = (data['targetQuantity'] as num?)?.toInt() ?? 0;
         final int updated;
@@ -450,7 +489,9 @@ class FirestoreInventoryRepository implements InventoryRepository {
           violation = v;
           return;
         }
+        marks.write(transaction);
         transaction.update(ref, {
+          ...marks.assignmentFields,
           'currentQuantity': updated,
           'updatedAt': FieldValue.serverTimestamp(),
           'updatedBy': actorUid,
@@ -476,5 +517,24 @@ class FirestoreInventoryRepository implements InventoryRepository {
       throw mapFirebaseException(error);
     }
     if (violation != null) throw _ruleFailure(violation!);
+  }
+}
+
+/// What [FirestoreInventoryRepository._readUseMarks] found still unmarked.
+class _UseMarks {
+  const _UseMarks({this.assignment = false, this.others = const []});
+
+  /// Whether the placement itself still needs `usedAt`.
+  final bool assignment;
+
+  /// The drawer and slot documents that still need `usedAt`.
+  final List<DocumentReference<Map<String, Object?>>> others;
+
+  Map<String, Object?> get assignmentFields => assignment ? {'usedAt': FieldValue.serverTimestamp()} : const {};
+
+  void write(Transaction transaction) {
+    for (final ref in others) {
+      transaction.update(ref, {'usedAt': FieldValue.serverTimestamp()});
+    }
   }
 }

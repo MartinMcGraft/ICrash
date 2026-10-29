@@ -63,6 +63,13 @@ class GridEditorViewModel extends ViewModel {
     ];
   }
 
+  /// P1/P2: once any slot of the drawer has History, its layout is fixed
+  /// (no resize, merge or split) and used slots keep their product.
+  bool get layoutLocked => drawer != null && data.drawerInUse(drawer!);
+
+  /// Whether the selected slot holds a placement with History.
+  bool get selectedInUse => selectedAssignment != null && data.isUsed(selectedAssignment!);
+
   Slot? get selectedSlot => selected.length == 1 ? slots.where((s) => s.id == selected.single).firstOrNull : null;
   CartProductAssignment? get selectedAssignment => selectedSlot == null ? null : data.assignmentsIn(drawerId)[selectedSlot!.id];
 
@@ -113,6 +120,7 @@ class GridEditorViewModel extends ViewModel {
   }
 
   void merge() {
+    if (layoutLocked) return;
     final list = slots.where((s) => selected.contains(s.id)).toList();
     if (!_isRectangle(list)) return;
     final minRow = list.map((s) => s.row).reduce(min);
@@ -137,7 +145,7 @@ class GridEditorViewModel extends ViewModel {
 
   void split() {
     final s = selectedSlot;
-    if (s == null) return;
+    if (s == null || layoutLocked) return;
     final next = slots.where((x) => x.id != s.id).toList();
     for (var r = 0; r < s.rowSpan; r++) {
       for (var c = 0; c < s.columnSpan; c++) {
@@ -154,6 +162,7 @@ class GridEditorViewModel extends ViewModel {
 
   /// Resizes the grid: slots outside the new bounds go, new cells appear.
   void resize({int? newRows, int? newColumns}) {
+    if (layoutLocked) return;
     rows = (newRows ?? rows).clamp(1, 12);
     columns = (newColumns ?? columns).clamp(1, 12);
     final kept = slots.where((s) => s.row + s.rowSpan <= rows && s.column + s.columnSpan <= columns).toList();
@@ -202,6 +211,7 @@ class GridEditorViewModel extends ViewModel {
     final next = List.of(slots);
     return run(() async {
       if (d == null || cart == null) return;
+      if (layoutLocked) throw const ActionError('drawerInUse');
       final institutionId = session.institution.id;
       if (d.rows != rows || d.columns != columns) {
         await services.drawers.updateDrawer(
@@ -238,6 +248,8 @@ class GridEditorViewModel extends ViewModel {
         );
       } else {
         if (existing != null) {
+          // P1: a used slot keeps its product.
+          if (data.isUsed(existing)) throw const ActionError('slotInUse');
           await services.inventory.deleteAssignment(institutionId: institutionId, cartId: cartId, assignmentId: existing.id);
         }
         await services.inventory.createAssignment(
@@ -265,6 +277,7 @@ class GridEditorViewModel extends ViewModel {
     final existing = selectedAssignment;
     return run(() async {
       if (existing == null) return;
+      if (data.isUsed(existing)) throw const ActionError('slotInUse');
       await services.inventory.deleteAssignment(institutionId: session.institution.id, cartId: cartId, assignmentId: existing.id);
     });
   }
@@ -284,8 +297,12 @@ class GridEditorViewModel extends ViewModel {
     });
   }
 
-  Future<ActionResult<void>> removeOrphan(CartProductAssignment orphan) => run(() => services.inventory
-      .deleteAssignment(institutionId: session.institution.id, cartId: cartId, assignmentId: orphan.id));
+  /// Q7: an orphan without History can be removed; one with History can
+  /// only be reassigned to a free slot (a repair of old data).
+  Future<ActionResult<void>> removeOrphan(CartProductAssignment orphan) => run(() async {
+        if (data.isUsed(orphan)) throw const ActionError('slotInUse');
+        await services.inventory.deleteAssignment(institutionId: session.institution.id, cartId: cartId, assignmentId: orphan.id);
+      });
 
   @override
   void dispose() {

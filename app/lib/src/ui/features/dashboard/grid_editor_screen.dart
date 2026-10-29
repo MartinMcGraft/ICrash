@@ -101,6 +101,9 @@ class _GridArea extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final selectedAssignment = vm.selectedAssignment;
+    // P1/P2: once the drawer has History, its layout is fixed.
+    final locked = vm.layoutLocked;
+    final selectedUsed = vm.selectedInUse;
     return SurfaceCard(
       elevated: false,
       padding: const EdgeInsets.all(IcSpace.s20),
@@ -112,25 +115,30 @@ class _GridArea extends StatelessWidget {
             runSpacing: IcSpace.s12,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _Dimension(label: l10n.createDrawerRowsLabel, value: vm.rows, onChanged: (v) => vm.resize(newRows: v)),
-              _Dimension(label: l10n.createDrawerColumnsLabel, value: vm.columns, onChanged: (v) => vm.resize(newColumns: v)),
+              _Dimension(label: l10n.createDrawerRowsLabel, value: vm.rows, enabled: !locked, onChanged: (v) => vm.resize(newRows: v)),
+              _Dimension(
+                label: l10n.createDrawerColumnsLabel,
+                value: vm.columns,
+                enabled: !locked,
+                onChanged: (v) => vm.resize(newColumns: v),
+              ),
               const SizedBox(width: IcSpace.s8),
               IcButton(
                 label: l10n.mergePositions,
                 icon: IcIcon.grelha,
                 style: IcButtonStyle.secondary,
-                onPressed: vm.selected.length >= 2 ? () => _merge(context) : null,
+                onPressed: !locked && vm.selected.length >= 2 ? () => _merge(context) : null,
               ),
               IcButton(
                 label: l10n.actionSplit,
                 style: IcButtonStyle.secondary,
-                onPressed: vm.canSplit ? vm.split : null,
+                onPressed: !locked && vm.canSplit ? vm.split : null,
               ),
               IcButton(
                 label: l10n.clearPosition,
                 icon: IcIcon.apagar,
                 style: IcButtonStyle.ghost,
-                onPressed: selectedAssignment == null
+                onPressed: selectedAssignment == null || selectedUsed
                     ? null
                     : () async {
                         final ok = await confirmAction(
@@ -152,7 +160,10 @@ class _GridArea extends StatelessWidget {
             ],
           ),
           const SizedBox(height: IcSpace.s8),
-          Text(l10n.gridSelectionHint, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
+          Text(
+            locked ? l10n.drawerInUseHint : l10n.gridSelectionHint,
+            style: IcText.bodyS.copyWith(color: locked ? IcColors.warningFg : IcColors.textMuted),
+          ),
           const SizedBox(height: IcSpace.s16),
           Expanded(
             // The position panel slides in over the grid, so the grid keeps
@@ -203,10 +214,13 @@ class _GridArea extends StatelessWidget {
 }
 
 class _Dimension extends StatelessWidget {
-  const _Dimension({required this.label, required this.value, required this.onChanged});
+  const _Dimension({required this.label, required this.value, required this.onChanged, this.enabled = true});
   final String label;
   final int value;
   final ValueChanged<int> onChanged;
+
+  /// False on a drawer in use: the stepper stays visible but can't move.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +229,7 @@ class _Dimension extends StatelessWidget {
       children: [
         Text(label, style: IcText.labelM.copyWith(color: IcColors.textSecondary)),
         const SizedBox(width: IcSpace.s8),
-        QuantityStepper(label: label, value: value, min: 1, max: 12, onChanged: onChanged),
+        QuantityStepper(label: label, value: value, min: enabled ? 1 : value, max: enabled ? 12 : value, onChanged: onChanged),
       ],
     );
   }
@@ -271,7 +285,8 @@ class _Orphans extends StatelessWidget {
                   IcButton(
                     label: l10n.actionRemove,
                     style: IcButtonStyle.ghost,
-                    onPressed: () => _remove(context, orphan),
+                    // Q7: an orphan with History can only be reassigned.
+                    onPressed: vm.data.isUsed(orphan) ? null : () => _remove(context, orphan),
                   ),
                 ],
               ),
@@ -348,12 +363,17 @@ class _PositionPanelState extends State<_PositionPanel> {
             Notice(kind: NoticeKind.info, title: l10n.gridUnsavedHint),
             const SizedBox(height: IcSpace.s16),
           ],
+          // P1: a used slot keeps its product; only the target can change.
+          if (vm.selectedInUse) ...[
+            Notice(kind: NoticeKind.warning, title: l10n.slotInUse, message: l10n.slotInUseHint),
+            const SizedBox(height: IcSpace.s16),
+          ],
           Text(l10n.productLabel, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
           const SizedBox(height: 6),
           SurfaceCard(
             elevated: false,
             padding: const EdgeInsets.symmetric(horizontal: IcSpace.s12, vertical: IcSpace.s12),
-            onTap: () async {
+            onTap: vm.selectedInUse ? null : () async {
               final picked = await _pickProduct(context, vm.catalog, vm.usedProductIds);
               if (picked == null) return;
               setState(() {

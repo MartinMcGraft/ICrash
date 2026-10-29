@@ -552,9 +552,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lotNumberLabel => 'Lot number';
 
   @override
-  String get lotRequiredValidation => 'Enter the lot';
-
-  @override
   String get chooseExpiryLabel => 'Choose expiry date';
 
   @override
@@ -1702,7 +1699,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expiryWarningDaysLabel => 'Expiry warning (days)';
 
   @override
-  String get askLotOnReplenish => 'Ask for lot and expiry on replenishment';
+  String get askLotOnReplenish =>
+      'Ask for expiry (and lot, if any) on replenishment';
 
   @override
   String get applyToPosition => 'Apply to position';
@@ -2271,4 +2269,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String signOnlyAuthorMessage(String name) {
     return 'This report is signed by $name, who did the check.';
   }
+
+  @override
+  String get lotOptionalLabel => 'Lot (optional)';
+
+  @override
+  String get noLot => 'no lot';
+
+  @override
+  String get errorQuantityRequired => 'Enter a quantity greater than 0.';
+
+  @override
+  String get correctionReasonLabel => 'Reason (optional)';
+
+  @override
+  String get correctionReasonHint => 'e.g. recorded in the wrong position';
 }

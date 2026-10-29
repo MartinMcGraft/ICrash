@@ -65,6 +65,32 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
 
+    // P1/P2: `usedAt` is a Firestore-only marker (no column in DATABASE.md)
+    // written with the first History event of a placement, on the placement,
+    // its slot and its drawer. Rules can't query usageEvents, so this is how
+    // they know a structure is in use. It may only go from absent to the
+    // request time, and never change or disappear afterwards.
+    function isUsed() {
+      return 'usedAt' in resource.data;
+    }
+
+    function usedAtKept() {
+      return ('usedAt' in resource.data)
+        ? ('usedAt' in request.resource.data && request.resource.data.usedAt == resource.data.usedAt)
+        : (!('usedAt' in request.resource.data) || request.resource.data.usedAt == request.time);
+    }
+
+    // Anyone who may record History on the cart may mark its structure used.
+    function onlyMarksUsed() {
+      return !('usedAt' in resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt']) &&
+        request.resource.data.usedAt == request.time;
+    }
+
+    function unchanged(field) {
+      return request.resource.data.get(field, null) == resource.data.get(field, null);
+    }
+
     // P5 (no overfill) and DATABASE.md `0 ≤ currNumberCC ≤ maxNumberCC`,
     // `maxNumberCC > 0`. Mirrors InventoryRules.checkStock in the app.
     function stockWithinTarget(data) {
@@ -197,13 +223,25 @@ service cloud.firestore {
           allow write: if isManagerOrAbove(institutionId);
         }
 
+        // Drawers are never deleted. A used drawer keeps its grid, and its
+        // number unless it never had one (P1/P2, Q8).
         match /drawers/{drawerId} {
           allow read: if canAccessCart(institutionId, cartId);
-          allow write: if isManagerOrAbove(institutionId);
+          allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data);
+          allow update: if (isManagerOrAbove(institutionId) && usedAtKept() &&
+              (!isUsed() || (unchanged('rows') && unchanged('columns') &&
+                (!('number' in resource.data) || unchanged('number'))))) ||
+            (canAccessCart(institutionId, cartId) && onlyMarksUsed());
+          allow delete: if false;
 
+          // A used slot keeps its place and size and can't be deleted.
           match /slots/{slotId} {
             allow read: if canAccessCart(institutionId, cartId);
-            allow write: if isManagerOrAbove(institutionId);
+            allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data);
+            allow update: if (isManagerOrAbove(institutionId) && usedAtKept() &&
+                (!isUsed() || (unchanged('row') && unchanged('column') && unchanged('rowSpan') && unchanged('columnSpan')))) ||
+              (canAccessCart(institutionId, cartId) && onlyMarksUsed());
+            allow delete: if isManagerOrAbove(institutionId) && !isUsed();
           }
         }
 
@@ -218,17 +256,23 @@ service cloud.firestore {
           allow create: if isManagerOrAbove(institutionId) &&
             request.resource.data.institutionId == institutionId &&
             request.resource.data.cartId == cartId &&
-            stockWithinTarget(request.resource.data);
-          allow delete: if isManagerOrAbove(institutionId);
+            stockWithinTarget(request.resource.data) &&
+            !('usedAt' in request.resource.data);
+          // P1: a placement with History can't be deleted.
+          allow delete: if isManagerOrAbove(institutionId) && !isUsed();
           // A normal assigned user may only ever move currentQuantity during
           // daily consumption; every structural field stays manager+ only
           // (spec sections 22-24, 43).
+          // A used placement keeps its slot and its product (P1, DATABASE.md
+          // §2.3 trigger on SLOTCC).
           allow update: if (isManagerOrAbove(institutionId) ||
               (canAccessCart(institutionId, cartId) &&
-                onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy']))) &&
+                onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy', 'usedAt']))) &&
             request.resource.data.institutionId == resource.data.institutionId &&
             request.resource.data.cartId == resource.data.cartId &&
-            stockUpdateAllowed();
+            stockUpdateAllowed() &&
+            usedAtKept() &&
+            (!isUsed() || (unchanged('slotId') && unchanged('drawerId') && unchanged('productId')));
 
           // DB1: a batch is the units of one slot with the same expiry date.
           // Batches are never deleted; a batch confirmed gone gets `removedAt`.

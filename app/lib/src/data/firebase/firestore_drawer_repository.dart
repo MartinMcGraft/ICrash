@@ -18,7 +18,7 @@ class FirestoreDrawerRepository implements DrawerRepository {
         .collection(FirestorePaths.drawers(institutionId, cartId))
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => CartDrawer.fromMap(doc.id, cartId, normalizeTimestamps(doc.data(), const ['createdAt', 'updatedAt'])))
+            .map((doc) => CartDrawer.fromMap(doc.id, cartId, normalizeTimestamps(doc.data(), const ['createdAt', 'updatedAt', 'usedAt'])))
             .toList())
         .handleError((Object error) => throw mapFirebaseException(error));
   }
@@ -40,7 +40,7 @@ class FirestoreDrawerRepository implements DrawerRepository {
       }
       await batch.commit();
       final created = await ref.get();
-      return CartDrawer.fromMap(ref.id, cartId, normalizeTimestamps(created.data()!, const ['createdAt', 'updatedAt']));
+      return CartDrawer.fromMap(ref.id, cartId, normalizeTimestamps(created.data()!, const ['createdAt', 'updatedAt', 'usedAt']));
     } catch (error) {
       throw mapFirebaseException(error);
     }

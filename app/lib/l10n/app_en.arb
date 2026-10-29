@@ -1500,5 +1500,8 @@
   "noLot": "no lot",
   "errorQuantityRequired": "Enter a quantity greater than 0.",
   "correctionReasonLabel": "Reason (optional)",
-  "correctionReasonHint": "e.g. recorded in the wrong position"
+  "correctionReasonHint": "e.g. recorded in the wrong position",
+  "slotInUse": "Position in use",
+  "slotInUseHint": "This position already has history: it keeps its product and can't be cleared. The structure of a cart in use can't be changed.",
+  "drawerInUseHint": "This drawer already has history: its grid can't be resized, merged or split. You can still change the positions' target quantities."
 }

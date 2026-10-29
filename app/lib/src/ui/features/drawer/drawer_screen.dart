@@ -233,7 +233,10 @@ class _DetailPanel extends StatelessWidget {
                     label: l10n.changeProductAction,
                     style: IcButtonStyle.ghost,
                     expand: true,
-                    onPressed: () => vm.showPanel(DrawerPanel.assign),
+                    // P1: a slot with History keeps its product.
+                    onPressed: vm.selectedInUse
+                        ? () => showMessage(context, l10n.slotInUseHint)
+                        : () => vm.showPanel(DrawerPanel.assign),
                   ),
                 ),
                 const SizedBox(width: IcSpace.s8),

@@ -43,9 +43,8 @@ class CartConfigViewModel extends ViewModel {
   int get nextDrawerNumber => data.nextFreeNumber;
 
   /// Whether a manager may change this drawer's number (Q8, 29 Oct): only a
-  /// drawer created before numbers were stored, or one never used. "Used"
-  /// (`usedAt`) arrives with the structure lock (P1/P2).
-  bool canEditNumber(CartDrawer drawer) => true;
+  /// drawer never used, or one created before numbers were stored.
+  bool canEditNumber(CartDrawer drawer) => drawer.number == null || !data.drawerInUse(drawer);
 
   Future<ActionResult<void>> save({required String name, String? service, String? location}) {
     final current = cart;

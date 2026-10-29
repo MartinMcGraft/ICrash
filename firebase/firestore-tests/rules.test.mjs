@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import {
-  doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp, collectionGroup, query, where, getDocs,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, addDoc, serverTimestamp, collectionGroup, query, where, getDocs,
 } from 'firebase/firestore';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -463,5 +463,93 @@ describe('batches are never deleted (DB1); lot optional, quantity required (P9)'
     const base = { actorUid: USER_UID, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'correction', amount: 1 };
     await assertSucceeds(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), { ...base, reason: 'registado na posição errada' }));
     await assertFails(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), { ...base, reason: 'x'.repeat(501) }));
+  });
+});
+
+describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => {
+  const drawerPath = `institutions/${INST_A}/carts/${CART_ID}/drawers/drawer-1`;
+  const slotPath = `${drawerPath}/slots/r0c0`;
+  const assignmentPath = `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`;
+
+  async function seedStructure({ used }) {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      const mark = used ? { usedAt: new Date('2026-10-29T10:00:00Z') } : {};
+      await setDoc(doc(db, drawerPath), { number: 1, rows: 2, columns: 2, ...mark });
+      await setDoc(doc(db, slotPath), { row: 0, column: 0, rowSpan: 1, columnSpan: 1, ...mark });
+      await setDoc(doc(db, assignmentPath), {
+        institutionId: INST_A, cartId: CART_ID, drawerId: 'drawer-1', slotId: 'r0c0', productId: 'product-1',
+        currentQuantity: 5, targetQuantity: 10, ...mark,
+      });
+    });
+  }
+
+  test('nobody can delete a drawer, used or not', async () => {
+    await seedStructure({ used: false });
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(deleteDoc(doc(db, drawerPath)));
+  });
+
+  test('a manager may delete an unused slot and placement', async () => {
+    await seedStructure({ used: false });
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertSucceeds(deleteDoc(doc(db, slotPath)));
+    await assertSucceeds(deleteDoc(doc(db, assignmentPath)));
+  });
+
+  test('a used slot and a used placement can\'t be deleted', async () => {
+    await seedStructure({ used: true });
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(deleteDoc(doc(db, slotPath)));
+    await assertFails(deleteDoc(doc(db, assignmentPath)));
+  });
+
+  test('the first event marks the placement, slot and drawer used, by an assigned user', async () => {
+    await seedStructure({ used: false });
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertSucceeds(updateDoc(doc(db, assignmentPath), { currentQuantity: 4, usedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db, slotPath), { usedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db, drawerPath), { usedAt: serverTimestamp() }));
+  });
+
+  test('an assigned user can\'t change a slot or drawer beyond marking it used', async () => {
+    await seedStructure({ used: false });
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertFails(updateDoc(doc(db, drawerPath), { rows: 3 }));
+    await assertFails(updateDoc(doc(db, slotPath), { rowSpan: 2, usedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db, slotPath), { usedAt: new Date('2020-01-01T00:00:00Z') }));
+  });
+
+  test('the marker can\'t be removed or changed, not even by an admin', async () => {
+    await seedStructure({ used: true });
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(updateDoc(doc(db, assignmentPath), { usedAt: deleteField() }));
+    await assertFails(updateDoc(doc(db, slotPath), { usedAt: serverTimestamp() }));
+  });
+
+  test('a used placement keeps its slot and product; its target and stock may change', async () => {
+    await seedStructure({ used: true });
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, assignmentPath), { slotId: 'r0c1' }));
+    await assertFails(updateDoc(doc(db, assignmentPath), { productId: 'product-2' }));
+    await assertSucceeds(updateDoc(doc(db, assignmentPath), { targetQuantity: 12, currentQuantity: 6 }));
+  });
+
+  test('a used drawer keeps its grid and number; an unused one may change', async () => {
+    await seedStructure({ used: true });
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, drawerPath), { rows: 3 }));
+    await assertFails(updateDoc(doc(db, drawerPath), { number: 2 }));
+    await assertFails(updateDoc(doc(db, slotPath), { columnSpan: 2 }));
+  });
+
+  test('a used drawer created before numbers were stored may get its first number (Q8)', async () => {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), drawerPath), { rows: 2, columns: 2, usedAt: new Date('2026-10-29T10:00:00Z') });
+    });
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertSucceeds(updateDoc(doc(db, drawerPath), { number: 1 }));
   });
 });

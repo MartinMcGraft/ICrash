@@ -33,6 +33,16 @@ class FirestoreUsageRepository implements UsageRepository {
         .handleError((Object error) => throw mapFirebaseException(error));
   }
 
+  @override
+  Stream<Set<String>> watchUsedAssignmentIds(String institutionId, String cartId) {
+    return _firestore
+        .collection(FirestorePaths.usageEvents(institutionId))
+        .where('cartId', isEqualTo: cartId)
+        .snapshots()
+        .map((snapshot) => {for (final doc in snapshot.docs) doc.data()['assignmentId'] as String? ?? ''}..remove(''))
+        .handleError((Object error) => throw mapFirebaseException(error));
+  }
+
   List<UsageEvent> Function(QuerySnapshot<Map<String, Object?>>) _toEvents(String institutionId) {
     return (snapshot) => snapshot.docs
         .map((doc) => UsageEvent.fromMap(

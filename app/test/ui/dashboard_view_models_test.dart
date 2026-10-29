@@ -499,4 +499,113 @@ void main() {
       expect(inventory.lastCorrectionReason, 'registado na posição errada');
     });
   });
+
+  group('P1/P2: a cart\'s structure is fixed once used', () {
+    const event = UsageEvent(
+      id: 'e1', institutionId: 'inst', actorUid: 'me', cartId: 'c1', assignmentId: 'a1', productId: 'p1',
+      type: UsageEventType.consumption, amount: -1,
+    );
+    late FakeDrawerRepository drawers;
+    late FakeInventoryRepository inventory;
+    late AppServices services;
+
+    setUp(() {
+      drawers = FakeDrawerRepository(drawers: [
+        const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 1, columns: 3),
+        const CartDrawer(id: 'd2', cartId: 'c1', number: 2, rows: 1, columns: 2),
+      ]);
+      inventory = FakeInventoryRepository(assignments: [
+        // a1 has History (an event); a2 was placed but never used.
+        const CartProductAssignment(
+            id: 'a1', cartId: 'c1', drawerId: 'd1', slotId: 'r0c0', productId: 'p1', currentQuantity: 3, targetQuantity: 4),
+        const CartProductAssignment(
+            id: 'a2', cartId: 'c1', drawerId: 'd1', slotId: 'r0c1', productId: 'p2', currentQuantity: 0, targetQuantity: 2),
+      ]);
+      services = buildTestServices(
+        drawers: drawers,
+        carts: FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1', layoutVersion: 1)]),
+        inventory: inventory,
+        usage: FakeUsageRepository(events: [event]),
+        products: FakeProductRepository(products: [
+          const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina'),
+          const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'),
+          const Product(id: 'p3', institutionId: 'inst', name: 'Amiodarona'),
+        ]),
+      );
+    });
+
+    test('B4: a used drawer can\'t be resized, merged or split, or saved', () async {
+      final vm = GridEditorViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1');
+      await _settle();
+      expect(vm.layoutLocked, isTrue);
+      vm.resize(newColumns: 4);
+      vm.toggle('r0c1');
+      vm.toggle('r0c2');
+      vm.merge();
+      expect(vm.slots, hasLength(3));
+      expect(vm.dirty, isFalse);
+      vm.dispose();
+    });
+
+    test('B4: an unused drawer can still be edited', () async {
+      final vm = GridEditorViewModel(services, _session(services), cartId: 'c1', drawerId: 'd2');
+      await _settle();
+      expect(vm.layoutLocked, isFalse);
+      vm.resize(newColumns: 3);
+      expect(vm.slots, hasLength(3));
+      vm.dispose();
+    });
+
+    test('B4: a used slot keeps its product and can\'t be cleared; its target can change', () async {
+      final vm = GridEditorViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1');
+      await _settle();
+      vm.selectOnly('r0c0');
+      expect(vm.selectedInUse, isTrue);
+      expect((await vm.clearPosition()).code, 'slotInUse');
+      final swap = await vm.apply(product: const Product(id: 'p3', institutionId: 'inst', name: 'Amiodarona'), target: 4);
+      expect(swap.code, 'slotInUse');
+      final target = await vm.apply(product: const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina'), target: 6);
+      expect(target.isOk, isTrue);
+      expect(inventory.assignments.where((a) => a.id == 'a1').single.targetQuantity, 6);
+      vm.dispose();
+    });
+
+    test('B4: an unused slot can still be cleared', () async {
+      final vm = GridEditorViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1');
+      await _settle();
+      vm.selectOnly('r0c1');
+      expect(vm.selectedInUse, isFalse);
+      expect((await vm.clearPosition()).isOk, isTrue);
+      expect(inventory.assignments.map((a) => a.id), ['a1']);
+      vm.dispose();
+    });
+
+    test('B4: an orphan with History can be reassigned but not removed (Q7)', () async {
+      drawers.slotsByDrawer['d1'] = [const Slot(id: 'r0c1', drawerId: 'd1', row: 0, column: 1, columnSpan: 2)];
+      final vm = GridEditorViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1');
+      await _settle();
+      final orphan = vm.orphans.singleWhere((a) => a.id == 'a1');
+      expect((await vm.removeOrphan(orphan)).code, 'slotInUse');
+      vm.dispose();
+    });
+
+    test('A6: "trocar produto" is refused on a used slot', () async {
+      final vm = DrawerViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1', initialSlotId: 'r0c0');
+      await _settle();
+      expect(vm.selectedInUse, isTrue);
+      final result = await vm.assign(const Product(id: 'p3', institutionId: 'inst', name: 'Amiodarona'), target: 2, initial: 0);
+      expect(result.code, 'slotInUse');
+      expect(inventory.assignments.where((a) => a.id == 'a1'), hasLength(1));
+      vm.dispose();
+    });
+
+    test('B3: a used drawer keeps its number; an unused one can be renumbered (Q8)', () async {
+      final vm = CartConfigViewModel(services, _session(services), 'c1');
+      await _settle();
+      expect(vm.canEditNumber(drawers.drawers.first), isFalse);
+      expect((await vm.setDrawerNumber(drawers.drawers.first, 5)).code, 'drawerInUse');
+      expect((await vm.setDrawerNumber(drawers.drawers.last, 5)).isOk, isTrue);
+      vm.dispose();
+    });
+  });
 }

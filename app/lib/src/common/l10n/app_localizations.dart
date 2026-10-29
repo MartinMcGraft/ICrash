@@ -1082,12 +1082,6 @@ abstract class AppLocalizations {
   /// **'Número de lote'**
   String get lotNumberLabel;
 
-  /// No description provided for @lotRequiredValidation.
-  ///
-  /// In pt, this message translates to:
-  /// **'Indique o lote'**
-  String get lotRequiredValidation;
-
   /// No description provided for @chooseExpiryLabel.
   ///
   /// In pt, this message translates to:
@@ -2872,7 +2866,7 @@ abstract class AppLocalizations {
   /// No description provided for @askLotOnReplenish.
   ///
   /// In pt, this message translates to:
-  /// **'Pedir lote e validade na reposição'**
+  /// **'Pedir validade (e lote, se existir) na reposição'**
   String get askLotOnReplenish;
 
   /// No description provided for @applyToPosition.
@@ -3780,6 +3774,36 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Este relatório é assinado por {name}, que fez a verificação.'**
   String signOnlyAuthorMessage(String name);
+
+  /// No description provided for @lotOptionalLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lote (opcional)'**
+  String get lotOptionalLabel;
+
+  /// No description provided for @noLot.
+  ///
+  /// In pt, this message translates to:
+  /// **'sem lote'**
+  String get noLot;
+
+  /// No description provided for @errorQuantityRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique uma quantidade maior do que 0.'**
+  String get errorQuantityRequired;
+
+  /// No description provided for @correctionReasonLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Motivo (opcional)'**
+  String get correctionReasonLabel;
+
+  /// No description provided for @correctionReasonHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'ex.: registado na posição errada'**
+  String get correctionReasonHint;
 }
 
 class _AppLocalizationsDelegate

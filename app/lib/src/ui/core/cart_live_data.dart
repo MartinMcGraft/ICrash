@@ -38,6 +38,15 @@ class CartLiveData {
       products = {for (final p in list) p.id: p};
       _changed();
     }, onError: (_) {}));
+    _subs.add(services.usage.watchUsedAssignmentIds(institutionId, cartId).listen((ids) {
+      usedAssignmentIds = ids;
+      usageLoaded = true;
+      _changed();
+    }, onError: (_) {
+      // Without the history query only the `usedAt` markers decide.
+      usageLoaded = true;
+      _changed();
+    }));
   }
 
   final AppServices services;
@@ -53,6 +62,10 @@ class CartLiveData {
   List<CartProductAssignment> assignments = const [];
   bool assignmentsLoaded = false;
   Map<String, Product> products = const {};
+
+  /// Placements of this cart with at least one History event.
+  Set<String> usedAssignmentIds = const {};
+  bool usageLoaded = false;
   Object? error;
 
   final List<StreamSubscription<Object?>> _subs = [];
@@ -95,6 +108,23 @@ class CartLiveData {
         for (final a in assignments)
           if (drawerOf(a) == drawerId) a.slotId: a,
       };
+
+  /// P1/P2: a placement with History keeps its slot and product and can't
+  /// be removed. Known from its `usedAt` marker or from the history itself
+  /// (old data); while the history is still loading, it counts as used.
+  bool isUsed(CartProductAssignment assignment) =>
+      assignment.usedAt != null || !usageLoaded || usedAssignmentIds.contains(assignment.id);
+
+  /// Whether the slot [slotId] of drawer [drawerId] holds a used placement.
+  bool slotInUse(String drawerId, String slotId) {
+    final a = assignmentsIn(drawerId)[slotId];
+    return a != null && isUsed(a);
+  }
+
+  /// A drawer is in use once any of its slots is: then its grid can't be
+  /// resized, merged or split, and its number can't change (P1/P2, Q8).
+  bool drawerInUse(CartDrawer drawer) =>
+      drawer.usedAt != null || assignmentsIn(drawer.id).values.any(isUsed);
 
   /// Saved slots. Every drawer created since 29 Oct 2026 has slot documents;
   /// an older drawer whose layout was never edited has none, and gets one

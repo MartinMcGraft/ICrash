@@ -8,7 +8,7 @@
 // Usage (emulators must already be running):
 //   node firestore-tests/seed_qa_run.mjs
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -222,6 +222,24 @@ async function main() {
       { lotNumber: 'LOTE-E', expiryDate: ts('2026-08-01'), quantity: 3, source: 'manual', removedAt: null },
     );
     // r1c1, r1c2 deliberately left unassigned (empty-slot tests).
+
+    // History for Adrenalina, so drawer 1 shows the structure lock (P1/P2):
+    // the placement, its slot r0c0 and drawer 1 carry the `usedAt` marker the
+    // app writes with a first event. Drawer 2 stays unused and editable.
+    const usedAt = ts('2026-10-01');
+    await setDoc(doc(db, 'institutions/hospital-teste/usageEvents/seed-replenishment-adrenalina'), {
+      type: 'replenishment',
+      cartId: 'carro-1',
+      assignmentId: 'assignment-adrenalina',
+      productId: 'adrenalina',
+      amount: 5,
+      actorUid: uids.manager,
+      batchId: 'lote-a',
+      serverTimestamp: usedAt,
+    });
+    await updateDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-adrenalina'), { usedAt });
+    await updateDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-1/slots/r0c0'), { usedAt });
+    await updateDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-1'), { usedAt });
 
     // Cart 2: bare, only the manager+admin are responsible (not the normal user) — cross-cart access test.
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-2'), {

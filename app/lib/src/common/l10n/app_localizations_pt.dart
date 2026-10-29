@@ -561,9 +561,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get lotNumberLabel => 'Número de lote';
 
   @override
-  String get lotRequiredValidation => 'Indique o lote';
-
-  @override
   String get chooseExpiryLabel => 'Escolher validade';
 
   @override
@@ -1729,7 +1726,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get expiryWarningDaysLabel => 'Aviso de validade (dias)';
 
   @override
-  String get askLotOnReplenish => 'Pedir lote e validade na reposição';
+  String get askLotOnReplenish =>
+      'Pedir validade (e lote, se existir) na reposição';
 
   @override
   String get applyToPosition => 'Aplicar à posição';
@@ -2299,4 +2297,19 @@ class AppLocalizationsPt extends AppLocalizations {
   String signOnlyAuthorMessage(String name) {
     return 'Este relatório é assinado por $name, que fez a verificação.';
   }
+
+  @override
+  String get lotOptionalLabel => 'Lote (opcional)';
+
+  @override
+  String get noLot => 'sem lote';
+
+  @override
+  String get errorQuantityRequired => 'Indique uma quantidade maior do que 0.';
+
+  @override
+  String get correctionReasonLabel => 'Motivo (opcional)';
+
+  @override
+  String get correctionReasonHint => 'ex.: registado na posição errada';
 }

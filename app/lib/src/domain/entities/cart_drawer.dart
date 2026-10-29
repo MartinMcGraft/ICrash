@@ -12,6 +12,7 @@ class CartDrawer {
     required this.number,
     required this.rows,
     required this.columns,
+    this.usedAt,
     this.createdAt,
     this.updatedAt,
   });
@@ -30,6 +31,11 @@ class CartDrawer {
   /// (spec section 36).
   final int rows;
   final int columns;
+
+  /// Firestore-only marker: set with the first History event in any of the
+  /// drawer's slots. A used drawer can't be resized, re-laid-out or
+  /// renumbered (P1/P2, Q8); drawers are never deleted.
+  final DateTime? usedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -41,6 +47,7 @@ class CartDrawer {
       number: (map['number'] as num?)?.toInt(),
       rows: (map['rows'] as num?)?.toInt() ?? 1,
       columns: (map['columns'] as num?)?.toInt() ?? 1,
+      usedAt: map['usedAt'] as DateTime?,
       createdAt: map['createdAt'] as DateTime?,
       updatedAt: map['updatedAt'] as DateTime?,
     );
@@ -58,6 +65,7 @@ class CartDrawer {
         number: number ?? this.number,
         rows: rows ?? this.rows,
         columns: columns ?? this.columns,
+        usedAt: usedAt,
         createdAt: createdAt,
         updatedAt: updatedAt,
       );

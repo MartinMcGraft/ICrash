@@ -1829,5 +1829,11 @@
   "correctionReasonLabel": "Motivo (opcional)",
   "@correctionReasonLabel": {},
   "correctionReasonHint": "ex.: registado na posição errada",
-  "@correctionReasonHint": {}
+  "@correctionReasonHint": {},
+  "slotInUse": "Posição em uso",
+  "@slotInUse": {},
+  "slotInUseHint": "Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.",
+  "@slotInUseHint": {},
+  "drawerInUseHint": "Esta gaveta já tem histórico: a grelha não pode ser redimensionada, fundida nem dividida. Pode alterar a quantidade alvo das posições.",
+  "@drawerInUseHint": {}
 }

@@ -17,6 +17,7 @@ class CartProductAssignment {
     required this.currentQuantity,
     required this.targetQuantity,
     this.earliestKnownExpiry,
+    this.usedAt,
     this.updatedAt,
     this.updatedBy,
   });
@@ -45,6 +46,13 @@ class CartProductAssignment {
   /// this assignment that have not been physically confirmed absent
   /// (spec sections 25-28). Only reconciliation may advance it.
   final DateTime? earliestKnownExpiry;
+
+  /// Firestore-only marker (no column in DATABASE.md): set with the first
+  /// History event that points to this placement. From then on the placement
+  /// keeps its slot and product and can't be deleted (P1/P2); the rules use
+  /// it because they can't query `usageEvents`. Placements used before
+  /// 29 Oct 2026 lack it; the app also checks their history.
+  final DateTime? usedAt;
   final DateTime? updatedAt;
   final String? updatedBy;
 
@@ -61,6 +69,7 @@ class CartProductAssignment {
       // `status` that was written once and never updated; both are ignored.
       updatedBy: map['updatedBy'] as String?,
       earliestKnownExpiry: map['earliestKnownExpiry'] as DateTime?,
+      usedAt: map['usedAt'] as DateTime?,
       updatedAt: map['updatedAt'] as DateTime?,
     );
   }
@@ -83,6 +92,7 @@ class CartProductAssignment {
     int? targetQuantity,
     DateTime? earliestKnownExpiry,
     bool clearEarliestKnownExpiry = false,
+    DateTime? usedAt,
   }) =>
       CartProductAssignment(
         id: id ?? this.id,
@@ -93,6 +103,7 @@ class CartProductAssignment {
         currentQuantity: currentQuantity ?? this.currentQuantity,
         targetQuantity: targetQuantity ?? this.targetQuantity,
         earliestKnownExpiry: clearEarliestKnownExpiry ? null : (earliestKnownExpiry ?? this.earliestKnownExpiry),
+        usedAt: usedAt ?? this.usedAt,
         updatedAt: updatedAt,
         updatedBy: updatedBy,
       );

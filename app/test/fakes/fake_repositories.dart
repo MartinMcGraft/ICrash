@@ -558,6 +558,10 @@ class FakeUsageRepository extends UnimplementedFake implements UsageRepository {
   @override
   Stream<List<UsageEvent>> watchEventsForAssignment(String institutionId, String assignmentId) =>
       Stream.value(List.unmodifiable(events.where((e) => e.assignmentId == assignmentId).toList()));
+
+  @override
+  Stream<Set<String>> watchUsedAssignmentIds(String institutionId, String cartId) =>
+      Stream.value({for (final e in events) if (e.cartId == cartId) e.assignmentId});
 }
 
 class FakeAuditRepository extends UnimplementedFake implements AuditRepository {}

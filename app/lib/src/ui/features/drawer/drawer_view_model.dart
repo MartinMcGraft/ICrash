@@ -87,6 +87,10 @@ class DrawerViewModel extends ViewModel {
   SlotHealth get selectedHealth =>
       InventoryHealth.slotHealth(selectedAssignment, expiryWarningDays: _warningDays, now: DateTime.now());
 
+  /// P1: the selected slot's placement has History, so it keeps its product
+  /// ("Trocar produto" is refused).
+  bool get selectedInUse => selectedAssignment != null && data.isUsed(selectedAssignment!);
+
   /// Most units the selected slot can still take (P5: no overfill).
   int get replenishMax {
     final a = selectedAssignment;
@@ -263,6 +267,7 @@ class DrawerViewModel extends ViewModel {
     return run(() async {
       if (slotId == null) return;
       InventoryRules.checkStock(initial, target);
+      if (existing != null && data.isUsed(existing)) throw const ActionError('slotInUse');
       if (existing != null) {
         await services.inventory.deleteAssignment(
           institutionId: session.institution.id,
