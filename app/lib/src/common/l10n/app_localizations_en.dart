@@ -758,9 +758,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginTitle => 'Sign in';
 
   @override
-  String get loginForgotPassword => 'I forgot my password';
-
-  @override
   String get loginUsePin => 'Unlock with PIN';
 
   @override
@@ -769,12 +766,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loginNeedsSavedSession =>
       'Sign in once on this device to use a PIN or open a cart.';
-
-  @override
-  String get loginResetSent => 'We sent you an e-mail to reset your password.';
-
-  @override
-  String get loginResetNeedsEmail => 'Type your e-mail first.';
 
   @override
   String get pinWorksOffline => 'Works offline';
@@ -846,20 +837,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartLoginNoAccess => 'You don\'t have access to this cart.';
 
   @override
-  String get profileSetPin => 'Set PIN';
-
-  @override
-  String get profileChangePin => 'Change PIN';
-
-  @override
   String get profileLockNow => 'Lock now';
 
   @override
   String get profileSwitchInstitution => 'Switch institution';
-
-  @override
-  String get pinSetupHelp =>
-      'The PIN unlocks the session saved on this device, even offline. It is not shared with other devices.';
 
   @override
   String get pinNewLabel => 'New PIN (4 digits)';
@@ -872,9 +853,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinMismatch => 'The PINs don\'t match';
-
-  @override
-  String get pinSaved => 'PIN saved on this device.';
 
   @override
   String get navCarts => 'Carts';
@@ -1324,9 +1302,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinLabel => 'PIN';
-
-  @override
-  String get signNeedsPin => 'Set a PIN on this device first to sign.';
 
   @override
   String get signNeedsConfirmation => 'Tick “I confirm the check” to sign.';
@@ -1911,24 +1886,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get inviteUser => 'Invite user';
-
-  @override
-  String get sendInvite => 'Send invitation';
-
-  @override
-  String get inviteNote =>
-      'The person receives an e-mail to set their own password.';
-
-  @override
-  String inviteSent(String email) {
-    return 'Invitation sent to $email.';
-  }
-
-  @override
-  String get resendInvite => 'Resend access e-mail';
-
-  @override
   String get emailTaken => 'A user with this e-mail already exists.';
 
   @override
@@ -2321,4 +2278,59 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get templateArchivedMessage =>
       'It can\'t be used to create carts. Restore it to use it again.';
+
+  @override
+  String get credentialsContactAdmin =>
+      'To change your credentials, contact the administration.';
+
+  @override
+  String get signNeedsAdminPin =>
+      'You don\'t have a PIN yet. Ask the administration to set one so you can sign.';
+
+  @override
+  String get createUser => 'Create user';
+
+  @override
+  String userCreated(String email) {
+    return 'User created: $email. Hand over their password and PIN.';
+  }
+
+  @override
+  String passwordTooShort(int min) {
+    return 'The password must have at least $min characters';
+  }
+
+  @override
+  String get passwordRepeatLabel => 'Repeat password';
+
+  @override
+  String get passwordMismatch => 'The passwords don\'t match';
+
+  @override
+  String get createUserNote =>
+      'Hand the password and PIN to the person. Only the administration can change them; the person can\'t.';
+
+  @override
+  String get setNewPin => 'Set new PIN';
+
+  @override
+  String setNewPinFor(String name) {
+    return 'New PIN for $name';
+  }
+
+  @override
+  String pinSetFor(String name) {
+    return '$name\'s PIN changed. Hand over the new PIN.';
+  }
+
+  @override
+  String get setPinNote =>
+      'The new PIN takes effect on a tablet the next time the person signs in on it while online.';
+
+  @override
+  String get resetPasswordAction => 'Reset password';
+
+  @override
+  String get resetPasswordSupport =>
+      'In this version, another person\'s password can\'t be changed from the app. Ask technical support (the IT department) to reset it.';
 }

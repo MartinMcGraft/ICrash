@@ -61,13 +61,15 @@ class UsersScreen extends StatelessWidget {
                   const SizedBox(width: IcSpace.s12),
                   Flexible(
                     child: SegmentedTabs<UsersFilter>(
-                      selected: vm.filter,
+                      selected: vm.effectiveFilter,
                       onChanged: vm.setFilter,
                       items: [
                         TabItem(UsersFilter.all, l10n.cartsFilterAll(vm.total)),
                         TabItem(UsersFilter.managers, l10n.usersFilterManagers(vm.managerCount)),
                         TabItem(UsersFilter.professionals, l10n.usersFilterProfessionals(vm.professionalCount)),
-                        TabItem(UsersFilter.invited, l10n.usersFilterInvited(vm.invitedCount)),
+                        // DB3: users are created active; only members invited
+                        // before 29 Oct 2026 can still be "invited".
+                        if (vm.invitedCount > 0) TabItem(UsersFilter.invited, l10n.usersFilterInvited(vm.invitedCount)),
                       ],
                     ),
                   ),

@@ -52,10 +52,14 @@ class UsersViewModel extends ViewModel {
   bool get canManage => session.isInstitutionAdmin;
   bool isMe(Membership m) => m.uid == session.user.uid;
 
+  /// The filter in effect: the "invited" tab disappears once nobody is
+  /// invited (DB3: users are created active), so it falls back to "all".
+  UsersFilter get effectiveFilter => filter == UsersFilter.invited && invitedCount == 0 ? UsersFilter.all : filter;
+
   List<Membership> get visible {
     final q = query.trim().toLowerCase();
     return _members.where((m) {
-      final inFilter = switch (filter) {
+      final inFilter = switch (effectiveFilter) {
         UsersFilter.all => true,
         UsersFilter.managers => _isManagerRole(m.role),
         UsersFilter.professionals => m.role == Role.user,

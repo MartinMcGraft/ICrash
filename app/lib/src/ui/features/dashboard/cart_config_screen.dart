@@ -217,7 +217,7 @@ class _Drawers extends StatelessWidget {
               TableColumnSpec(l10n.columnSize, flex: 2),
               TableColumnSpec(l10n.columnPositions, flex: 2),
               TableColumnSpec(l10n.columnWithProduct, flex: 2),
-              TableColumnSpec('', width: 200, alignEnd: true),
+              TableColumnSpec('', width: 240, alignEnd: true),
             ],
             emptyText: l10n.cartDetailDrawersEmpty,
             rows: [

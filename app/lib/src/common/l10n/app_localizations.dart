@@ -1430,12 +1430,6 @@ abstract class AppLocalizations {
   /// **'Iniciar sessão'**
   String get loginTitle;
 
-  /// No description provided for @loginForgotPassword.
-  ///
-  /// In pt, this message translates to:
-  /// **'Esqueci-me da palavra-passe'**
-  String get loginForgotPassword;
-
   /// No description provided for @loginUsePin.
   ///
   /// In pt, this message translates to:
@@ -1453,18 +1447,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Inicie sessão uma vez neste dispositivo para usar o PIN ou entrar num carro.'**
   String get loginNeedsSavedSession;
-
-  /// No description provided for @loginResetSent.
-  ///
-  /// In pt, this message translates to:
-  /// **'Enviámos um e-mail para redefinir a palavra-passe.'**
-  String get loginResetSent;
-
-  /// No description provided for @loginResetNeedsEmail.
-  ///
-  /// In pt, this message translates to:
-  /// **'Escreva primeiro o seu e-mail.'**
-  String get loginResetNeedsEmail;
 
   /// No description provided for @pinWorksOffline.
   ///
@@ -1574,18 +1556,6 @@ abstract class AppLocalizations {
   /// **'Não tem acesso a este carro.'**
   String get cartLoginNoAccess;
 
-  /// No description provided for @profileSetPin.
-  ///
-  /// In pt, this message translates to:
-  /// **'Definir PIN'**
-  String get profileSetPin;
-
-  /// No description provided for @profileChangePin.
-  ///
-  /// In pt, this message translates to:
-  /// **'Alterar PIN'**
-  String get profileChangePin;
-
   /// No description provided for @profileLockNow.
   ///
   /// In pt, this message translates to:
@@ -1597,12 +1567,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Mudar de instituição'**
   String get profileSwitchInstitution;
-
-  /// No description provided for @pinSetupHelp.
-  ///
-  /// In pt, this message translates to:
-  /// **'O PIN desbloqueia a sessão guardada neste dispositivo, mesmo sem rede. Não é partilhado com outros dispositivos.'**
-  String get pinSetupHelp;
 
   /// No description provided for @pinNewLabel.
   ///
@@ -1627,12 +1591,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Os PIN não coincidem'**
   String get pinMismatch;
-
-  /// No description provided for @pinSaved.
-  ///
-  /// In pt, this message translates to:
-  /// **'PIN guardado neste dispositivo.'**
-  String get pinSaved;
 
   /// No description provided for @navCarts.
   ///
@@ -2298,12 +2256,6 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'PIN'**
   String get pinLabel;
-
-  /// No description provided for @signNeedsPin.
-  ///
-  /// In pt, this message translates to:
-  /// **'Defina primeiro um PIN neste dispositivo para assinar.'**
-  String get signNeedsPin;
 
   /// No description provided for @signNeedsConfirmation.
   ///
@@ -3157,36 +3109,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 utilizador} other{{count} utilizadores}}'**
   String usersCount(int count);
 
-  /// No description provided for @inviteUser.
-  ///
-  /// In pt, this message translates to:
-  /// **'Convidar utilizador'**
-  String get inviteUser;
-
-  /// No description provided for @sendInvite.
-  ///
-  /// In pt, this message translates to:
-  /// **'Enviar convite'**
-  String get sendInvite;
-
-  /// No description provided for @inviteNote.
-  ///
-  /// In pt, this message translates to:
-  /// **'A pessoa recebe um e-mail para definir a sua palavra-passe.'**
-  String get inviteNote;
-
-  /// No description provided for @inviteSent.
-  ///
-  /// In pt, this message translates to:
-  /// **'Convite enviado para {email}.'**
-  String inviteSent(String email);
-
-  /// No description provided for @resendInvite.
-  ///
-  /// In pt, this message translates to:
-  /// **'Reenviar e-mail de acesso'**
-  String get resendInvite;
-
   /// No description provided for @emailTaken.
   ///
   /// In pt, this message translates to:
@@ -3864,6 +3786,90 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.'**
   String get templateArchivedMessage;
+
+  /// No description provided for @credentialsContactAdmin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Para alterar as suas credenciais, contacte a administração.'**
+  String get credentialsContactAdmin;
+
+  /// No description provided for @signNeedsAdminPin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não tem PIN. Peça à administração que lhe atribua um para poder assinar.'**
+  String get signNeedsAdminPin;
+
+  /// No description provided for @createUser.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar utilizador'**
+  String get createUser;
+
+  /// No description provided for @userCreated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Utilizador criado: {email}. Entregue-lhe a palavra-passe e o PIN.'**
+  String userCreated(String email);
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'A palavra-passe tem de ter pelo menos {min} caracteres'**
+  String passwordTooShort(int min);
+
+  /// No description provided for @passwordRepeatLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Repetir palavra-passe'**
+  String get passwordRepeatLabel;
+
+  /// No description provided for @passwordMismatch.
+  ///
+  /// In pt, this message translates to:
+  /// **'As palavras-passe não coincidem'**
+  String get passwordMismatch;
+
+  /// No description provided for @createUserNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entregue a palavra-passe e o PIN à pessoa. Só a administração os pode alterar; a pessoa não os pode mudar.'**
+  String get createUserNote;
+
+  /// No description provided for @setNewPin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definir novo PIN'**
+  String get setNewPin;
+
+  /// No description provided for @setNewPinFor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo PIN para {name}'**
+  String setNewPinFor(String name);
+
+  /// No description provided for @pinSetFor.
+  ///
+  /// In pt, this message translates to:
+  /// **'PIN de {name} alterado. Entregue-lhe o novo PIN.'**
+  String pinSetFor(String name);
+
+  /// No description provided for @setPinNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'O novo PIN passa a valer num tablet na próxima vez que a pessoa entrar nele com ligação à rede.'**
+  String get setPinNote;
+
+  /// No description provided for @resetPasswordAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Redefinir palavra-passe'**
+  String get resetPasswordAction;
+
+  /// No description provided for @resetPasswordSupport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nesta versão, a palavra-passe de outra pessoa não pode ser alterada a partir da aplicação. Peça ao suporte técnico (departamento de informática) que a redefina.'**
+  String get resetPasswordSupport;
 }
 
 class _AppLocalizationsDelegate

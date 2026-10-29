@@ -545,9 +545,10 @@ check the node again before editing it.
 
 ### DC-38 · B7: "Convites pendentes" and "Convite pendente" are legacy
 - **Where:** p20 `458:1406` (tab), `458:1486` (pill); p21 `I456:2080;442:677`, `456:2161`.
-- **What:** new users are created **active**. Invitations no longer exist; the tab and
-  pill only appear for members invited before 29 Oct 2026. Suggest removing them from the
-  mockups, or showing the tab only when its count is above 0.
+- **What:** new users are created **active**, and invitations no longer exist. The code
+  now shows the "Convites pendentes" tab **only when its count is above 0** (members
+  invited before 29 Oct 2026); the pill stays for those rows. Remove both from the mockups,
+  or show them as the legacy case.
 - **Copy:** `usersFilterInvited` "Convites pendentes ({count})" (still in code).
 - **Why:** DB3.
 - **Status:** to do (decision for the Figma session)

@@ -770,9 +770,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get loginTitle => 'Iniciar sessão';
 
   @override
-  String get loginForgotPassword => 'Esqueci-me da palavra-passe';
-
-  @override
   String get loginUsePin => 'Desbloquear com PIN';
 
   @override
@@ -781,13 +778,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get loginNeedsSavedSession =>
       'Inicie sessão uma vez neste dispositivo para usar o PIN ou entrar num carro.';
-
-  @override
-  String get loginResetSent =>
-      'Enviámos um e-mail para redefinir a palavra-passe.';
-
-  @override
-  String get loginResetNeedsEmail => 'Escreva primeiro o seu e-mail.';
 
   @override
   String get pinWorksOffline => 'Funciona sem rede';
@@ -859,20 +849,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get cartLoginNoAccess => 'Não tem acesso a este carro.';
 
   @override
-  String get profileSetPin => 'Definir PIN';
-
-  @override
-  String get profileChangePin => 'Alterar PIN';
-
-  @override
   String get profileLockNow => 'Bloquear agora';
 
   @override
   String get profileSwitchInstitution => 'Mudar de instituição';
-
-  @override
-  String get pinSetupHelp =>
-      'O PIN desbloqueia a sessão guardada neste dispositivo, mesmo sem rede. Não é partilhado com outros dispositivos.';
 
   @override
   String get pinNewLabel => 'Novo PIN (4 dígitos)';
@@ -885,9 +865,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pinMismatch => 'Os PIN não coincidem';
-
-  @override
-  String get pinSaved => 'PIN guardado neste dispositivo.';
 
   @override
   String get navCarts => 'Carrinhos';
@@ -1350,10 +1327,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get pinLabel => 'PIN';
-
-  @override
-  String get signNeedsPin =>
-      'Defina primeiro um PIN neste dispositivo para assinar.';
 
   @override
   String get signNeedsConfirmation =>
@@ -1939,24 +1912,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get inviteUser => 'Convidar utilizador';
-
-  @override
-  String get sendInvite => 'Enviar convite';
-
-  @override
-  String get inviteNote =>
-      'A pessoa recebe um e-mail para definir a sua palavra-passe.';
-
-  @override
-  String inviteSent(String email) {
-    return 'Convite enviado para $email.';
-  }
-
-  @override
-  String get resendInvite => 'Reenviar e-mail de acesso';
-
-  @override
   String get emailTaken => 'Já existe um utilizador com este e-mail.';
 
   @override
@@ -2349,4 +2304,59 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get templateArchivedMessage =>
       'Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.';
+
+  @override
+  String get credentialsContactAdmin =>
+      'Para alterar as suas credenciais, contacte a administração.';
+
+  @override
+  String get signNeedsAdminPin =>
+      'Ainda não tem PIN. Peça à administração que lhe atribua um para poder assinar.';
+
+  @override
+  String get createUser => 'Criar utilizador';
+
+  @override
+  String userCreated(String email) {
+    return 'Utilizador criado: $email. Entregue-lhe a palavra-passe e o PIN.';
+  }
+
+  @override
+  String passwordTooShort(int min) {
+    return 'A palavra-passe tem de ter pelo menos $min caracteres';
+  }
+
+  @override
+  String get passwordRepeatLabel => 'Repetir palavra-passe';
+
+  @override
+  String get passwordMismatch => 'As palavras-passe não coincidem';
+
+  @override
+  String get createUserNote =>
+      'Entregue a palavra-passe e o PIN à pessoa. Só a administração os pode alterar; a pessoa não os pode mudar.';
+
+  @override
+  String get setNewPin => 'Definir novo PIN';
+
+  @override
+  String setNewPinFor(String name) {
+    return 'Novo PIN para $name';
+  }
+
+  @override
+  String pinSetFor(String name) {
+    return 'PIN de $name alterado. Entregue-lhe o novo PIN.';
+  }
+
+  @override
+  String get setPinNote =>
+      'O novo PIN passa a valer num tablet na próxima vez que a pessoa entrar nele com ligação à rede.';
+
+  @override
+  String get resetPasswordAction => 'Redefinir palavra-passe';
+
+  @override
+  String get resetPasswordSupport =>
+      'Nesta versão, a palavra-passe de outra pessoa não pode ser alterada a partir da aplicação. Peça ao suporte técnico (departamento de informática) que a redefina.';
 }

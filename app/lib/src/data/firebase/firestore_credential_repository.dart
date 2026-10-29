@@ -33,7 +33,7 @@ class FirestoreCredentialRepository implements CredentialRepository {
       await _ref(institutionId, uid).set({
         'pinHash': pinHash,
         'updatedAt': FieldValue.serverTimestamp(),
-        if (adminUid != null) 'updatedBy': adminUid,
+        'updatedBy': ?adminUid,
       });
     } catch (error) {
       throw mapFirebaseException(error);
