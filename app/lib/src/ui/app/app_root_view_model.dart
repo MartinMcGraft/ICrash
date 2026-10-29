@@ -149,6 +149,7 @@ class AppRootViewModel extends ViewModel {
       institutionName: institution.name,
     ));
     remembered = await services.deviceSession.rememberedUser();
+    await _refreshPin(institution.id, current.uid);
     _closeSession();
     session = SessionController(
       services: services,
@@ -168,6 +169,19 @@ class AppRootViewModel extends ViewModel {
     notify();
   }
 
+  /// DB3: the PIN is set by the administration. After each sign-in the
+  /// device copies the user's PIN hash, so A2 and A9 can check it offline.
+  /// Offline or refused, the copy already on the device is kept.
+  Future<void> _refreshPin(String institutionId, String uid) async {
+    try {
+      final pinHash = await services.credentials.fetchPinHash(institutionId, uid);
+      await services.deviceSession.cachePinHash(uid, pinHash);
+    } on RepositoryFailure {
+      // Keep the cached hash.
+    }
+    hasPin = await services.deviceSession.hasPin(uid);
+  }
+
   /// Profile › "Bloquear": only meaningful with a PIN.
   Future<void> lock() async {
     if (!hasPin) return;
@@ -176,12 +190,6 @@ class AppRootViewModel extends ViewModel {
     notify();
   }
 
-  Future<ActionResult<void>> setPin(String pin) => run(() async {
-        final current = user;
-        if (current == null) throw const ActionError('noSavedSession');
-        await services.deviceSession.setPin(current.uid, pin);
-        hasPin = true;
-      });
 
   /// Signs out and forgets the device session ("Não é a Ana?").
   Future<void> signOut() async {

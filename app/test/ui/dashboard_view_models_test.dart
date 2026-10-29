@@ -218,19 +218,51 @@ void main() {
   });
 
   group('B7 UsersViewModel', () {
-    test('invite creates the member and sends the access e-mail', () async {
-      final auth = FakeAuthRepository();
+    test('the administrator creates a user with the password and PIN they chose (DB3)', () async {
       final institutions = FakeInstitutionRepository();
-      final services = buildTestServices(auth: auth, institutions: institutions);
+      final services = buildTestServices(institutions: institutions);
       final vm = UsersViewModel(services, _session(services));
       await _settle();
-      final result = await vm.invite(name: 'Ana Silva', email: 'Ana.Silva@H.pt', role: Role.user);
+      final result =
+          await vm.createUser(name: 'Ana Silva', email: 'Ana.Silva@H.pt', role: Role.user, password: 'segura-123', pin: '2468');
       expect(result.isOk, isTrue);
-      expect(institutions.members.single.displayName, 'Ana Silva');
-      expect(auth.passwordResets, ['ana.silva@h.pt']);
+      final member = institutions.members.single;
+      expect(member.displayName, 'Ana Silva');
+      expect(member.status, MembershipStatus.active, reason: 'no invitation: the person gets the credentials by hand');
+      expect(institutions.passwords[member.uid], 'segura-123');
+      final hash = institutions.pinHashes[member.uid]!;
+      expect(hash, isNot(contains('2468')));
+      expect(await services.pinHasher.verify('2468', hash), isTrue);
       await _settle();
-      final again = await vm.invite(name: 'Ana', email: 'ana.silva@h.pt', role: Role.user);
+      final again = await vm.createUser(name: 'Ana', email: 'ana.silva@h.pt', role: Role.user, password: 'segura-123', pin: '2468');
       expect(again.code, 'emailTaken');
+      vm.dispose();
+    });
+
+    test('a short password or a PIN that isn\'t 4 digits is refused', () async {
+      final institutions = FakeInstitutionRepository();
+      final services = buildTestServices(institutions: institutions);
+      final vm = UsersViewModel(services, _session(services));
+      await _settle();
+      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.user, password: 'curta', pin: '1234')).code,
+          'passwordTooShort');
+      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.user, password: 'segura-123', pin: '12')).code,
+          'pinInvalid');
+      expect(institutions.members, isEmpty);
+      vm.dispose();
+    });
+
+    test('an administrator sets a new PIN for someone else, never for themselves', () async {
+      const me = Membership(uid: 'me', institutionId: 'inst', role: Role.institutionAdmin, status: MembershipStatus.active);
+      const ana = Membership(uid: 'ana', institutionId: 'inst', role: Role.user, status: MembershipStatus.active);
+      final credentials = FakeCredentialRepository();
+      final services = buildTestServices(institutions: FakeInstitutionRepository(members: [me, ana]), credentials: credentials);
+      final vm = UsersViewModel(services, _session(services));
+      await _settle();
+      expect((await vm.setMemberPin(ana, '1357')).isOk, isTrue);
+      expect(await services.pinHasher.verify('1357', credentials.pinHashes['inst/ana']!), isTrue);
+      expect((await vm.setMemberPin(me, '1357')).code, 'self');
+      expect(credentials.pinHashes.containsKey('inst/me'), isFalse);
       vm.dispose();
     });
 

@@ -47,8 +47,9 @@ dependencies:
   connectivity_plus: ^7.3.1
   pdf: ^3.11.3
   printing: ^5.14.2
-  # Hashing the device PIN (design v2 A2); already resolved transitively.
-  crypto: ^3.0.6
+  # PBKDF2 for the administrator-set PIN (DB3; interim, under Firebase).
+  # Pure Dart on mobile/desktop, Web Crypto in the browser.
+  cryptography: ^2.7.0
 
 dev_dependencies:
   flutter_test:

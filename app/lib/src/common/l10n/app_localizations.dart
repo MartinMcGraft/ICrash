@@ -3079,24 +3079,6 @@ abstract class AppLocalizations {
   /// **'Editar modelo'**
   String get editTemplate;
 
-  /// No description provided for @deleteTemplate.
-  ///
-  /// In pt, this message translates to:
-  /// **'Eliminar modelo'**
-  String get deleteTemplate;
-
-  /// No description provided for @deleteTemplateConfirm.
-  ///
-  /// In pt, this message translates to:
-  /// **'Eliminar o modelo “{name}”? Os carrinhos já criados a partir dele não são alterados.'**
-  String deleteTemplateConfirm(String name);
-
-  /// No description provided for @templateDeleted.
-  ///
-  /// In pt, this message translates to:
-  /// **'Modelo eliminado.'**
-  String get templateDeleted;
-
   /// No description provided for @templateSaved.
   ///
   /// In pt, this message translates to:
@@ -3804,6 +3786,84 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'ex.: registado na posição errada'**
   String get correctionReasonHint;
+
+  /// No description provided for @slotInUse.
+  ///
+  /// In pt, this message translates to:
+  /// **'Posição em uso'**
+  String get slotInUse;
+
+  /// No description provided for @slotInUseHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.'**
+  String get slotInUseHint;
+
+  /// No description provided for @drawerInUseHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta gaveta já tem histórico: a grelha não pode ser redimensionada, fundida nem dividida. Pode alterar a quantidade alvo das posições.'**
+  String get drawerInUseHint;
+
+  /// No description provided for @templatesTabActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativos ({count})'**
+  String templatesTabActive(int count);
+
+  /// No description provided for @templatesTabArchived.
+  ///
+  /// In pt, this message translates to:
+  /// **'Arquivados ({count})'**
+  String templatesTabArchived(int count);
+
+  /// No description provided for @templatesArchivedEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não há modelos arquivados.'**
+  String get templatesArchivedEmpty;
+
+  /// No description provided for @archiveTemplate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Arquivar modelo'**
+  String get archiveTemplate;
+
+  /// No description provided for @archiveTemplateConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Arquivar o modelo “{name}”? Deixa de aparecer ao criar carrinhos; os carrinhos já criados não mudam. Pode restaurá-lo mais tarde.'**
+  String archiveTemplateConfirm(String name);
+
+  /// No description provided for @templateArchived.
+  ///
+  /// In pt, this message translates to:
+  /// **'Modelo arquivado.'**
+  String get templateArchived;
+
+  /// No description provided for @restoreTemplate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Restaurar'**
+  String get restoreTemplate;
+
+  /// No description provided for @templateRestored.
+  ///
+  /// In pt, this message translates to:
+  /// **'Modelo restaurado.'**
+  String get templateRestored;
+
+  /// No description provided for @templateArchivedTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Modelo arquivado'**
+  String get templateArchivedTitle;
+
+  /// No description provided for @templateArchivedMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.'**
+  String get templateArchivedMessage;
 }
 
 class _AppLocalizationsDelegate

@@ -553,3 +553,46 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
     await assertSucceeds(updateDoc(doc(db, drawerPath), { number: 1 }));
   });
 });
+
+describe('credentials are set by the administration only (DB3)', () => {
+  const credPath = (uid) => `institutions/${INST_A}/memberships/${uid}/private/credentials`;
+  const HASH = 'pbkdf2-sha256$60000$c2FsdC1mb3ItdGVzdHMtMQ==$yGloleHkdAyoaW/Eb0SMpPM7gAhWmYdCkJvDYomXLK0=';
+
+  test('an institution admin sets another member\'s PIN hash', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(setDoc(doc(db, credPath(USER_UID)), { pinHash: HASH }));
+  });
+
+  test('nobody sets their own PIN, not even an admin; a manager can\'t set anyone\'s', async () => {
+    await seedBaseline();
+    await assertFails(setDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), credPath(ADMIN_UID)), { pinHash: HASH }));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext(USER_UID).firestore(), credPath(USER_UID)), { pinHash: HASH }));
+    await assertFails(setDoc(doc(testEnv.authenticatedContext(MANAGER_UID).firestore(), credPath(USER_UID)), { pinHash: HASH }));
+  });
+
+  test('only a salted PBKDF2 hash is accepted, never a plain PIN', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(setDoc(doc(db, credPath(USER_UID)), { pinHash: '1234' }));
+  });
+
+  test('the user and admins can read the hash; other members can\'t', async () => {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), credPath(USER_UID)), { pinHash: HASH });
+    });
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext(USER_UID).firestore(), credPath(USER_UID))));
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), credPath(USER_UID))));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(MANAGER_UID).firestore(), credPath(USER_UID))));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(USER2_UID).firestore(), credPath(USER_UID))));
+  });
+
+  test('a credentials document can\'t be deleted', async () => {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), credPath(USER_UID)), { pinHash: HASH });
+    });
+    await assertFails(deleteDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), credPath(USER_UID))));
+  });
+});

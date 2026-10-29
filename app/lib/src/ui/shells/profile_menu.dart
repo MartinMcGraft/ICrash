@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../common/l10n/app_localizations.dart';
 import '../../common/locale_scope.dart';
@@ -66,7 +65,20 @@ Future<void> showProfileMenu(BuildContext context) {
                   ),
                 ),
                 const Divider(),
-                item(IcIcon.cadeado, actions.hasPin ? l10n.profileChangePin : l10n.profileSetPin, () => showSetPinDialog(context, actions)),
+                // DB3: credentials are set by the administration only.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: IcSpace.s20, vertical: IcSpace.s12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const IcIconView(IcIcon.info, size: 20, color: IcColors.textSecondary),
+                      const SizedBox(width: IcSpace.s12),
+                      Expanded(
+                        child: Text(l10n.credentialsContactAdmin, style: IcText.bodyS.copyWith(color: IcColors.textSecondary)),
+                      ),
+                    ],
+                  ),
+                ),
                 if (actions.hasPin) item(IcIcon.cadeado, l10n.profileLockNow, () => actions.lock()),
                 if (actions.switchInstitution != null) item(IcIcon.escudo, l10n.profileSwitchInstitution, actions.switchInstitution!),
                 if (actions.switchShell != null)
@@ -85,65 +97,4 @@ Future<void> showProfileMenu(BuildContext context) {
       );
     },
   );
-}
-
-/// Asks for a 4-digit PIN twice and stores it on this device.
-Future<void> showSetPinDialog(BuildContext context, AppActions actions) async {
-  final l10n = AppLocalizations.of(context);
-  final first = TextEditingController();
-  final second = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-  final messenger = ScaffoldMessenger.of(context);
-  final pin = await showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.profileSetPin),
-      content: SizedBox(
-        width: 360,
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.pinSetupHelp, style: IcText.bodyM.copyWith(color: IcColors.textSecondary)),
-              const SizedBox(height: IcSpace.s16),
-              LabeledField(
-                label: l10n.pinNewLabel,
-                controller: first,
-                obscure: true,
-                autofocus: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-                validator: (v) => (v == null || v.length != 4) ? l10n.pinFourDigits : null,
-              ),
-              const SizedBox(height: IcSpace.s12),
-              LabeledField(
-                label: l10n.pinRepeatLabel,
-                controller: second,
-                obscure: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-                validator: (v) => v != first.text ? l10n.pinMismatch : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.actionCancel)),
-        FilledButton(
-          onPressed: () {
-            if (formKey.currentState!.validate()) Navigator.of(context).pop(first.text);
-          },
-          child: Text(l10n.actionSave),
-        ),
-      ],
-    ),
-  );
-  first.dispose();
-  second.dispose();
-  if (pin == null) return;
-  final ok = await actions.setPin(pin);
-  messenger.showSnackBar(SnackBar(content: Text(ok ? l10n.pinSaved : l10n.actionGenericError)));
 }

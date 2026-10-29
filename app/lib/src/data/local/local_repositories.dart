@@ -3,7 +3,7 @@
 // Every class here implements a domain repository interface with
 // device-local storage. Swap them for Firestore implementations in
 // `AppServices` once the matching product decision is made:
-//   LocalDeviceSessionRepository  — D3 (PIN; device-local by design)
+//   LocalDeviceSessionRepository  — saved session + cached PIN hash (DB3)
 //   LocalReportRepository         — D4/D6 (monthly check + signing)
 //   LocalEmergencyRepository      — §9 (emergency mode)
 //   LocalTemplateRepository       — B6 templates
@@ -12,10 +12,7 @@
 //   LocalCartSettingsRepository   — D7 automatic state rule
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
-
-import 'package:crypto/crypto.dart';
 
 import '../../common/repository_failure.dart';
 import '../../domain/entities/app_permission.dart';
@@ -31,6 +28,7 @@ import '../../domain/repositories/permission_repository.dart';
 import '../../domain/repositories/report_repository.dart';
 import '../../domain/repositories/shift_repository.dart';
 import '../../domain/repositories/template_repository.dart';
+import '../../services/pin_hasher.dart';
 import 'local_store.dart';
 
 String _newId() {
@@ -43,11 +41,18 @@ String _newId() {
 // ---------------------------------------------------------------------------
 
 class LocalDeviceSessionRepository implements DeviceSessionRepository {
-  LocalDeviceSessionRepository(this._store);
+  LocalDeviceSessionRepository(this._store, {PinHasher? hasher}) : _hasher = hasher ?? PinHasher();
   final LocalStore _store;
+  final PinHasher _hasher;
 
   static const _userKey = 'device.user';
-  String _pinKey(String uid) => 'device.pin.$uid';
+
+  /// The administrator-set PIN hash cached for offline unlock (DB3).
+  String _hashKey(String uid) => 'device.pinHash.$uid';
+
+  /// The old self-set device PIN (salted SHA-256, before 29 Oct 2026). Never
+  /// read; removed whenever the cache is written.
+  String _legacyPinKey(String uid) => 'device.pin.$uid';
 
   @override
   Future<RememberedUser?> rememberedUser() async {
@@ -63,25 +68,20 @@ class LocalDeviceSessionRepository implements DeviceSessionRepository {
   Future<void> forget() => _store.write(_userKey, null);
 
   @override
-  Future<bool> hasPin(String uid) async => await _store.read(_pinKey(uid)) is Map;
+  Future<bool> hasPin(String uid) async => await _store.read(_hashKey(uid)) is String;
 
   @override
-  Future<void> setPin(String uid, String pin) async {
-    if (!RegExp(r'^\d{4}$').hasMatch(pin)) {
-      throw const RepositoryFailure(RepositoryFailureReason.invalidInput);
-    }
-    final salt = _newId();
-    await _store.write(_pinKey(uid), {'salt': salt, 'hash': _hash(salt, pin)});
+  Future<void> cachePinHash(String uid, String? pinHash) async {
+    await _store.write(_hashKey(uid), pinHash);
+    await _store.write(_legacyPinKey(uid), null);
   }
 
   @override
   Future<bool> verifyPin(String uid, String pin) async {
-    final raw = await _store.read(_pinKey(uid));
-    if (raw is! Map) return false;
-    return raw['hash'] == _hash(raw['salt'] as String, pin);
+    final encoded = await _store.read(_hashKey(uid));
+    if (encoded is! String) return false;
+    return _hasher.verify(pin, encoded);
   }
-
-  static String _hash(String salt, String pin) => sha256.convert(utf8.encode('$salt:$pin')).toString();
 }
 
 // ---------------------------------------------------------------------------

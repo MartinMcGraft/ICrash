@@ -89,7 +89,6 @@ class _AppRootState extends State<AppRoot> {
                 signOut: vm.signOut,
                 lock: vm.lock,
                 switchInstitution: vm.institutions.length > 1 ? vm.switchInstitution : null,
-                setPin: (pin) async => (await vm.setPin(pin)).isOk,
                 hasPin: vm.hasPin,
                 showingDashboard: shell == ShellKind.dashboard,
                 switchShell: kDebugMode

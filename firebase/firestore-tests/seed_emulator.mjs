@@ -11,6 +11,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hashPin } from './pin_hash.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ID = 'demo-icrash-v2';
@@ -18,6 +19,7 @@ const AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 
 const TEST_EMAIL = 'enfermeira.teste@icrash.pt';
 const TEST_PASSWORD = 'icrash-teste-123';
+const TEST_PIN = '1234';
 const INSTITUTION_ID = 'hospital-teste';
 const CART_ID = 'carro-1';
 
@@ -82,6 +84,8 @@ async function seedFirestore(uid) {
       uid,
       status: 'active',
     });
+    // DB3: the administration sets the PIN.
+    await setDoc(doc(db, `institutions/${INSTITUTION_ID}/memberships/${uid}/private/credentials`), { pinHash: hashPin(TEST_PIN) });
 
     await setDoc(doc(db, `institutions/${INSTITUTION_ID}/carts/${CART_ID}`), {
       name: 'Carro de Emergência 1',
@@ -106,4 +110,5 @@ await seedFirestore(uid);
 console.log('\nSeed complete. Sign in from the app with:');
 console.log(`  e-mail:        ${TEST_EMAIL}`);
 console.log(`  palavra-passe: ${TEST_PASSWORD}`);
+console.log(`  PIN:           ${TEST_PIN}`);
 console.log(`Institution: Hospital de Teste (${INSTITUTION_ID}), role: institutionAdmin`);

@@ -43,7 +43,7 @@ void main() {
     test('the author can sign with their PIN', () async {
       final services = buildTestServices();
       final id = await _report(services, 'ana');
-      await services.deviceSession.setPin('ana', '1234');
+      await services.deviceSession.cachePinHash('ana', await services.pinHasher.hash('1234'));
       final vm = ReportViewModel(services, _session(services, 'ana'), id);
       await _settle();
       expect(vm.canSign, isTrue);
@@ -59,7 +59,7 @@ void main() {
     test('anyone else sees the report but can\'t sign it', () async {
       final services = buildTestServices();
       final id = await _report(services, 'ana');
-      await services.deviceSession.setPin('rui', '1234');
+      await services.deviceSession.cachePinHash('rui', await services.pinHasher.hash('1234'));
       final vm = ReportViewModel(services, _session(services, 'rui'), id);
       await _settle();
       expect(vm.report, isNotNull);

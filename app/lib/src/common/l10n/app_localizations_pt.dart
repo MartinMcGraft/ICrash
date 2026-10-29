@@ -1870,17 +1870,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get editTemplate => 'Editar modelo';
 
   @override
-  String get deleteTemplate => 'Eliminar modelo';
-
-  @override
-  String deleteTemplateConfirm(String name) {
-    return 'Eliminar o modelo “$name”? Os carrinhos já criados a partir dele não são alterados.';
-  }
-
-  @override
-  String get templateDeleted => 'Modelo eliminado.';
-
-  @override
   String get templateSaved => 'Modelo guardado.';
 
   @override
@@ -2312,4 +2301,52 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get correctionReasonHint => 'ex.: registado na posição errada';
+
+  @override
+  String get slotInUse => 'Posição em uso';
+
+  @override
+  String get slotInUseHint =>
+      'Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.';
+
+  @override
+  String get drawerInUseHint =>
+      'Esta gaveta já tem histórico: a grelha não pode ser redimensionada, fundida nem dividida. Pode alterar a quantidade alvo das posições.';
+
+  @override
+  String templatesTabActive(int count) {
+    return 'Ativos ($count)';
+  }
+
+  @override
+  String templatesTabArchived(int count) {
+    return 'Arquivados ($count)';
+  }
+
+  @override
+  String get templatesArchivedEmpty => 'Não há modelos arquivados.';
+
+  @override
+  String get archiveTemplate => 'Arquivar modelo';
+
+  @override
+  String archiveTemplateConfirm(String name) {
+    return 'Arquivar o modelo “$name”? Deixa de aparecer ao criar carrinhos; os carrinhos já criados não mudam. Pode restaurá-lo mais tarde.';
+  }
+
+  @override
+  String get templateArchived => 'Modelo arquivado.';
+
+  @override
+  String get restoreTemplate => 'Restaurar';
+
+  @override
+  String get templateRestored => 'Modelo restaurado.';
+
+  @override
+  String get templateArchivedTitle => 'Modelo arquivado';
+
+  @override
+  String get templateArchivedMessage =>
+      'Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.';
 }

@@ -33,15 +33,24 @@ class RememberedUser {
       );
 }
 
-/// Device-local unlock (proposal D3 option a: "o PIN desbloqueia a sessão
-/// guardada neste dispositivo. Funciona sem rede."). The PIN never leaves
-/// the device and is stored hashed.
+/// The session saved on this device, and the PIN check that unlocks it
+/// (A2) and signs reports (A9).
+///
+/// DB3 (28 Oct): the PIN is set by the administration only. The device
+/// keeps a copy of the user's PIN *hash* (fetched from the membership's
+/// credentials after each sign-in), so A2 still works offline. Users can't
+/// set or change their PIN here.
 abstract class DeviceSessionRepository {
   Future<RememberedUser?> rememberedUser();
   Future<void> remember(RememberedUser user);
   Future<void> forget();
 
+  /// Whether this device holds a PIN hash for [uid].
   Future<bool> hasPin(String uid);
-  Future<void> setPin(String uid, String pin);
+
+  /// Stores (or, with null, removes) the cached PIN hash for [uid].
+  Future<void> cachePinHash(String uid, String? pinHash);
+
+  /// Checks [pin] against the cached hash. False when there is none.
   Future<bool> verifyPin(String uid, String pin);
 }

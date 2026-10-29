@@ -1,9 +1,8 @@
-import 'dart:math';
-
 import '../../../common/app_services.dart';
 import '../../../domain/entities/app_permission.dart';
 import '../../../domain/entities/membership.dart';
 import '../../../domain/entities/role.dart';
+import '../../../services/pin_hasher.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 
@@ -11,7 +10,7 @@ enum UsersFilter { all, managers, professionals, invited }
 
 /// B7 · Utilizadores e permissões.
 class UsersViewModel extends ViewModel {
-  UsersViewModel(this.services, this.session, {Random? random}) : _random = random ?? Random.secure() {
+  UsersViewModel(this.services, this.session) {
     final id = session.institution.id;
     listen(services.institutions.watchMembers(id), (v) {
       _members = List.of(v)..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
@@ -29,7 +28,9 @@ class UsersViewModel extends ViewModel {
 
   final AppServices services;
   final SessionController session;
-  final Random _random;
+
+  /// Firebase Auth's own minimum is 6; the app asks for 8.
+  static const minPasswordLength = 8;
 
   LoadState state = LoadState.loading;
   UsersFilter filter = UsersFilter.all;
@@ -100,31 +101,38 @@ class UsersViewModel extends ViewModel {
         );
       });
 
-  /// "Convidar utilizador": creates the account with a random password the
-  /// admin never sees, then sends the password-reset e-mail so the person
-  /// chooses their own password (replaces the old "invent a temporary
-  /// password and pass it on" flow, audit §4.4).
-  Future<ActionResult<void>> invite({required String name, required String email, required Role role}) => run(() async {
+  /// "Criar utilizador" (DB3, 28 Oct): the administrator chooses the
+  /// person's password and PIN and hands them over; nobody else can change
+  /// them. The account is created with that password (no reset e-mail) and
+  /// the PIN is stored as a salted slow hash. Error codes `emailTaken`,
+  /// `passwordTooShort`, `pinInvalid`.
+  Future<ActionResult<void>> createUser({
+    required String name,
+    required String email,
+    required Role role,
+    required String password,
+    required String pin,
+  }) =>
+      run(() async {
         final normalized = email.trim().toLowerCase();
         if (_members.any((m) => (m.email ?? '').toLowerCase() == normalized)) throw const ActionError('emailTaken');
+        if (password.length < minPasswordLength) throw const ActionError('passwordTooShort');
+        if (!PinHasher.isValidPin(pin)) throw const ActionError('pinInvalid');
         await services.institutions.createMember(
           session.institution.id,
           email: normalized,
-          password: _randomPassword(),
+          password: password,
+          pinHash: await services.pinHasher.hash(pin),
           role: role,
           displayName: name.trim(),
         );
-        await services.auth.sendPasswordReset(normalized);
       });
 
-  Future<ActionResult<void>> resendInvite(Membership member) => run(() async {
-        final email = member.email;
-        if (email == null) throw const ActionError('noEmail');
-        await services.auth.sendPasswordReset(email);
+  /// "Definir novo PIN" for another member (DB3). An administrator can't set
+  /// their own (code `self`); another administrator does it.
+  Future<ActionResult<void>> setMemberPin(Membership member, String pin) => run(() async {
+        if (isMe(member)) throw const ActionError('self');
+        if (!PinHasher.isValidPin(pin)) throw const ActionError('pinInvalid');
+        await services.credentials.setPinHash(session.institution.id, member.uid, await services.pinHasher.hash(pin));
       });
-
-  String _randomPassword() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!#%+=?';
-    return List.generate(20, (_) => chars[_random.nextInt(chars.length)]).join();
-  }
 }

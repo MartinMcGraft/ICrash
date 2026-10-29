@@ -105,10 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const SizedBox(height: IcSpace.s12),
                                   Notice(kind: NoticeKind.critical, title: _errorText(l10n, vm.error!)),
                                 ],
-                                if (vm.resetSent) ...[
-                                  const SizedBox(height: IcSpace.s12),
-                                  Notice(kind: NoticeKind.info, title: l10n.loginResetSent),
-                                ],
                                 const SizedBox(height: IcSpace.s16),
                                 IcButton(
                                   label: l10n.loginSubmit,
@@ -117,16 +113,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   busy: vm.busy,
                                   onPressed: () => _submit(vm),
                                 ),
-                                const SizedBox(height: IcSpace.s4),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                                    onPressed: vm.busy ? null : () => _resetPassword(vm, l10n),
-                                    child: Text(l10n.loginForgotPassword),
-                                  ),
+                                const SizedBox(height: IcSpace.s8),
+                                // DB3: no "forgot password"; credentials are
+                                // set and reset by the administration.
+                                Text(
+                                  l10n.credentialsContactAdmin,
+                                  style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
                                 ),
-                                const SizedBox(height: IcSpace.s4),
+                                const SizedBox(height: IcSpace.s12),
                                 Row(
                                   children: [
                                     Expanded(
@@ -169,16 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit(LoginViewModel vm) {
     if (vm.busy || !_formKey.currentState!.validate()) return;
     vm.signIn(_email.text, _password.text);
-  }
-
-  Future<void> _resetPassword(LoginViewModel vm, AppLocalizations l10n) async {
-    if (_email.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.loginResetNeedsEmail)));
-      return;
-    }
-    final result = await vm.resetPassword(_email.text);
-    if (!mounted || result.isOk) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.actionGenericError)));
   }
 }
 

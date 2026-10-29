@@ -10,6 +10,7 @@
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import fs from 'node:fs';
+import { hashPin } from './pin_hash.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +18,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ID = 'demo-icrash-v2';
 const AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 const PASSWORD = 'icrash-teste-123';
+// DB3: the administration sets every user's PIN. Same test PIN for everyone.
+const PIN = '1234';
 
 const USERS = {
   admin: 'enfermeira.teste@icrash.pt',
@@ -115,6 +118,12 @@ async function main() {
       uid: uids.user,
       status: 'active',
     });
+
+    // PIN hashes (DB3), in the members' private credentials document, the
+    // way B7 "Criar utilizador" / "Definir novo PIN" write them.
+    for (const uid of [uids.admin, uids.manager, uids.user]) {
+      await setDoc(doc(db, `institutions/hospital-teste/memberships/${uid}/private/credentials`), { pinHash: hashPin(PIN) });
+    }
 
     // Products
     const products = {
@@ -266,6 +275,7 @@ async function main() {
       uid: uids.admin,
       status: 'active',
     });
+    await setDoc(doc(db, `institutions/hospital-teste-b/memberships/${uids.admin}/private/credentials`), { pinHash: hashPin(PIN) });
     await setDoc(doc(db, 'institutions/hospital-teste-b/carts/carro-b1'), {
       name: 'Carro B1',
       status: 'operational',
@@ -278,7 +288,7 @@ async function main() {
   });
 
   await testEnv.cleanup();
-  console.log('QA seed complete.');
+  console.log(`QA seed complete. Password for every account: ${PASSWORD} · PIN: ${PIN}`);
   console.log(JSON.stringify(uids, null, 2));
 }
 

@@ -19,11 +19,13 @@ import 'package:icrash_app/src/domain/inventory_rules.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
+import 'package:icrash_app/src/domain/repositories/credential_repository.dart';
 import 'package:icrash_app/src/domain/repositories/drawer_repository.dart';
 import 'package:icrash_app/src/domain/repositories/institution_repository.dart';
 import 'package:icrash_app/src/domain/repositories/inventory_repository.dart';
 import 'package:icrash_app/src/domain/repositories/product_repository.dart';
 import 'package:icrash_app/src/domain/repositories/usage_repository.dart';
+import 'package:icrash_app/src/services/pin_hasher.dart';
 import 'package:icrash_app/src/services/scanner_service.dart';
 
 /// Throws on any call that isn't explicitly overridden by a subclass.
@@ -64,11 +66,6 @@ class FakeAuthRepository extends UnimplementedFake implements AuthRepository {
     signOutCallCount++;
     signedInUser = null;
   }
-
-  final List<String> passwordResets = [];
-
-  @override
-  Future<void> sendPasswordReset(String email) async => passwordResets.add(email);
 }
 
 class FakeInstitutionRepository extends UnimplementedFake implements InstitutionRepository {
@@ -79,6 +76,10 @@ class FakeInstitutionRepository extends UnimplementedFake implements Institution
   Membership? myMembership;
   final List<Membership> members;
   Object? createMemberError;
+
+  /// What [createMember] received, by the new member's uid.
+  final Map<String, String> passwords = {};
+  final Map<String, String> pinHashes = {};
   int _nextUid = 1;
   final _membersController = StreamController<List<Membership>>.broadcast();
 
@@ -101,12 +102,16 @@ class FakeInstitutionRepository extends UnimplementedFake implements Institution
     String institutionId, {
     required String email,
     required String password,
+    required String pinHash,
     required Role role,
     String? displayName,
   }) async {
     if (createMemberError != null) throw createMemberError!;
+    final uid = 'member-${_nextUid++}';
+    passwords[uid] = password;
+    pinHashes[uid] = pinHash;
     members.add(Membership(
-      uid: 'member-${_nextUid++}',
+      uid: uid,
       institutionId: institutionId,
       role: role,
       status: MembershipStatus.active,
@@ -566,6 +571,24 @@ class FakeUsageRepository extends UnimplementedFake implements UsageRepository {
 
 class FakeAuditRepository extends UnimplementedFake implements AuditRepository {}
 
+/// PIN hashes by `institutionId/uid` (DB3).
+class FakeCredentialRepository extends UnimplementedFake implements CredentialRepository {
+  FakeCredentialRepository({Map<String, String>? pinHashes}) : pinHashes = pinHashes ?? {};
+
+  final Map<String, String> pinHashes;
+  Object? fetchError;
+
+  @override
+  Future<String?> fetchPinHash(String institutionId, String uid) async {
+    if (fetchError != null) throw fetchError!;
+    return pinHashes['$institutionId/$uid'];
+  }
+
+  @override
+  Future<void> setPinHash(String institutionId, String uid, String pinHash) async =>
+      pinHashes['$institutionId/$uid'] = pinHash;
+}
+
 /// Lets a widget test drive the scan flow without a camera: push a raw GS1
 /// payload string through [emit] and it reaches whatever is listening to
 /// [scanRawPayloads], exactly like a real decoded barcode would.
@@ -616,6 +639,8 @@ AppServices buildTestServices({
   InventoryRepository? inventory,
   UsageRepository? usage,
   AuditRepository? audit,
+  CredentialRepository? credentials,
+  PinHasher? pinHasher,
   Gs1DataMatrixScannerService Function()? createGs1Scanner,
   InternalQrScannerService Function()? createInternalQrScanner,
   LocalStore? localStore,
@@ -629,6 +654,9 @@ AppServices buildTestServices({
     inventory: inventory ?? FakeInventoryRepository(),
     usage: usage ?? FakeUsageRepository(),
     audit: audit ?? FakeAuditRepository(),
+    credentials: credentials ?? FakeCredentialRepository(),
+    // Few PBKDF2 iterations keep tests fast; the count travels with each hash.
+    pinHasher: pinHasher ?? PinHasher(iterations: 1000),
     createGs1Scanner: createGs1Scanner ?? FakeGs1DataMatrixScannerService.new,
     createInternalQrScanner: createInternalQrScanner ?? FakeInternalQrScannerService.new,
     // A fresh store per test, so local stubs (templates, shifts, PIN…) never

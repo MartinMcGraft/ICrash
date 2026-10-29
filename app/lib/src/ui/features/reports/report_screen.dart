@@ -16,7 +16,6 @@ import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/fit.dart';
 import '../../core/widgets/layout.dart';
 import '../../core/widgets/status.dart';
-import '../../shells/profile_menu.dart';
 import 'report_pdf.dart';
 import 'report_view_model.dart';
 
@@ -261,16 +260,13 @@ class _SignPanelState extends State<_SignPanel> {
           onPressed: () async {
             final result = await vm.sign(_pin.text);
             if (!context.mounted) return;
-            if (result.code == 'noPin') {
-              showMessage(context, l10n.signNeedsPin);
-              await showSetPinDialog(context, AppActionsScope.of(context));
-              return;
-            }
             showResult(
               context,
               result,
               success: l10n.reportSignedMessage,
               failure: switch (result.code) {
+                // DB3: the PIN is set by the administration (B7).
+                'noPin' => l10n.signNeedsAdminPin,
                 'notConfirmed' => l10n.signNeedsConfirmation,
                 'wrongPin' => l10n.signWrongPin,
                 'notAuthor' => l10n.signOnlyAuthorTitle,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../common/l10n/app_localizations.dart';
 import '../../../domain/entities/app_permission.dart';
@@ -50,7 +51,7 @@ class UsersScreen extends StatelessWidget {
                 subtitle: l10n.usersCount(vm.total),
                 trailing: [
                   if (vm.canManage)
-                    IcButton(label: l10n.inviteUser, icon: IcIcon.mais, onPressed: () => _invite(context, vm)),
+                    IcButton(label: l10n.createUser, icon: IcIcon.mais, onPressed: () => _create(context, vm)),
                 ],
               ),
               const SizedBox(height: IcSpace.s20),
@@ -117,17 +118,28 @@ class UsersScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _invite(BuildContext context, UsersViewModel vm) async {
+  Future<void> _create(BuildContext context, UsersViewModel vm) async {
     final l10n = AppLocalizations.of(context);
-    final input = await _showInviteDialog(context);
+    final input = await _showCreateUserDialog(context);
     if (input == null || !context.mounted) return;
-    final result = await vm.invite(name: input.$1, email: input.$2, role: input.$3);
+    final result = await vm.createUser(
+      name: input.name,
+      email: input.email,
+      role: input.role,
+      password: input.password,
+      pin: input.pin,
+    );
     if (!context.mounted) return;
     showResult(
       context,
       result,
-      success: l10n.inviteSent(input.$2),
-      failure: result.code == 'emailTaken' ? l10n.emailTaken : null,
+      success: l10n.userCreated(input.email),
+      failure: switch (result.code) {
+        'emailTaken' => l10n.emailTaken,
+        'passwordTooShort' => l10n.passwordTooShort(UsersViewModel.minPasswordLength),
+        'pinInvalid' => l10n.pinFourDigits,
+        _ => null,
+      },
     );
   }
 }
@@ -148,7 +160,7 @@ class _MemberStatus extends StatelessWidget {
   }
 }
 
-enum _MemberAction { role, toggle, resend }
+enum _MemberAction { role, toggle, pin, password }
 
 class _MemberMenu extends StatelessWidget {
   const _MemberMenu({required this.vm, required this.member});
@@ -175,7 +187,9 @@ class _MemberMenu extends StatelessWidget {
       itemBuilder: (_) => [
         PopupMenuItem(value: _MemberAction.role, child: Text(l10n.changeUserType)),
         PopupMenuItem(value: _MemberAction.toggle, child: Text(active ? l10n.deactivateUser : l10n.reactivateUser)),
-        if (member.email != null) PopupMenuItem(value: _MemberAction.resend, child: Text(l10n.resendInvite)),
+        // DB3: only the administration sets credentials.
+        PopupMenuItem(value: _MemberAction.pin, child: Text(l10n.setNewPin)),
+        PopupMenuItem(value: _MemberAction.password, child: Text(l10n.resetPasswordAction)),
       ],
     );
   }
@@ -202,10 +216,24 @@ class _MemberMenu extends StatelessWidget {
         final toggled = await vm.setActive(member, activate);
         if (!context.mounted) return;
         showResult(context, toggled, success: l10n.userUpdated);
-      case _MemberAction.resend:
-        final sent = await vm.resendInvite(member);
+      case _MemberAction.pin:
+        final pin = await _showPinDialog(context, title: l10n.setNewPinFor(member.label));
+        if (pin == null || !context.mounted) return;
+        final set = await vm.setMemberPin(member, pin);
         if (!context.mounted) return;
-        showResult(context, sent, success: l10n.inviteSent(member.email ?? ''));
+        showResult(context, set, success: l10n.pinSetFor(member.label));
+      case _MemberAction.password:
+        // Q4: a client can't change another user's Firebase password without
+        // Cloud Functions (Spark plan). IT resets it with
+        // firebase/tools/set_password.mjs; see docs/FIREBASE.md §9.
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.resetPasswordAction),
+            content: SizedBox(width: 420, child: Text(l10n.resetPasswordSupport, style: IcText.bodyM)),
+            actions: [IcButton(label: l10n.actionClose, onPressed: () => Navigator.of(context).pop())],
+          ),
+        );
     }
   }
 }
@@ -270,63 +298,197 @@ Future<Role?> _showRoleDialog(BuildContext context, Role current) {
   );
 }
 
-Future<(String, String, Role)?> _showInviteDialog(BuildContext context) {
+class _NewUser {
+  const _NewUser({required this.name, required this.email, required this.role, required this.password, required this.pin});
+  final String name;
+  final String email;
+  final Role role;
+  final String password;
+  final String pin;
+}
+
+/// "Criar utilizador" (DB3): the administrator sets the password and PIN
+/// and hands them over.
+Future<_NewUser?> _showCreateUserDialog(BuildContext context) {
   final l10n = AppLocalizations.of(context);
   final formKey = GlobalKey<FormState>();
   final name = TextEditingController();
   final email = TextEditingController();
+  final password = TextEditingController();
+  final password2 = TextEditingController();
+  final pin = TextEditingController();
+  final pin2 = TextEditingController();
   var role = Role.user;
-  return showDialog<(String, String, Role)>(
+  final pinFormatters = [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)];
+  return showDialog<_NewUser>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(l10n.inviteUser),
+        title: Text(l10n.createUser),
         content: SizedBox(
-          width: 440,
+          width: 480,
           child: Form(
             key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LabeledField(
-                  label: l10n.fieldName,
-                  controller: name,
-                  autofocus: true,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? l10n.validationEnterName : null,
-                ),
-                const SizedBox(height: IcSpace.s16),
-                LabeledField(
-                  label: l10n.fieldEmail,
-                  controller: email,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) => (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) ? l10n.emailInvalid : null,
-                ),
-                const SizedBox(height: IcSpace.s16),
-                Text(l10n.columnUserType, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<Role>(
-                  initialValue: role,
-                  isExpanded: true,
-                  items: [for (final r in assignableRoles) DropdownMenuItem(value: r, child: Text(roleText(l10n, r)))],
-                  onChanged: (v) => setState(() => role = v ?? role),
-                ),
-                const SizedBox(height: IcSpace.s12),
-                Text(l10n.inviteNote, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  LabeledField(
+                    label: l10n.fieldName,
+                    controller: name,
+                    autofocus: true,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? l10n.validationEnterName : null,
+                  ),
+                  const SizedBox(height: IcSpace.s12),
+                  LabeledField(
+                    label: l10n.fieldEmail,
+                    controller: email,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) =>
+                        (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) ? l10n.emailInvalid : null,
+                  ),
+                  const SizedBox(height: IcSpace.s12),
+                  Text(l10n.columnUserType, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<Role>(
+                    initialValue: role,
+                    isExpanded: true,
+                    items: [for (final r in assignableRoles) DropdownMenuItem(value: r, child: Text(roleText(l10n, r)))],
+                    onChanged: (v) => setState(() => role = v ?? role),
+                  ),
+                  const SizedBox(height: IcSpace.s12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: LabeledField(
+                          label: l10n.loginPasswordLabel,
+                          controller: password,
+                          obscure: true,
+                          validator: (v) => (v == null || v.length < UsersViewModel.minPasswordLength)
+                              ? l10n.passwordTooShort(UsersViewModel.minPasswordLength)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: IcSpace.s12),
+                      Expanded(
+                        child: LabeledField(
+                          label: l10n.passwordRepeatLabel,
+                          controller: password2,
+                          obscure: true,
+                          validator: (v) => v != password.text ? l10n.passwordMismatch : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: IcSpace.s12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: LabeledField(
+                          label: l10n.pinLabel,
+                          controller: pin,
+                          obscure: true,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: pinFormatters,
+                          validator: (v) => (v == null || v.length != 4) ? l10n.pinFourDigits : null,
+                        ),
+                      ),
+                      const SizedBox(width: IcSpace.s12),
+                      Expanded(
+                        child: LabeledField(
+                          label: l10n.pinRepeatLabel,
+                          controller: pin2,
+                          obscure: true,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: pinFormatters,
+                          validator: (v) => v != pin.text ? l10n.pinMismatch : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: IcSpace.s12),
+                  Text(l10n.createUserNote, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
+                ],
+              ),
             ),
           ),
         ),
         actions: [
           IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
           IcButton(
-            label: l10n.sendInvite,
+            label: l10n.createUser,
             onPressed: () {
-              if (formKey.currentState!.validate()) Navigator.of(context).pop((name.text.trim(), email.text.trim(), role));
+              if (!formKey.currentState!.validate()) return;
+              Navigator.of(context).pop(_NewUser(
+                name: name.text.trim(),
+                email: email.text.trim(),
+                role: role,
+                password: password.text,
+                pin: pin.text,
+              ));
             },
           ),
         ],
       ),
+    ),
+  );
+}
+
+/// "Definir novo PIN" (DB3): the administrator types the new PIN twice.
+Future<String?> _showPinDialog(BuildContext context, {required String title}) {
+  final l10n = AppLocalizations.of(context);
+  final formKey = GlobalKey<FormState>();
+  final pin = TextEditingController();
+  final pin2 = TextEditingController();
+  final pinFormatters = [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)];
+  return showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 380,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LabeledField(
+                label: l10n.pinNewLabel,
+                controller: pin,
+                obscure: true,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: pinFormatters,
+                validator: (v) => (v == null || v.length != 4) ? l10n.pinFourDigits : null,
+              ),
+              const SizedBox(height: IcSpace.s12),
+              LabeledField(
+                label: l10n.pinRepeatLabel,
+                controller: pin2,
+                obscure: true,
+                keyboardType: TextInputType.number,
+                inputFormatters: pinFormatters,
+                validator: (v) => v != pin.text ? l10n.pinMismatch : null,
+              ),
+              const SizedBox(height: IcSpace.s12),
+              Text(l10n.setPinNote, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
+        IcButton(
+          label: l10n.actionSave,
+          onPressed: () {
+            if (formKey.currentState!.validate()) Navigator.of(context).pop(pin.text);
+          },
+        ),
+      ],
     ),
   );
 }

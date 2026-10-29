@@ -110,6 +110,7 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
     String institutionId, {
     required String email,
     required String password,
+    required String pinHash,
     required Role role,
     String? displayName,
   }) async {
@@ -138,6 +139,12 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
       batch.set(_firestore.collection(FirestorePaths.memberIndex(institutionId)).doc(newUid), {
         'uid': newUid,
         'status': MembershipStatus.active.id,
+      });
+      // DB3: the PIN the administrator set, as a salted slow hash.
+      batch.set(_firestore.doc(FirestorePaths.credentials(institutionId, newUid)), {
+        'pinHash': pinHash,
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (_auth.currentUser != null) 'updatedBy': _auth.currentUser!.uid,
       });
       await batch.commit();
     } catch (error) {

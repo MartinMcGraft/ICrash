@@ -1843,17 +1843,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editTemplate => 'Edit template';
 
   @override
-  String get deleteTemplate => 'Delete template';
-
-  @override
-  String deleteTemplateConfirm(String name) {
-    return 'Delete the template “$name”? Carts already created from it are not changed.';
-  }
-
-  @override
-  String get templateDeleted => 'Template deleted.';
-
-  @override
   String get templateSaved => 'Template saved.';
 
   @override
@@ -2284,4 +2273,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get correctionReasonHint => 'e.g. recorded in the wrong position';
+
+  @override
+  String get slotInUse => 'Position in use';
+
+  @override
+  String get slotInUseHint =>
+      'This position already has history: it keeps its product and can\'t be cleared. The structure of a cart in use can\'t be changed.';
+
+  @override
+  String get drawerInUseHint =>
+      'This drawer already has history: its grid can\'t be resized, merged or split. You can still change the positions\' target quantities.';
+
+  @override
+  String templatesTabActive(int count) {
+    return 'Active ($count)';
+  }
+
+  @override
+  String templatesTabArchived(int count) {
+    return 'Archived ($count)';
+  }
+
+  @override
+  String get templatesArchivedEmpty => 'There are no archived templates.';
+
+  @override
+  String get archiveTemplate => 'Archive template';
+
+  @override
+  String archiveTemplateConfirm(String name) {
+    return 'Archive the template “$name”? It won\'t be offered when creating carts; carts already created don\'t change. You can restore it later.';
+  }
+
+  @override
+  String get templateArchived => 'Template archived.';
+
+  @override
+  String get restoreTemplate => 'Restore';
+
+  @override
+  String get templateRestored => 'Template restored.';
+
+  @override
+  String get templateArchivedTitle => 'Template archived';
+
+  @override
+  String get templateArchivedMessage =>
+      'It can\'t be used to create carts. Restore it to use it again.';
 }

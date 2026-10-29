@@ -410,18 +410,12 @@
   },
   "loginTitle": "Iniciar sessão",
   "@loginTitle": {},
-  "loginForgotPassword": "Esqueci-me da palavra-passe",
-  "@loginForgotPassword": {},
   "loginUsePin": "Desbloquear com PIN",
   "@loginUsePin": {},
   "loginCartLogin": "Entrar no carro",
   "@loginCartLogin": {},
   "loginNeedsSavedSession": "Inicie sessão uma vez neste dispositivo para usar o PIN ou entrar num carro.",
   "@loginNeedsSavedSession": {},
-  "loginResetSent": "Enviámos um e-mail para redefinir a palavra-passe.",
-  "@loginResetSent": {},
-  "loginResetNeedsEmail": "Escreva primeiro o seu e-mail.",
-  "@loginResetNeedsEmail": {},
   "pinWorksOffline": "Funciona sem rede",
   "@pinWorksOffline": {},
   "pinWrong": "{count, plural, =1{PIN errado. Resta 1 tentativa.} other{PIN errado. Restam {count} tentativas.}}",
@@ -479,16 +473,10 @@
   "@cartLoginNotFound": {},
   "cartLoginNoAccess": "Não tem acesso a este carro.",
   "@cartLoginNoAccess": {},
-  "profileSetPin": "Definir PIN",
-  "@profileSetPin": {},
-  "profileChangePin": "Alterar PIN",
-  "@profileChangePin": {},
   "profileLockNow": "Bloquear agora",
   "@profileLockNow": {},
   "profileSwitchInstitution": "Mudar de instituição",
   "@profileSwitchInstitution": {},
-  "pinSetupHelp": "O PIN desbloqueia a sessão guardada neste dispositivo, mesmo sem rede. Não é partilhado com outros dispositivos.",
-  "@pinSetupHelp": {},
   "pinNewLabel": "Novo PIN (4 dígitos)",
   "@pinNewLabel": {},
   "pinRepeatLabel": "Repetir PIN",
@@ -497,8 +485,6 @@
   "@pinFourDigits": {},
   "pinMismatch": "Os PIN não coincidem",
   "@pinMismatch": {},
-  "pinSaved": "PIN guardado neste dispositivo.",
-  "@pinSaved": {},
   "navCarts": "Carrinhos",
   "@navCarts": {},
   "navReports": "Relatórios",
@@ -1016,8 +1002,6 @@
   "@confirmCheck": {},
   "pinLabel": "PIN",
   "@pinLabel": {},
-  "signNeedsPin": "Defina primeiro um PIN neste dispositivo para assinar.",
-  "@signNeedsPin": {},
   "signNeedsConfirmation": "Marque “Confirmo a verificação” para assinar.",
   "@signNeedsConfirmation": {},
   "signWrongPin": "PIN errado.",
@@ -1515,22 +1499,6 @@
       }
     }
   },
-  "inviteUser": "Convidar utilizador",
-  "@inviteUser": {},
-  "sendInvite": "Enviar convite",
-  "@sendInvite": {},
-  "inviteNote": "A pessoa recebe um e-mail para definir a sua palavra-passe.",
-  "@inviteNote": {},
-  "inviteSent": "Convite enviado para {email}.",
-  "@inviteSent": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "resendInvite": "Reenviar e-mail de acesso",
-  "@resendInvite": {},
   "emailTaken": "Já existe um utilizador com este e-mail.",
   "@emailTaken": {},
   "emailInvalid": "Indique um e-mail válido.",
@@ -1861,5 +1829,57 @@
   "templateArchivedTitle": "Modelo arquivado",
   "@templateArchivedTitle": {},
   "templateArchivedMessage": "Não pode ser usado para criar carrinhos. Restaure-o para voltar a usá-lo.",
-  "@templateArchivedMessage": {}
+  "@templateArchivedMessage": {},
+  "credentialsContactAdmin": "Para alterar as suas credenciais, contacte a administração.",
+  "@credentialsContactAdmin": {},
+  "signNeedsAdminPin": "Ainda não tem PIN. Peça à administração que lhe atribua um para poder assinar.",
+  "@signNeedsAdminPin": {},
+  "createUser": "Criar utilizador",
+  "@createUser": {},
+  "userCreated": "Utilizador criado: {email}. Entregue-lhe a palavra-passe e o PIN.",
+  "@userCreated": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordTooShort": "A palavra-passe tem de ter pelo menos {min} caracteres",
+  "@passwordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordRepeatLabel": "Repetir palavra-passe",
+  "@passwordRepeatLabel": {},
+  "passwordMismatch": "As palavras-passe não coincidem",
+  "@passwordMismatch": {},
+  "createUserNote": "Entregue a palavra-passe e o PIN à pessoa. Só a administração os pode alterar; a pessoa não os pode mudar.",
+  "@createUserNote": {},
+  "setNewPin": "Definir novo PIN",
+  "@setNewPin": {},
+  "setNewPinFor": "Novo PIN para {name}",
+  "@setNewPinFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pinSetFor": "PIN de {name} alterado. Entregue-lhe o novo PIN.",
+  "@pinSetFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setPinNote": "O novo PIN passa a valer num tablet na próxima vez que a pessoa entrar nele com ligação à rede.",
+  "@setPinNote": {},
+  "resetPasswordAction": "Redefinir palavra-passe",
+  "@resetPasswordAction": {},
+  "resetPasswordSupport": "Nesta versão, a palavra-passe de outra pessoa não pode ser alterada a partir da aplicação. Peça ao suporte técnico (departamento de informática) que a redefina.",
+  "@resetPasswordSupport": {}
 }

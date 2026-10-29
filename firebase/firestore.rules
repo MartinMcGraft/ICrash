@@ -182,6 +182,22 @@ service cloud.firestore {
         // (spec sections 18, 60).
         allow update: if isInstitutionAdmin(institutionId) && request.auth.uid != uid;
         allow delete: if isInstitutionAdmin(institutionId) && request.auth.uid != uid;
+
+        // DB3: credentials are set by the administration only. Today this
+        // holds the PIN hash (INTERIM under Firebase: the user can read their
+        // own hash so the device can check the PIN offline; a 4-digit PIN
+        // can be brute-forced from it. The real check moves to the
+        // institution's server). Nobody writes their own, not even an admin.
+        match /private/{docId} {
+          allow read: if docId == 'credentials' &&
+            ((isMember(institutionId) && request.auth.uid == uid) || isInstitutionAdmin(institutionId));
+          allow create, update: if docId == 'credentials' &&
+            isInstitutionAdmin(institutionId) &&
+            request.auth.uid != uid &&
+            request.resource.data.pinHash is string &&
+            request.resource.data.pinHash.matches('^pbkdf2-sha256[$][0-9]+[$][A-Za-z0-9+/=]+[$][A-Za-z0-9+/=]+$');
+          allow delete: if false;
+        }
       }
 
       match /products/{productId} {

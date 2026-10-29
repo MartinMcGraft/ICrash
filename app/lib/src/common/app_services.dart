@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../data/firebase/firebase_auth_repository.dart';
 import '../data/firebase/firestore_audit_repository.dart';
 import '../data/firebase/firestore_cart_repository.dart';
+import '../data/firebase/firestore_credential_repository.dart';
 import '../data/firebase/firestore_drawer_repository.dart';
 import '../data/firebase/firestore_institution_repository.dart';
 import '../data/firebase/firestore_inventory_repository.dart';
@@ -13,6 +14,7 @@ import '../data/firebase/firestore_usage_repository.dart';
 import '../domain/repositories/audit_repository.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/cart_repository.dart';
+import '../domain/repositories/credential_repository.dart';
 import '../domain/repositories/drawer_repository.dart';
 import '../domain/repositories/institution_repository.dart';
 import '../domain/repositories/inventory_repository.dart';
@@ -32,6 +34,7 @@ import '../services/sync_status.dart';
 import '../services/gs1_camera_scanner_service.dart';
 import '../services/gs1_hid_scanner_service.dart';
 import '../services/internal_qr_camera_scanner_service.dart';
+import '../services/pin_hasher.dart';
 import '../services/scanner_platform_support.dart';
 import '../services/scanner_service.dart';
 
@@ -54,6 +57,7 @@ class AppServices {
           inventory: FirestoreInventoryRepository(firestore),
           usage: FirestoreUsageRepository(firestore),
           audit: FirestoreAuditRepository(firestore),
+          credentials: FirestoreCredentialRepository(firestore, auth),
           createGs1Scanner: isCameraScanningSupported ? MobileScannerGs1Service.new : HidGs1ScannerService.new,
           createInternalQrScanner: MobileScannerInternalQrService.new,
           localStore: SharedPreferencesLocalStore(),
@@ -70,8 +74,10 @@ class AppServices {
     required this.inventory,
     required this.usage,
     required this.audit,
+    required this.credentials,
     required this.createGs1Scanner,
     required this.createInternalQrScanner,
+    PinHasher? pinHasher,
     LocalStore? localStore,
     DeviceSessionRepository? deviceSession,
     ReportRepository? reports,
@@ -84,7 +90,8 @@ class AppServices {
     CodeScannerService Function()? createCodeScanner,
   })  : createCodeScanner = createCodeScanner ??
             (isCameraScanningSupported ? CameraCodeScannerService.new : KeyboardCodeScannerService.new),
-        deviceSession = deviceSession ?? LocalDeviceSessionRepository(localStore ?? _testStore),
+        pinHasher = pinHasher ?? PinHasher(),
+        deviceSession = deviceSession ?? LocalDeviceSessionRepository(localStore ?? _testStore, hasher: pinHasher),
         reports = reports ?? LocalReportRepository(localStore ?? _testStore),
         emergency = emergency ?? LocalEmergencyRepository(localStore ?? _testStore),
         templates = templates ?? LocalTemplateRepository(localStore ?? _testStore),
@@ -104,6 +111,12 @@ class AppServices {
   final InventoryRepository inventory;
   final UsageRepository usage;
   final AuditRepository audit;
+
+  /// Administrator-set PIN hashes (DB3; interim, under Firebase).
+  final CredentialRepository credentials;
+
+  /// Salted, slow PIN hashing (PBKDF2), shared by B7 and the device check.
+  final PinHasher pinHasher;
 
   // STUB (local only) repositories — design v2 features with no Firestore
   // model yet. See data/local/local_store.dart.

@@ -24,11 +24,15 @@ import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
 import 'package:icrash_app/src/ui/core/theme/app_theme.dart';
 import 'package:icrash_app/src/ui/core/widgets/slot_grid.dart';
+import 'package:icrash_app/src/ui/features/auth/login_screen.dart';
 import 'package:icrash_app/src/ui/features/cart/cart_screen.dart';
 import 'package:icrash_app/src/ui/features/carts/carts_screen.dart';
+import 'package:icrash_app/src/ui/features/dashboard/cart_config_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/catalog_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/grid_editor_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/shifts_screen.dart';
+import 'package:icrash_app/src/ui/features/dashboard/templates_screen.dart';
+import 'package:icrash_app/src/ui/features/dashboard/users_screen.dart';
 import 'package:icrash_app/src/ui/features/drawer/drawer_screen.dart';
 import 'package:icrash_app/src/ui/shells/shell_navigation.dart';
 
@@ -262,6 +266,46 @@ void main() {
 
     testWidgets('A4 carts on a phone may scroll vertically but not sideways', (tester) async {
       await _pump(tester, phone, _services(carts: 20), const CartsScreen());
+      _expectNoScroll(tester, axes: {Axis.horizontal});
+    });
+  });
+
+  // Screens changed by the 28 Oct database decisions (29 Oct 2026).
+  group('screens changed on 29 Oct fit without scrolling', () {
+    for (final (name, size) in [('tablet', tablet), ('desktop', desktop)]) {
+      testWidgets('A1 sign-in ($name): no "forgot password", credentials note', (tester) async {
+        await _pump(
+          tester,
+          size,
+          _services(),
+          LoginScreen(onSignedIn: () async {}, onUsePin: () {}, onCartLogin: () {}, savedSessionAvailable: true),
+        );
+        _expectNoScroll(tester);
+      });
+
+      testWidgets('B3 cart configuration ($name): 10 numbered drawers', (tester) async {
+        await _pump(tester, size, _services(drawers: 10), const CartConfigScreen(cartId: 'c0'));
+        _expectNoScroll(tester);
+      });
+
+      testWidgets('B6 templates ($name): active/archived tabs', (tester) async {
+        await _pump(tester, size, _services(), const TemplatesScreen());
+        _expectNoScroll(tester);
+      });
+
+      testWidgets('B7 users ($name): "Criar utilizador"', (tester) async {
+        await _pump(tester, size, _services(), const UsersScreen());
+        _expectNoScroll(tester);
+      });
+    }
+
+    testWidgets('A1 sign-in on a phone may scroll vertically but not sideways', (tester) async {
+      await _pump(
+        tester,
+        phone,
+        _services(),
+        LoginScreen(onSignedIn: () async {}, onUsePin: () {}, onCartLogin: () {}, savedSessionAvailable: true),
+      );
       _expectNoScroll(tester, axes: {Axis.horizontal});
     });
   });

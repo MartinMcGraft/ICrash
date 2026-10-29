@@ -17,8 +17,8 @@ abstract class AuthRepository {
 
   Future<AuthUser> signInWithEmailPassword(String email, String password);
 
-  /// Design v2 A1 "Esqueci-me da palavra-passe".
-  Future<void> sendPasswordReset(String email);
+  // No password reset here (DB3): credentials are set and reset by the
+  // administration only. See docs/FIREBASE.md §9 for how a reset is done.
 
   Future<void> signOut();
 }

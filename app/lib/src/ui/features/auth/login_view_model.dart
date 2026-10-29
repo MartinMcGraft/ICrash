@@ -12,11 +12,9 @@ class LoginViewModel extends ViewModel {
   final Future<void> Function() onSignedIn;
 
   RepositoryFailureReason? error;
-  bool resetSent = false;
 
   Future<void> signIn(String email, String password) async {
     error = null;
-    resetSent = false;
     final result = await run(() => auth.signInWithEmailPassword(email.trim(), password));
     if (result.isOk) {
       await onSignedIn();
@@ -24,12 +22,5 @@ class LoginViewModel extends ViewModel {
       error = result.failure;
       notify();
     }
-  }
-
-  Future<ActionResult<void>> resetPassword(String email) async {
-    final result = await run(() => auth.sendPasswordReset(email.trim()));
-    resetSent = result.isOk;
-    notify();
-    return result;
   }
 }

@@ -18,14 +18,17 @@ abstract class InstitutionRepository {
   /// per Rules, but only an admin sees the management UI over it.
   Stream<List<Membership>> watchMembers(String institutionId);
 
-  /// Creates a brand-new member: a Firebase Auth account for [email] plus an
-  /// active `memberships`/`memberIndex` pair, written atomically. There is no
-  /// Cloud Function yet (spec Phase 1 has none) to invite an existing user by
-  /// e-mail alone, so this always provisions a fresh account.
+  /// Creates a brand-new member with the credentials the administrator chose
+  /// (DB3): a Firebase Auth account for [email] with [password], plus an
+  /// active `memberships`/`memberIndex` pair and the [pinHash], written
+  /// atomically. The administrator hands both over; no e-mail is sent.
+  /// There is no Cloud Function (Spark plan), so this always provisions a
+  /// fresh account.
   Future<void> createMember(
     String institutionId, {
     required String email,
     required String password,
+    required String pinHash,
     required Role role,
     String? displayName,
   });

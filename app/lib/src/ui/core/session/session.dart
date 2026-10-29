@@ -112,7 +112,6 @@ class AppActions {
     required this.signOut,
     required this.lock,
     required this.switchInstitution,
-    required this.setPin,
     required this.hasPin,
     this.switchShell,
     this.showingDashboard = false,
@@ -126,8 +125,8 @@ class AppActions {
   /// Null when the user belongs to a single institution.
   final VoidCallback? switchInstitution;
 
-  /// Sets the device PIN; returns false on failure.
-  final Future<bool> Function(String pin) setPin;
+  /// Whether this device holds the user's PIN (set by the administration,
+  /// DB3; users can't set or change it themselves).
   final bool hasPin;
 
   /// Debug builds only: flips between the App and the Dashboard shell so

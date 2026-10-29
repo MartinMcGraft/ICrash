@@ -15,6 +15,12 @@ class FirestorePaths {
   /// See the comment on the `memberIndex` rule in `firestore.rules`.
   static String memberIndex(String institutionId) => 'institutions/$institutionId/memberIndex';
 
+  /// The member's credentials (DB3): today only the PIN hash. Separate from
+  /// the membership document because every member can read memberships,
+  /// while this is readable only by that user and institution admins.
+  static String credentials(String institutionId, String uid) =>
+      'institutions/$institutionId/memberships/$uid/private/credentials';
+
   static String products(String institutionId) => 'institutions/$institutionId/products';
 
   static String carts(String institutionId) => 'institutions/$institutionId/carts';
