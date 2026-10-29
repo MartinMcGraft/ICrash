@@ -219,9 +219,9 @@ class _MemberMenu extends StatelessWidget {
       case _MemberAction.pin:
         final pin = await _showPinDialog(context, title: l10n.setNewPinFor(member.label));
         if (pin == null || !context.mounted) return;
-        final set = await vm.setMemberPin(member, pin);
+        final updated = await vm.setMemberPin(member, pin);
         if (!context.mounted) return;
-        showResult(context, set, success: l10n.pinSetFor(member.label));
+        showResult(context, updated, success: l10n.pinSetFor(member.label));
       case _MemberAction.password:
         // Q4: a client can't change another user's Firebase password without
         // Cloud Functions (Spark plan). IT resets it with
