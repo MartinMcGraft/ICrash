@@ -348,8 +348,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
   final Map<String, List<Batch>> batchesByAssignment = {};
   CartProductAssignment? lastCreated;
   String? lastCorrectedEventId;
+  String? lastCorrectionReason;
+  String? lastConsumptionEventId;
   int _nextId = 1;
   int _nextBatchId = 1;
+  int _nextEventId = 1;
   final _controller = StreamController<List<CartProductAssignment>>.broadcast();
 
   void _emit() => _controller.add(List.unmodifiable(assignments));
@@ -435,7 +438,11 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required String assignmentId,
   }) async {
     assignments.removeWhere((a) => a.id == assignmentId);
-    batchesByAssignment.remove(assignmentId);
+    // DB1: batches are marked removed, never deleted.
+    final now = DateTime.now();
+    batchesByAssignment[assignmentId] = [
+      for (final b in batchesByAssignment[assignmentId] ?? const <Batch>[]) b.isActive ? b.removed(now) : b,
+    ];
     _emit();
   }
 
@@ -453,18 +460,24 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
 
   @override
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId) {
-    return Stream.value(List.unmodifiable(batchesByAssignment[assignmentId] ?? const []));
+    return Stream.value(List.unmodifiable((batchesByAssignment[assignmentId] ?? const <Batch>[]).where((b) => b.isActive)));
   }
 
   @override
-  Future<void> recordConsumption({
+  String newUsageEventId(String institutionId) => 'event-${_nextEventId++}';
+
+  @override
+  Future<String> recordConsumption({
     required String institutionId,
     required String cartId,
     required String assignmentId,
     required int amount,
     required String actorUid,
-  }) async =>
-      _update(assignmentId, (a) => a.copyWith(currentQuantity: InventoryRules.applyConsumption(a.currentQuantity, amount)));
+    String? eventId,
+  }) async {
+    _update(assignmentId, (a) => a.copyWith(currentQuantity: InventoryRules.applyConsumption(a.currentQuantity, amount)));
+    return lastConsumptionEventId = eventId ?? newUsageEventId(institutionId);
+  }
 
   @override
   Future<void> recordReplenishment({
@@ -505,7 +518,13 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
       InventoryRules.checkStock(confirmedQuantity, a.targetQuantity);
       return a.copyWith(currentQuantity: confirmedQuantity);
     });
-    batchesByAssignment[assignmentId] = List.of(confirmedBatches);
+    // DB1: batches the audit didn't confirm are marked removed, never deleted.
+    final confirmed = {for (final b in confirmedBatches) b.id};
+    final now = DateTime.now();
+    batchesByAssignment[assignmentId] = [
+      for (final b in batchesByAssignment[assignmentId] ?? const <Batch>[])
+        b.isActive && !confirmed.contains(b.id) ? b.removed(now) : b,
+    ];
     _emit();
   }
 
@@ -517,7 +536,9 @@ class FakeInventoryRepository extends UnimplementedFake implements InventoryRepo
     required int amount,
     required String correctsEventId,
     required String actorUid,
+    String? reason,
   }) async {
+    lastCorrectionReason = reason;
     _update(
       assignmentId,
       (a) => a.copyWith(currentQuantity: InventoryRules.applyCorrection(a.currentQuantity, amount, target: a.targetQuantity)),

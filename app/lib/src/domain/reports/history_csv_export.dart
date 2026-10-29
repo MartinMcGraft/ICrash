@@ -65,6 +65,7 @@ class EventCsvRow {
     required this.type,
     required this.amount,
     required this.user,
+    this.reason = '',
   });
   final DateTime? when;
   final String cart;
@@ -75,13 +76,17 @@ class EventCsvRow {
   final UsageEventType type;
   final int amount;
   final String user;
+
+  /// A correction's reason, or empty.
+  final String reason;
 }
 
 /// B9 "Exportar CSV" (audit C10: always *when, who, where*). Semicolon
 /// separated, which spreadsheet apps open directly in pt-PT locales.
 String buildEventsCsv(List<EventCsvRow> rows) {
   String cell(String v) => v.contains(';') || v.contains('"') || v.contains('\n') ? '"${v.replaceAll('"', '""')}"' : v;
-  final buffer = StringBuffer()..writeln(['Data', 'Carrinho', 'Local', 'Produto', 'Tipo', 'Quantidade', 'Utilizador'].join(';'));
+  final buffer = StringBuffer()
+    ..writeln(['Data', 'Carrinho', 'Local', 'Produto', 'Tipo', 'Quantidade', 'Utilizador', 'Motivo'].join(';'));
   for (final r in rows) {
     buffer.writeln([
       r.when == null ? '' : _formatDateTime(r.when!),
@@ -91,6 +96,7 @@ String buildEventsCsv(List<EventCsvRow> rows) {
       usageEventTypeCsvLabel(r.type),
       '${r.amount > 0 ? '+' : ''}${r.amount}',
       r.user,
+      r.reason,
     ].map(cell).join(';'));
   }
   return buffer.toString();

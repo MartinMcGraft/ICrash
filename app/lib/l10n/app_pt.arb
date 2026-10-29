@@ -261,7 +261,6 @@
   "replenishStockTitle": "Repor stock",
   "receivedQuantityLabel": "Quantidade recebida",
   "lotNumberLabel": "Número de lote",
-  "lotRequiredValidation": "Indique o lote",
   "chooseExpiryLabel": "Escolher validade",
   "expiryDateLabel": "Validade: {date}",
   "@expiryDateLabel": {
@@ -1343,7 +1342,7 @@
   "@catalogNoMatches": {},
   "expiryWarningDaysLabel": "Aviso de validade (dias)",
   "@expiryWarningDaysLabel": {},
-  "askLotOnReplenish": "Pedir lote e validade na reposição",
+  "askLotOnReplenish": "Pedir validade (e lote, se existir) na reposição",
   "@askLotOnReplenish": {},
   "applyToPosition": "Aplicar à posição",
   "@applyToPosition": {},
@@ -1820,5 +1819,15 @@
         "type": "String"
       }
     }
-  }
+  },
+  "lotOptionalLabel": "Lote (opcional)",
+  "@lotOptionalLabel": {},
+  "noLot": "sem lote",
+  "@noLot": {},
+  "errorQuantityRequired": "Indique uma quantidade maior do que 0.",
+  "@errorQuantityRequired": {},
+  "correctionReasonLabel": "Motivo (opcional)",
+  "@correctionReasonLabel": {},
+  "correctionReasonHint": "ex.: registado na posição errada",
+  "@correctionReasonHint": {}
 }

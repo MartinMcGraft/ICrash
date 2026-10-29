@@ -151,10 +151,15 @@ class FirestoreInventoryRepository implements InventoryRepository {
     required String assignmentId,
   }) async {
     try {
+      // DB1: batches are never deleted. They're marked removed and stay as
+      // history; only the placement document goes (and only while it has no
+      // history, see firestore.rules).
       final batches = await _firestore.collection(FirestorePaths.batches(institutionId, cartId, assignmentId)).get();
       final writeBatch = _firestore.batch();
       for (final doc in batches.docs) {
-        writeBatch.delete(doc.reference);
+        if (doc.data()['removedAt'] == null) {
+          writeBatch.update(doc.reference, {'removedAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp()});
+        }
       }
       writeBatch.delete(_assignmentRef(institutionId, cartId, assignmentId));
       await writeBatch.commit();
@@ -206,11 +211,17 @@ class FirestoreInventoryRepository implements InventoryRepository {
     return _firestore
         .collection(FirestorePaths.batches(institutionId, cartId, assignmentId))
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
+        // Removed batches stay in Firestore as history (DB1) and are left out
+        // here. Filtered on the device: a `removedAt == null` query would also
+        // drop every batch written before the field existed.
+        .map((snapshot) => snapshot.docs
+            .map((doc) {
               final data = doc.data();
               final expiry = timestampToDateTime(data['expiryDate']) ?? DateTime.now();
-              return Batch.fromMap(doc.id, assignmentId, data, expiry);
-            }).toList())
+              return Batch.fromMap(doc.id, assignmentId, data, expiry, removedAt: timestampToDateTime(data['removedAt']));
+            })
+            .where((batch) => batch.isActive)
+            .toList())
         .handleError((Object error) => throw mapFirebaseException(error));
   }
 
@@ -218,16 +229,21 @@ class FirestoreInventoryRepository implements InventoryRepository {
       _firestore.collection(FirestorePaths.assignments(institutionId, cartId)).doc(assignmentId);
 
   @override
-  Future<void> recordConsumption({
+  String newUsageEventId(String institutionId) => _firestore.collection(FirestorePaths.usageEvents(institutionId)).doc().id;
+
+  @override
+  Future<String> recordConsumption({
     required String institutionId,
     required String cartId,
     required String assignmentId,
     required int amount,
     required String actorUid,
+    String? eventId,
   }) async {
     if (amount <= 0) {
       throw ArgumentError.value(amount, 'amount', 'Consumption amount must be positive');
     }
+    final eventRef = _firestore.collection(FirestorePaths.usageEvents(institutionId)).doc(eventId);
     try {
       await _firestore.runTransaction((transaction) async {
         final ref = _assignmentRef(institutionId, cartId, assignmentId);
@@ -244,7 +260,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
           'updatedBy': actorUid,
         });
         transaction.set(
-          _firestore.collection(FirestorePaths.usageEvents(institutionId)).doc(),
+          eventRef,
           UsageEvent(
             id: '',
             institutionId: institutionId,
@@ -261,6 +277,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
     } catch (error) {
       throw mapFirebaseException(error);
     }
+    return eventRef.id;
   }
 
   @override
@@ -325,6 +342,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
             productId: data['productId'] as String? ?? '',
             type: UsageEventType.replenishment,
             amount: amount,
+            batchId: batchRef.id,
           ).toMap()
             ..['serverTimestamp'] = FieldValue.serverTimestamp(),
         );
@@ -344,62 +362,61 @@ class FirestoreInventoryRepository implements InventoryRepository {
     required List<Batch> confirmedBatches,
     required String actorUid,
   }) async {
+    StockRuleViolation? violation;
     try {
-      final batchesCollection = _firestore.collection(FirestorePaths.batches(institutionId, cartId, assignmentId));
       final ref = _assignmentRef(institutionId, cartId, assignmentId);
-      final before = await ref.get();
-      InventoryRules.checkStock(confirmedQuantity, (before.data()?['targetQuantity'] as num?)?.toInt() ?? 0);
-
-      // Batch-collection replacement can outgrow a single transaction's
-      // document limit for a heavily audited slot, so it runs as a plain
-      // WriteBatch; the assignment/event update immediately follows and is
-      // the operation callers must treat as the durable outcome.
-      final existingBatches = await batchesCollection.get();
-      final writeBatch = _firestore.batch();
-      for (final doc in existingBatches.docs) {
-        writeBatch.delete(doc.reference);
-      }
-
+      final batchesCollection = _firestore.collection(FirestorePaths.batches(institutionId, cartId, assignmentId));
+      // Client transactions can't run queries, so the batch ids are listed
+      // first; each batch is then read again inside the transaction.
+      final listed = await batchesCollection.get();
+      final confirmedIds = {for (final b in confirmedBatches) b.id};
       final earliestExpiry = InventoryRules.earliestExpiryFromConfirmedBatches(confirmedBatches);
-      for (final batch in confirmedBatches) {
-        writeBatch.set(batchesCollection.doc(), {
-          ...batch.toMap(),
-          'expiryDate': Timestamp.fromDate(batch.expiryDate),
-          'createdAt': FieldValue.serverTimestamp(),
+
+      // One atomic write: the quantity, the expiry, the batches found gone
+      // and the logbook row change together or not at all.
+      await _firestore.runTransaction((transaction) async {
+        final data = (await transaction.get(ref)).data();
+        if (data == null) throw StateError('Assignment $assignmentId not found');
+        final batchSnapshots = [for (final doc in listed.docs) await transaction.get(doc.reference)];
+        final previousQuantity = (data['currentQuantity'] as num?)?.toInt() ?? 0;
+        try {
+          InventoryRules.checkStock(confirmedQuantity, (data['targetQuantity'] as num?)?.toInt() ?? 0);
+        } on StockRuleViolation catch (v) {
+          violation = v;
+          return;
+        }
+        transaction.update(ref, {
+          'currentQuantity': confirmedQuantity,
+          'earliestKnownExpiry': earliestExpiry == null ? null : Timestamp.fromDate(earliestExpiry),
           'updatedAt': FieldValue.serverTimestamp(),
+          'updatedBy': actorUid,
         });
-      }
-      await writeBatch.commit();
-
-      final previous = await ref.get();
-      final previousQuantity = (previous.data()?['currentQuantity'] as num?)?.toInt() ?? 0;
-      final productId = previous.data()?['productId'] as String? ?? '';
-
-      await ref.update({
-        'currentQuantity': confirmedQuantity,
-        'earliestKnownExpiry': earliestExpiry == null ? null : Timestamp.fromDate(earliestExpiry),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'updatedBy': actorUid,
+        // DB1: a batch the audit didn't find is marked removed, never deleted.
+        // Confirmed batches are kept as they are.
+        for (final snapshot in batchSnapshots) {
+          final batchData = snapshot.data();
+          if (batchData == null || batchData['removedAt'] != null || confirmedIds.contains(snapshot.id)) continue;
+          transaction.update(snapshot.reference, {'removedAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp()});
+        }
+        transaction.set(
+          _firestore.collection(FirestorePaths.usageEvents(institutionId)).doc(),
+          UsageEvent(
+            id: '',
+            institutionId: institutionId,
+            actorUid: actorUid,
+            cartId: cartId,
+            assignmentId: assignmentId,
+            productId: data['productId'] as String? ?? '',
+            type: UsageEventType.auditReconciliation,
+            amount: confirmedQuantity - previousQuantity,
+          ).toMap()
+            ..['serverTimestamp'] = FieldValue.serverTimestamp(),
+        );
       });
-
-      await _firestore.collection(FirestorePaths.usageEvents(institutionId)).add(
-            UsageEvent(
-              id: '',
-              institutionId: institutionId,
-              actorUid: actorUid,
-              cartId: cartId,
-              assignmentId: assignmentId,
-              productId: productId,
-              type: UsageEventType.auditReconciliation,
-              amount: confirmedQuantity - previousQuantity,
-            ).toMap()
-              ..['serverTimestamp'] = FieldValue.serverTimestamp(),
-          );
-    } on StockRuleViolation catch (violation) {
-      throw _ruleFailure(violation);
     } catch (error) {
       throw mapFirebaseException(error);
     }
+    if (violation != null) throw _ruleFailure(violation!);
   }
 
   @override
@@ -410,6 +427,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
     required int amount,
     required String correctsEventId,
     required String actorUid,
+    String? reason,
   }) async {
     if (amount == 0) {
       throw ArgumentError.value(amount, 'amount', 'Correction amount must not be zero');
@@ -449,6 +467,7 @@ class FirestoreInventoryRepository implements InventoryRepository {
             type: UsageEventType.correction,
             amount: amount,
             correctsEventId: correctsEventId,
+            reason: reason == null || reason.trim().isEmpty ? null : reason.trim(),
           ).toMap()
             ..['serverTimestamp'] = FieldValue.serverTimestamp(),
         );

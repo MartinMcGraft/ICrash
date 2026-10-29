@@ -166,14 +166,15 @@ async function main() {
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-adrenalina/batches/lote-a'),
-      { lotNumber: 'LOTE-A', expiryDate: ts('2026-12-31'), source: 'manual' },
+      { lotNumber: 'LOTE-A', expiryDate: ts('2026-12-31'), quantity: 3, source: 'manual', removedAt: null },
     );
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-adrenalina/batches/lote-b'),
-      { lotNumber: 'LOTE-B', expiryDate: ts('2026-10-15'), source: 'manual' },
+      { lotNumber: 'LOTE-B', expiryDate: ts('2026-10-15'), quantity: 2, source: 'manual', removedAt: null },
     );
 
     // Assignment 2: Atropina, below target, expiring soon (within the 30-day window).
+    // Its batch has no lot number (P9: some items show only an expiry date).
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-atropina'), {
       institutionId: 'hospital-teste',
       cartId: 'carro-1',
@@ -186,7 +187,7 @@ async function main() {
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-atropina/batches/lote-c'),
-      { lotNumber: 'LOTE-C', expiryDate: ts('2026-09-25'), source: 'manual' },
+      { expiryDate: ts('2026-09-25'), quantity: 2, source: 'manual', removedAt: null },
     );
 
     // Assignment 3: Seringa, fully stocked, far-future expiry — no alerts expected.
@@ -202,7 +203,7 @@ async function main() {
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-seringa/batches/lote-d'),
-      { lotNumber: 'LOTE-D', expiryDate: ts('2028-01-01'), source: 'manual' },
+      { lotNumber: 'LOTE-D', expiryDate: ts('2028-01-01'), quantity: 20, source: 'manual', removedAt: null },
     );
 
     // Assignment 4: already expired — expired-category testing.
@@ -218,7 +219,7 @@ async function main() {
     });
     await setDoc(
       doc(db, 'institutions/hospital-teste/carts/carro-1/assignments/assignment-expirado/batches/lote-e'),
-      { lotNumber: 'LOTE-E', expiryDate: ts('2026-08-01'), source: 'manual' },
+      { lotNumber: 'LOTE-E', expiryDate: ts('2026-08-01'), quantity: 3, source: 'manual', removedAt: null },
     );
     // r1c1, r1c2 deliberately left unassigned (empty-slot tests).
 

@@ -435,3 +435,33 @@ describe('no overfill: 0 ≤ currentQuantity ≤ targetQuantity (P5)', () => {
     await assertFails(updateDoc(doc(db, path), { currentQuantity: 12 }));
   });
 });
+
+describe('batches are never deleted (DB1); lot optional, quantity required (P9)', () => {
+  const batchPath = `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}/batches`;
+
+  test('a manager can create a batch without a lot number, but not without a quantity', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertSucceeds(setDoc(doc(db, `${batchPath}/b-1`), { expiryDate: new Date('2027-01-31'), quantity: 2, source: 'manual' }));
+    await assertFails(setDoc(doc(db, `${batchPath}/b-2`), { expiryDate: new Date('2027-01-31'), source: 'manual' }));
+    await assertFails(setDoc(doc(db, `${batchPath}/b-3`), { expiryDate: new Date('2027-01-31'), quantity: 0, source: 'manual' }));
+  });
+
+  test('nobody can delete a batch, not even an institution admin; marking it removed is allowed', async () => {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), `${batchPath}/b-1`), { expiryDate: new Date('2027-01-31'), quantity: 2 });
+    });
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(deleteDoc(doc(db, `${batchPath}/b-1`)));
+    await assertSucceeds(updateDoc(doc(db, `${batchPath}/b-1`), { removedAt: serverTimestamp() }));
+  });
+
+  test('a usage event may carry a reason of at most 500 characters', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    const base = { actorUid: USER_UID, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'correction', amount: 1 };
+    await assertSucceeds(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), { ...base, reason: 'registado na posição errada' }));
+    await assertFails(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), { ...base, reason: 'x'.repeat(501) }));
+  });
+});

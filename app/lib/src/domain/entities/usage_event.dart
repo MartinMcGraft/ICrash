@@ -13,6 +13,8 @@ class UsageEvent {
     required this.type,
     required this.amount,
     this.correctsEventId,
+    this.reason,
+    this.batchId,
     this.localTimestamp,
     this.serverTimestamp,
   });
@@ -32,6 +34,13 @@ class UsageEvent {
   /// Set only when [type] is [UsageEventType.correction]; the corrected
   /// event is never mutated or removed, only compensated.
   final String? correctsEventId;
+
+  /// Why a correction was made (optional, A6 correction dialog; DATABASE.md
+  /// HISTORY `reason` VARCHAR(500)).
+  final String? reason;
+
+  /// The batch a replenishment created (DATABASE.md HISTORY `idBatch`, R27).
+  final String? batchId;
   final DateTime? localTimestamp;
   final DateTime? serverTimestamp;
 
@@ -46,6 +55,8 @@ class UsageEvent {
       type: UsageEventTypeCodec.fromId(map['type'] as String? ?? UsageEventType.consumption.id),
       amount: (map['amount'] as num?)?.toInt() ?? 0,
       correctsEventId: map['correctsEventId'] as String?,
+      reason: map['reason'] as String?,
+      batchId: map['batchId'] as String?,
       serverTimestamp: serverTimestamp,
     );
   }
@@ -58,6 +69,8 @@ class UsageEvent {
         'type': type.id,
         'amount': amount,
         if (correctsEventId != null) 'correctsEventId': correctsEventId,
+        if (reason != null) 'reason': reason,
+        if (batchId != null) 'batchId': batchId,
       };
 }
 

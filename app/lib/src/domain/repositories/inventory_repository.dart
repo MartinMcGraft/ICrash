@@ -42,11 +42,10 @@ abstract class InventoryRepository {
     required String actorUid,
   });
 
-  /// Permanently removes an assignment and its batches, without touching
-  /// past `usageEvents` (spec sections 43-45: history is immutable and
-  /// outlives the assignment that produced it). Used to let a manager drop
-  /// an assignment whose slot no longer exists after a drawer merge/split,
-  /// when reassigning it to a different slot isn't the right call.
+  /// Removes a placement that has no history yet (P1: a used placement can't
+  /// be deleted; the rules refuse it). Its batches are marked removed, never
+  /// deleted (DB1). Used by "trocar produto", "Limpar posição" and "remove
+  /// orphan" before the slot was ever used.
   Future<void> deleteAssignment({
     required String institutionId,
     required String cartId,
@@ -65,21 +64,30 @@ abstract class InventoryRepository {
     required int targetQuantity,
   });
 
+  /// The placement's batches still in the slot (removed ones are history
+  /// and left out).
   Stream<List<Batch>> watchBatches(String institutionId, String cartId, String assignmentId);
 
+  /// A fresh id for a usage event, so a caller can keep it before the write
+  /// completes (A10 "Desfazer último" corrects that exact event).
+  String newUsageEventId(String institutionId);
+
   /// Decrements `currentQuantity` by [amount] and appends a [UsageEvent] of
-  /// type `consumption`. Never touches batch records or `earliestKnownExpiry`.
-  Future<void> recordConsumption({
+  /// type `consumption` (with id [eventId] when given). Never touches batch
+  /// records or `earliestKnownExpiry`. Returns the event's id.
+  Future<String> recordConsumption({
     required String institutionId,
     required String cartId,
     required String assignmentId,
     required int amount,
     required String actorUid,
+    String? eventId,
   });
 
   /// Increments `currentQuantity`, stores the new [Batch], and conservatively
   /// lowers `earliestKnownExpiry` only if the new batch expires sooner than
   /// the current value (spec section 26). Never removes existing batches.
+  /// The replenishment event records the id of the batch it created (R27).
   Future<void> recordReplenishment({
     required String institutionId,
     required String cartId,
@@ -89,9 +97,11 @@ abstract class InventoryRepository {
     required String actorUid,
   });
 
-  /// Applies a physical audit's findings: replaces the confirmed batch set,
-  /// recomputes `currentQuantity` and `earliestKnownExpiry` strictly from
-  /// [confirmedBatches] and [confirmedQuantity] (spec section 27).
+  /// Applies a physical audit's findings in one atomic write: sets
+  /// `currentQuantity` to [confirmedQuantity], recomputes
+  /// `earliestKnownExpiry` strictly from [confirmedBatches] (spec section 27),
+  /// marks every other batch removed (never deleted, DB1) and writes the
+  /// event.
   Future<void> reconcileAfterAudit({
     required String institutionId,
     required String cartId,
@@ -102,6 +112,7 @@ abstract class InventoryRepository {
   });
 
   /// Compensating event that never mutates the original (spec section 44).
+  /// [reason] is optional (P15 asks whether it should be mandatory).
   Future<void> recordCorrection({
     required String institutionId,
     required String cartId,
@@ -109,5 +120,6 @@ abstract class InventoryRepository {
     required int amount,
     required String correctsEventId,
     required String actorUid,
+    String? reason,
   });
 }

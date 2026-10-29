@@ -230,9 +230,18 @@ service cloud.firestore {
             request.resource.data.cartId == resource.data.cartId &&
             stockUpdateAllowed();
 
+          // DB1: a batch is the units of one slot with the same expiry date.
+          // Batches are never deleted; a batch confirmed gone gets `removedAt`.
           match /batches/{batchId} {
             allow read: if canAccessCart(institutionId, cartId);
-            allow write: if isManagerOrAbove(institutionId);
+            // A new batch needs its quantity (> 0) and expiry date; the lot
+            // number is optional (P9).
+            allow create: if isManagerOrAbove(institutionId) &&
+              request.resource.data.quantity is int &&
+              request.resource.data.quantity > 0 &&
+              request.resource.data.expiryDate is timestamp;
+            allow update: if isManagerOrAbove(institutionId);
+            allow delete: if false;
           }
         }
       }
@@ -242,7 +251,9 @@ service cloud.firestore {
         allow read: if isMember(institutionId);
         allow create: if isMember(institutionId) &&
           request.resource.data.actorUid == request.auth.uid &&
-          canAccessCart(institutionId, request.resource.data.cartId);
+          canAccessCart(institutionId, request.resource.data.cartId) &&
+          // DATABASE.md HISTORY `reason` VARCHAR(500), optional.
+          (!('reason' in request.resource.data) || (request.resource.data.reason is string && request.resource.data.reason.size() <= 500));
         allow update, delete: if false;
       }
 

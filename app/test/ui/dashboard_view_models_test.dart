@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
+import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
@@ -10,6 +11,7 @@ import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/shift.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
+import 'package:icrash_app/src/domain/entities/usage_event.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
 import 'package:icrash_app/src/ui/features/dashboard/cart_config_view_model.dart';
@@ -434,6 +436,67 @@ void main() {
       final result = await vm.assign(const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'), target: 2, initial: 3);
       expect(result.code, 'exceedsTarget');
       expect(inventory.assignments, hasLength(1));
+    });
+  });
+
+  group('A6/A7 DrawerViewModel: stock history (DB1, P9)', () {
+    late FakeInventoryRepository inventory;
+    late DrawerViewModel vm;
+
+    setUp(() async {
+      final drawers = FakeDrawerRepository(drawers: [const CartDrawer(id: 'd1', cartId: 'c1', number: 1, rows: 1, columns: 2)]);
+      final carts = FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]);
+      inventory = FakeInventoryRepository(assignments: [
+        const CartProductAssignment(
+            id: 'a1', cartId: 'c1', drawerId: 'd1', slotId: 'r0c0', productId: 'p1', currentQuantity: 3, targetQuantity: 4),
+      ]);
+      inventory.batchesByAssignment['a1'] = [
+        Batch(id: 'b1', assignmentId: 'a1', lotNumber: 'L1', expiryDate: DateTime(2027, 1, 31), quantity: 2),
+        Batch(id: 'b2', assignmentId: 'a1', expiryDate: DateTime(2027, 3, 31), quantity: 1),
+      ];
+      final services = buildTestServices(drawers: drawers, carts: carts, inventory: inventory);
+      vm = DrawerViewModel(services, _session(services), cartId: 'c1', drawerId: 'd1', initialSlotId: 'r0c0');
+      await _settle();
+    });
+
+    tearDown(() => vm.dispose());
+
+    test('replenishment accepts an empty lot but needs an expiry date', () async {
+      vm.showPanel(DrawerPanel.replenish);
+      expect(vm.amount, 1, reason: 'prefilled up to the target, never above it');
+      expect((await vm.replenish()).code, 'expiryRequired');
+      vm.setExpiry(DateTime(2027, 6, 30));
+      final result = await vm.replenish();
+      expect(result.isOk, isTrue);
+      expect(inventory.batchesByAssignment['a1']!.last.lotNumber, isNull);
+      expect(inventory.assignments.single.currentQuantity, 4);
+    });
+
+    test('a full slot can\'t be replenished (P5)', () async {
+      vm.showPanel(DrawerPanel.replenish);
+      vm.setExpiry(DateTime(2027, 6, 30));
+      vm.setAmount(2);
+      expect((await vm.replenish()).code, 'exceedsTarget');
+    });
+
+    test('reconciliation marks unconfirmed batches removed instead of deleting them', () async {
+      final result = await vm.reconcile(confirmedQuantity: 2, confirmedBatchIds: {'b1'});
+      expect(result.isOk, isTrue);
+      final all = inventory.batchesByAssignment['a1']!;
+      expect(all, hasLength(2));
+      expect(all.singleWhere((b) => b.id == 'b2').removedAt, isNotNull);
+      expect(all.singleWhere((b) => b.id == 'b1').isActive, isTrue);
+    });
+
+    test('a correction passes its optional reason', () async {
+      const event = UsageEvent(
+        id: 'e1', institutionId: 'inst', actorUid: 'me', cartId: 'c1', assignmentId: 'a1', productId: 'p1',
+        type: UsageEventType.consumption, amount: -1,
+      );
+      final result = await vm.correct(event, 1, reason: 'registado na posição errada');
+      expect(result.isOk, isTrue);
+      expect(inventory.lastCorrectedEventId, 'e1');
+      expect(inventory.lastCorrectionReason, 'registado na posição errada');
     });
   });
 }

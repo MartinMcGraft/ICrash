@@ -76,6 +76,9 @@ class EmergencyViewModel extends ViewModel {
     return run(() async {
       if (a == null) return;
       if (a.currentQuantity < units || units <= 0) throw const ActionError('empty');
+      // The event id is chosen now and kept on the line, so "Desfazer
+      // último" corrects exactly this event.
+      final eventId = services.inventory.newUsageEventId(session.institution.id);
       await services.emergency.addConsumption(
         session.institution.id,
         cartId,
@@ -85,6 +88,7 @@ class EmergencyViewModel extends ViewModel {
           productName: data.productName(a.productId),
           amount: units,
           at: DateTime.now(),
+          eventId: eventId,
         ),
       );
       // Not awaited on purpose: offline, Firestore only completes the write
@@ -96,7 +100,9 @@ class EmergencyViewModel extends ViewModel {
             assignmentId: a.id,
             amount: units,
             actorUid: session.user.uid,
+            eventId: eventId,
           ))
+          .then((_) {})
           .catchError(_failed));
     });
   }
@@ -106,23 +112,29 @@ class EmergencyViewModel extends ViewModel {
   Future<ActionResult<void>> undoLast() => run(() async {
         final removed = await services.emergency.removeLast(session.institution.id, cartId);
         if (removed == null) return;
-        List<UsageEvent> events;
-        try {
-          events = await services.usage.watchEventsForAssignment(session.institution.id, removed.assignmentId).first;
-        } on RepositoryFailure {
-          events = const [];
+        // The line carries the id of the event it recorded. Only lines saved
+        // before that existed fall back to matching by actor and amount.
+        var correctsEventId = removed.eventId;
+        if (correctsEventId == null) {
+          List<UsageEvent> events;
+          try {
+            events = await services.usage.watchEventsForAssignment(session.institution.id, removed.assignmentId).first;
+          } on RepositoryFailure {
+            events = const [];
+          }
+          correctsEventId = events
+              .where((e) => e.type == UsageEventType.consumption && e.actorUid == session.user.uid && e.amount == -removed.amount)
+              .firstOrNull
+              ?.id;
         }
-        final original = events
-            .where((e) => e.type == UsageEventType.consumption && e.actorUid == session.user.uid && e.amount == -removed.amount)
-            .firstOrNull;
-        if (original == null) return;
+        if (correctsEventId == null) return;
         unawaited(services.sync
             .track(services.inventory.recordCorrection(
               institutionId: session.institution.id,
               cartId: cartId,
               assignmentId: removed.assignmentId,
               amount: removed.amount,
-              correctsEventId: original.id,
+              correctsEventId: correctsEventId,
               actorUid: session.user.uid,
             ))
             .catchError((Object _) {}));

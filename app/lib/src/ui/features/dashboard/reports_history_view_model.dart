@@ -138,6 +138,7 @@ class ReportsHistoryViewModel extends ViewModel {
           type: e.type,
           amount: e.amount,
           user: session.nameOf(e.actorUid),
+          reason: e.reason ?? '',
         ),
     ]);
   }

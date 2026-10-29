@@ -83,4 +83,22 @@ void main() {
 
     expect(csv.trim(), 'Data,Tipo,Produto,Quantidade');
   });
+
+  test('the B9 events export has a reason column for corrections', () {
+    final csv = buildEventsCsv([
+      EventCsvRow(
+        when: null,
+        cart: 'Carro 1',
+        place: 'B3',
+        product: 'Adrenalina',
+        type: UsageEventType.correction,
+        amount: 1,
+        user: 'Ana',
+        reason: 'registado na posição errada',
+      ),
+    ]);
+    final lines = csv.trim().split('\n');
+    expect(lines.first.split(';').last, 'Motivo');
+    expect(lines.last.split(';').last, 'registado na posição errada');
+  });
 }

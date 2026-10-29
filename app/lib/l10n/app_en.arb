@@ -261,7 +261,6 @@
   "replenishStockTitle": "Replenish stock",
   "receivedQuantityLabel": "Received quantity",
   "lotNumberLabel": "Lot number",
-  "lotRequiredValidation": "Enter the lot",
   "chooseExpiryLabel": "Choose expiry date",
   "expiryDateLabel": "Expiry: {date}",
   "@expiryDateLabel": {
@@ -1147,7 +1146,7 @@
   "chooseProduct": "Choose product",
   "catalogNoMatches": "No product matches the search.",
   "expiryWarningDaysLabel": "Expiry warning (days)",
-  "askLotOnReplenish": "Ask for lot and expiry on replenishment",
+  "askLotOnReplenish": "Ask for expiry (and lot, if any) on replenishment",
   "applyToPosition": "Apply to position",
   "positionApplied": "Position updated.",
   "catalogTitle": "Consumables catalogue",
@@ -1496,5 +1495,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "lotOptionalLabel": "Lot (optional)",
+  "noLot": "no lot",
+  "errorQuantityRequired": "Enter a quantity greater than 0.",
+  "correctionReasonLabel": "Reason (optional)",
+  "correctionReasonHint": "e.g. recorded in the wrong position"
 }

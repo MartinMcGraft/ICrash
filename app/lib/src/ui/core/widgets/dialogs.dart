@@ -48,6 +48,7 @@ String? actionCodeText(AppLocalizations l10n, String? code) => switch (code) {
       'targetBelowCurrent' => l10n.errorTargetBelowCurrent,
       'invalidTarget' => l10n.errorInvalidTarget,
       'slotTaken' => l10n.slotTaken,
+      'quantityRequired' => l10n.errorQuantityRequired,
       'drawerNumberTaken' => l10n.drawerNumberTaken,
       'drawerNumberInvalid' => l10n.drawerNumberHelp,
       _ => null,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../common/l10n/app_localizations.dart';
 import '../../../common/repository_failure.dart';
@@ -160,11 +161,13 @@ class _DetailPanel extends StatelessWidget {
     final health = vm.selectedHealth;
     final expiry = assignment.earliestKnownExpiry;
     final daysLeft = expiry?.difference(DateTime.now()).inDays;
-    final lot = vm.batches.isEmpty
+    // P9: a batch may have no lot number; it still has its expiry date.
+    final first = vm.batches.firstOrNull;
+    final lot = first == null
         ? '—'
-        : vm.batches.first.quantity == null
-            ? vm.batches.first.lotNumber
-            : l10n.lotWithUnits(vm.batches.first.lotNumber, vm.batches.first.quantity!);
+        : first.quantity == null
+            ? (first.lotNumber ?? l10n.noLot)
+            : l10n.lotWithUnits(first.lotNumber ?? l10n.noLot, first.quantity!);
     final expiryColor = switch (health) {
       SlotHealth.expired => IcColors.dangerFg,
       SlotHealth.expiring => IcColors.warningFg,
@@ -394,7 +397,6 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
           result,
           success: l10n.replenishmentRecorded,
           failure: switch (result.code) {
-            'lotRequired' => l10n.lotRequiredValidation,
             'expiryRequired' => l10n.replenishMissingExpiry,
             _ => null,
           },
@@ -406,7 +408,7 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
           QuantityStepper(label: l10n.quantityLabel, value: vm.amount, min: 1, max: vm.replenishMax.clamp(1, 9999), onChanged: vm.setAmount),
         ),
         LabeledField(
-          label: l10n.lotLabel,
+          label: l10n.lotOptionalLabel,
           controller: _lot,
           onChanged: vm.setLot,
           trailing: IcIconButton(
@@ -457,6 +459,13 @@ class _CorrectPanel extends StatefulWidget {
 class _CorrectPanelState extends State<_CorrectPanel> {
   UsageEvent? _event;
   int _adjust = 0;
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -473,7 +482,7 @@ class _CorrectPanelState extends State<_CorrectPanel> {
       onConfirm: _event == null || _adjust == 0
           ? null
           : () async {
-              final result = await vm.correct(_event!, _adjust);
+              final result = await vm.correct(_event!, _adjust, reason: _reason.text);
               if (!context.mounted) return;
               showResult(context, result, success: l10n.correctionRecorded);
             },
@@ -515,6 +524,13 @@ class _CorrectPanelState extends State<_CorrectPanel> {
               max: vm.correctionMax,
               onChanged: (v) => setState(() => _adjust = v),
             ),
+          ),
+          const SizedBox(height: IcSpace.s12),
+          LabeledField(
+            label: l10n.correctionReasonLabel,
+            controller: _reason,
+            hint: l10n.correctionReasonHint,
+            inputFormatters: [LengthLimitingTextInputFormatter(500)],
           ),
         ],
       ],
@@ -659,7 +675,7 @@ class _ReconcilePanelState extends State<_ReconcilePanel> {
           Text(l10n.confirmedBatchesLabel, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
           for (final batch in vm.batches)
             CheckRow(
-              label: '${l10n.batchLotLabel(batch.lotNumber)} · ${format.numeric(batch.expiryDate)}',
+              label: '${batch.lotNumber == null ? l10n.noLot : l10n.batchLotLabel(batch.lotNumber!)} · ${format.numeric(batch.expiryDate)}',
               value: _batchIds.contains(batch.id),
               onChanged: (checked) => setState(() => checked ? _batchIds.add(batch.id) : _batchIds.remove(batch.id)),
             ),

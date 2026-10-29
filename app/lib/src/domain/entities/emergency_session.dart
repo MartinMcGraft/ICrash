@@ -77,6 +77,7 @@ class EmergencyConsumption {
     required this.productName,
     required this.amount,
     required this.at,
+    this.eventId,
   });
 
   final String assignmentId;
@@ -85,12 +86,17 @@ class EmergencyConsumption {
   final int amount;
   final DateTime at;
 
+  /// Id of the consumption event this line recorded, so "Desfazer último"
+  /// corrects exactly that event. Missing on lines saved before 29 Oct 2026.
+  final String? eventId;
+
   Map<String, Object?> toJson() => {
         'assignmentId': assignmentId,
         'productId': productId,
         'productName': productName,
         'amount': amount,
         'at': at.toIso8601String(),
+        if (eventId != null) 'eventId': eventId,
       };
 
   factory EmergencyConsumption.fromJson(Map<String, Object?> json) => EmergencyConsumption(
@@ -99,5 +105,6 @@ class EmergencyConsumption {
         productName: json['productName'] as String? ?? '',
         amount: (json['amount'] as num).toInt(),
         at: DateTime.parse(json['at'] as String),
+        eventId: json['eventId'] as String?,
       );
 }

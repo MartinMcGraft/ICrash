@@ -207,8 +207,10 @@ class DrawerViewModel extends ViewModel {
     final expiryValue = expiry;
     return run(() async {
       if (a == null) return;
-      if (lotValue.isEmpty) throw const ActionError('lotRequired');
+      // P9: the lot is optional (some items show only an expiry date). The
+      // expiry date and a quantity above 0 are required.
       if (expiryValue == null) throw const ActionError('expiryRequired');
+      if (amount <= 0) throw const ActionError('quantityRequired');
       InventoryRules.applyReplenishment(a.currentQuantity, amount, target: a.targetQuantity);
       await services.sync.track(services.inventory.recordReplenishment(
         institutionId: session.institution.id,
@@ -218,7 +220,7 @@ class DrawerViewModel extends ViewModel {
         batch: Batch(
           id: '',
           assignmentId: a.id,
-          lotNumber: lotValue,
+          lotNumber: lotValue.isEmpty ? null : lotValue,
           expiryDate: expiryValue,
           quantity: amount,
           gtin: scannedGtin,
@@ -231,7 +233,10 @@ class DrawerViewModel extends ViewModel {
     });
   }
 
-  Future<ActionResult<void>> correct(UsageEvent event, int adjustment) {
+  /// A compensating correction of [event] (spec section 44) with an
+  /// optional [reason] (DATABASE.md HISTORY `reason`; P15 is open on whether
+  /// it becomes mandatory).
+  Future<ActionResult<void>> correct(UsageEvent event, int adjustment, {String? reason}) {
     final a = selectedAssignment;
     return run(() async {
       if (a == null) return;
@@ -244,6 +249,7 @@ class DrawerViewModel extends ViewModel {
         amount: adjustment,
         correctsEventId: event.id,
         actorUid: session.user.uid,
+        reason: reason,
       ));
       panel = DrawerPanel.detail;
     });

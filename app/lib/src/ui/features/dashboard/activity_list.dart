@@ -33,7 +33,10 @@ EventRow buildEventRow(
   return EventRow(
     kind: kind,
     title: '${usageEventText(l10n, event.type)} · ${products[event.productId]?.name ?? l10n.productRemoved}',
-    subtitle: '$where · ${session.nameOf(event.actorUid)}',
+    // A correction shows its reason, when one was given (DATABASE.md HISTORY `reason`).
+    subtitle: event.reason == null
+        ? '$where · ${session.nameOf(event.actorUid)}'
+        : '$where · ${session.nameOf(event.actorUid)} · ${event.reason}',
     amount: IcFormat.signed(event.amount),
     when: event.serverTimestamp == null ? '' : format.relative(event.serverTimestamp!),
   );
