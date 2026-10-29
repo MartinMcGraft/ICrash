@@ -90,15 +90,16 @@ bool _startsKnownAi(String input, int index) =>
     input.startsWith('01', index) || input.startsWith('17', index) || input.startsWith('10', index);
 
 /// GS1 general specification: a 2-digit year 00-50 means 2000-2050, 51-99
-/// means 1951-1999. Day "00" means "last day of the month" per the spec;
-/// treated here as the 1st rather than computed, since medicine expiry
-/// dates using day 00 are rare and this is only ever a pre-fill the user can
-/// correct (spec section 30's mandatory manual-fallback requirement).
+/// means 1951-1999. Day "00" (an item marked with month and year only)
+/// means the last day of that month, which is how I-Crash stores month-only
+/// expiry dates (P11, DATABASE.md BATCH `expirationDate`). The result is a
+/// pre-fill the user can still correct (spec section 30).
 DateTime? _parseYyMmDd(String yymmdd) {
   final year = int.parse(yymmdd.substring(0, 2));
   final month = int.parse(yymmdd.substring(2, 4));
   final day = int.parse(yymmdd.substring(4, 6));
   final fullYear = year <= 50 ? 2000 + year : 1900 + year;
   if (month < 1 || month > 12) return null;
-  return DateTime(fullYear, month, day == 0 ? 1 : day);
+  // DateTime(y, m + 1, 0) is the last day of month m (also for December).
+  return day == 0 ? DateTime(fullYear, month + 1, 0) : DateTime(fullYear, month, day);
 }

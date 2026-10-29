@@ -117,7 +117,10 @@ class LocalReportRepository implements ReportRepository {
             if (report.id == reportId)
               (report.isSigned
                   ? throw const RepositoryFailure(RepositoryFailureReason.conflict)
-                  : report.signed(uid: uid, name: name, at: DateTime.now()))
+                  // DB4: only the person who performed the check signs it.
+                  : report.createdByUid != uid
+                      ? throw const RepositoryFailure(RepositoryFailureReason.permissionDenied, code: 'notAuthor')
+                      : report.signed(uid: uid, name: name, at: DateTime.now()))
             else
               report,
         ]);

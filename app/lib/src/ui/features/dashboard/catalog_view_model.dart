@@ -1,6 +1,7 @@
 import '../../../common/app_services.dart';
 import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/product.dart';
+import '../../../domain/gtin.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 
@@ -77,19 +78,27 @@ class CatalogViewModel extends ViewModel {
     notify();
   }
 
-  /// GTINs must be unique in the catalogue (they identify a scanned box).
-  bool gtinTaken(String gtin, {String? exceptId}) => _products.any((p) => p.gtin == gtin && p.id != exceptId);
+  /// GTINs are unique in the catalogue when present (P16: they identify a
+  /// scanned box). Compared in their 14-digit form, so an EAN-13 and its
+  /// padded GTIN-14 count as the same code.
+  bool gtinTaken(String gtin, {String? exceptId}) {
+    final normalized = normalizeGtin(gtin);
+    return _products.any((p) => p.id != exceptId && p.gtin != null && normalizeGtin(p.gtin) == normalized);
+  }
 
+  /// Saves the product with its GTIN padded to 14 digits (P16), so a code
+  /// typed here matches its own scan. Error code `gtinTaken`.
   Future<ActionResult<void>> save(Product product) => run(() async {
-        final gtin = product.gtin;
+        final gtin = normalizeGtin(product.gtin);
         if (gtin != null && gtinTaken(gtin, exceptId: product.id.isEmpty ? null : product.id)) {
           throw const ActionError('gtinTaken');
         }
+        final normalized = gtin == null || gtin == product.gtin ? product : product.copyWith(gtin: gtin);
         final id = session.institution.id;
         if (product.id.isEmpty) {
-          await services.sync.track(services.products.createProduct(id, product));
+          await services.sync.track(services.products.createProduct(id, normalized));
         } else {
-          await services.sync.track(services.products.updateProduct(id, product));
+          await services.sync.track(services.products.updateProduct(id, normalized));
         }
       });
 
@@ -110,7 +119,7 @@ class CatalogViewModel extends ViewModel {
       lines.add(CatalogImportLine(
         name: name,
         unitDescription: cell(1),
-        gtin: cell(2)?.replaceAll(RegExp(r'\s'), ''),
+        gtin: normalizeGtin(cell(2)),
         category: _category(cell(3)),
         expiryWarningDays: int.tryParse(cell(4) ?? ''),
       ));
@@ -131,7 +140,7 @@ class CatalogViewModel extends ViewModel {
   Future<ActionResult<CatalogImportResult>> importCsv(String text) => run(() async {
         final institutionId = session.institution.id;
         final names = {for (final p in _products) p.name.toLowerCase()};
-        final gtins = {for (final p in _products) if (p.gtin != null) p.gtin!};
+        final gtins = {for (final p in _products) if (p.gtin != null) normalizeGtin(p.gtin)!};
         var created = 0;
         var skipped = 0;
         for (final line in parseCsv(text)) {

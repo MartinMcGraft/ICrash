@@ -1810,5 +1810,15 @@
   "drawerNumberSaved": "Número da gaveta alterado.",
   "@drawerNumberSaved": {},
   "slotTaken": "Esta posição já tem um produto.",
-  "@slotTaken": {}
+  "@slotTaken": {},
+  "signOnlyAuthorTitle": "Só quem fez a verificação pode assinar",
+  "@signOnlyAuthorTitle": {},
+  "signOnlyAuthorMessage": "Este relatório é assinado por {name}, que fez a verificação.",
+  "@signOnlyAuthorMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

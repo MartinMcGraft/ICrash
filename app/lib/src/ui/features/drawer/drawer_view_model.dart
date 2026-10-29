@@ -8,6 +8,7 @@ import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/entities/slot.dart';
 import '../../../domain/entities/usage_event.dart';
+import '../../../domain/gtin.dart';
 import '../../../domain/inventory_health.dart';
 import '../../../domain/inventory_rules.dart';
 import '../../../services/gs1_data_matrix_parser.dart';
@@ -304,7 +305,9 @@ class DrawerViewModel extends ViewModel {
     scanWarningProduct = null;
     scanUnknownGtin = false;
     if (parsed.gtin != null) {
-      final productId = data.products.values.where((p) => p.gtin == parsed.gtin).firstOrNull?.id;
+      // Compared in the 14-digit form: older products may hold an unpadded GTIN.
+      final scanned = normalizeGtin(parsed.gtin);
+      final productId = data.products.values.where((p) => p.gtin != null && normalizeGtin(p.gtin) == scanned).firstOrNull?.id;
       final assignment = productId == null ? null : data.assignments.where((a) => a.productId == productId).firstOrNull;
       final inThisDrawer = assignment != null && data.drawerOf(assignment) == drawerId;
       if (inThisDrawer) {

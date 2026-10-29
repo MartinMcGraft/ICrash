@@ -40,8 +40,12 @@ void main() {
     expect(parseGs1DataMatrix('17510101').expiryDate, DateTime(1951, 1, 1));
   });
 
-  test('treats day 00 as the 1st of the month rather than crashing', () {
-    expect(parseGs1DataMatrix('17260600').expiryDate, DateTime(2026, 6, 1));
+  test('treats day 00 (month-only expiry) as the last day of the month (P11)', () {
+    expect(parseGs1DataMatrix('17260600').expiryDate, DateTime(2026, 6, 30));
+    expect(parseGs1DataMatrix('17260100').expiryDate, DateTime(2026, 1, 31));
+    expect(parseGs1DataMatrix('17260200').expiryDate, DateTime(2026, 2, 28));
+    expect(parseGs1DataMatrix('17280200').expiryDate, DateTime(2028, 2, 29));
+    expect(parseGs1DataMatrix('17261200').expiryDate, DateTime(2026, 12, 31));
   });
 
   test('returns an empty result for a payload with no recognized AI', () {

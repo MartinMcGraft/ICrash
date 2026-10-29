@@ -177,6 +177,30 @@ void main() {
       vm.dispose();
     });
 
+    test('a typed EAN-13 is saved padded to 14 digits, so it matches its own scan (P16)', () async {
+      final products = FakeProductRepository();
+      final services = buildTestServices(products: products);
+      final vm = CatalogViewModel(services, _session(services));
+      await _settle();
+      final result = await vm.save(const Product(id: '', institutionId: 'inst', name: 'Adrenalina', gtin: '5601234567890'));
+      expect(result.isOk, isTrue);
+      expect(products.products.single.gtin, '05601234567890');
+      expect((await products.findByGtin('inst', '05601234567890'))?.name, 'Adrenalina');
+      vm.dispose();
+    });
+
+    test('an old unpadded GTIN still counts as taken and is still found by a scan', () async {
+      final products = FakeProductRepository(products: [
+        const Product(id: 'p1', institutionId: 'inst', name: 'A', gtin: '5601234567890'),
+      ]);
+      final services = buildTestServices(products: products);
+      final vm = CatalogViewModel(services, _session(services));
+      await _settle();
+      expect(vm.gtinTaken('05601234567890'), isTrue);
+      expect((await products.findByGtin('inst', '05601234567890'))?.id, 'p1');
+      vm.dispose();
+    });
+
     test('counts the carts where a product is used', () async {
       final inventory = FakeInventoryRepository(assignments: [
         const CartProductAssignment(id: 'a1', cartId: 'c1', slotId: 's', productId: 'p1', currentQuantity: 1, targetQuantity: 1),

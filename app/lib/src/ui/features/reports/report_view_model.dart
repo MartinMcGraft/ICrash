@@ -27,8 +27,15 @@ class ReportViewModel extends ViewModel {
     notify();
   }
 
-  /// Error codes: `notConfirmed`, `noPin`, `wrongPin`.
+  /// DB4 (28 Oct): the person who performed the check signs it; there is no
+  /// separate signer. Anyone else sees the report but can't sign it.
+  bool get canSign => report != null && !report!.isSigned && report!.createdByUid == session.user.uid;
+
+  /// Error codes: `notAuthor`, `notConfirmed`, `noPin`, `wrongPin`.
   Future<ActionResult<void>> sign(String pin) => run(() async {
+        final current = report;
+        if (current == null) return;
+        if (current.createdByUid != session.user.uid) throw const ActionError('notAuthor');
         if (!confirmed) throw const ActionError('notConfirmed');
         final uid = session.user.uid;
         if (!await services.deviceSession.hasPin(uid)) throw const ActionError('noPin');

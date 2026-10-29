@@ -218,6 +218,23 @@ class _SignPanelState extends State<_SignPanel> {
         ],
       );
     }
+    // DB4: only the person who performed the check may sign it.
+    if (!vm.canSign) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.signReport, style: IcText.titleS),
+          const SizedBox(height: IcSpace.s12),
+          Notice(
+            kind: NoticeKind.info,
+            title: l10n.signOnlyAuthorTitle,
+            message: l10n.signOnlyAuthorMessage(report.createdByName),
+          ),
+          const Spacer(),
+          download,
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -256,6 +273,7 @@ class _SignPanelState extends State<_SignPanel> {
               failure: switch (result.code) {
                 'notConfirmed' => l10n.signNeedsConfirmation,
                 'wrongPin' => l10n.signWrongPin,
+                'notAuthor' => l10n.signOnlyAuthorTitle,
                 _ => null,
               },
             );

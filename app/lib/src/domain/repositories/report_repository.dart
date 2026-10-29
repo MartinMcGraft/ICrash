@@ -7,6 +7,8 @@ abstract class ReportRepository {
   Future<CartReport> createReport(CartReport report);
 
   /// Proposal D6: name + PIN + date; a signed report can no longer change.
+  /// DB4: only the report's creator (who performed the check) may sign it;
+  /// anyone else gets a failure with code `notAuthor`.
   Future<void> signReport(String institutionId, String reportId, {required String uid, required String name});
 
   /// Monthly-check draft for one cart ("Guardar e sair"), as opaque JSON.

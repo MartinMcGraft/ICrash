@@ -1487,5 +1487,14 @@
   "drawerNumberTaken": "This cart already has a drawer with this number.",
   "editDrawerNumber": "Change number",
   "drawerNumberSaved": "Drawer number changed.",
-  "slotTaken": "This position already has a product."
+  "slotTaken": "This position already has a product.",
+  "signOnlyAuthorTitle": "Only the person who did the check can sign",
+  "signOnlyAuthorMessage": "This report is signed by {name}, who did the check.",
+  "@signOnlyAuthorMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

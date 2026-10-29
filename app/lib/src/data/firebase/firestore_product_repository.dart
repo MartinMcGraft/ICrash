@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../domain/entities/product.dart';
+import '../../domain/gtin.dart';
 import '../../domain/repositories/product_repository.dart';
 import 'firestore_codec.dart';
 import 'firestore_exception_mapper.dart';
@@ -27,8 +28,13 @@ class FirestoreProductRepository implements ProductRepository {
   @override
   Future<Product?> findByGtin(String institutionId, String gtin) async {
     try {
-      final snapshot =
-          await _firestore.collection(FirestorePaths.products(institutionId)).where('gtin', isEqualTo: gtin).limit(1).get();
+      // GTINs are stored padded to 14 digits since 29 Oct 2026 (P16); older
+      // products may hold the code as typed, so look for those forms too.
+      final snapshot = await _firestore
+          .collection(FirestorePaths.products(institutionId))
+          .where('gtin', whereIn: gtinLookupForms(gtin))
+          .limit(1)
+          .get();
       if (snapshot.docs.isEmpty) return null;
       final doc = snapshot.docs.first;
       return Product.fromMap(doc.id, institutionId, normalizeTimestamps(doc.data(), _timestampFields));

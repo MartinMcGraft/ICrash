@@ -14,6 +14,7 @@ import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/entities/usage_event.dart';
+import 'package:icrash_app/src/domain/gtin.dart';
 import 'package:icrash_app/src/domain/inventory_rules.dart';
 import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
@@ -307,8 +308,9 @@ class FakeProductRepository extends UnimplementedFake implements ProductReposito
 
   @override
   Future<Product?> findByGtin(String institutionId, String gtin) async {
+    final forms = gtinLookupForms(gtin);
     for (final product in products) {
-      if (product.gtin == gtin) return product;
+      if (forms.contains(product.gtin)) return product;
     }
     return null;
   }
