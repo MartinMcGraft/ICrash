@@ -365,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @duplicateCartDescription.
   ///
   /// In pt, this message translates to:
-  /// **'Cria um novo carro com as mesmas gavetas e slots. Não copia produtos, stock nem histórico.'**
+  /// **'Cria um novo carro com as mesmas gavetas e slots. Não copia consumíveis, stock nem histórico.'**
   String get duplicateCartDescription;
 
   /// No description provided for @duplicateCartNameLabel.
@@ -389,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @createProductTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Novo produto'**
+  /// **'Novo consumível clínico'**
   String get createProductTitle;
 
   /// No description provided for @createProductNameLabel.
@@ -557,25 +557,25 @@ abstract class AppLocalizations {
   /// No description provided for @productsScreenTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Produtos'**
+  /// **'Consumíveis clínicos'**
   String get productsScreenTitle;
 
   /// No description provided for @productsCreateError.
   ///
   /// In pt, this message translates to:
-  /// **'Não foi possível criar o produto. Tente novamente.'**
+  /// **'Não foi possível criar o consumível. Tente novamente.'**
   String get productsCreateError;
 
   /// No description provided for @productsLoadError.
   ///
   /// In pt, this message translates to:
-  /// **'Não foi possível carregar os produtos: {error}'**
+  /// **'Não foi possível carregar os consumíveis: {error}'**
   String productsLoadError(Object error);
 
   /// No description provided for @productsEmpty.
   ///
   /// In pt, this message translates to:
-  /// **'Ainda não existem produtos nesta instituição.'**
+  /// **'Ainda não existem consumíveis nesta instituição.'**
   String get productsEmpty;
 
   /// No description provided for @membersScreenTitle.
@@ -653,19 +653,19 @@ abstract class AppLocalizations {
   /// No description provided for @productSearchHint.
   ///
   /// In pt, this message translates to:
-  /// **'Nome do produto ou GTIN'**
+  /// **'Nome do consumível ou GTIN'**
   String get productSearchHint;
 
   /// No description provided for @productSearchPrompt.
   ///
   /// In pt, this message translates to:
-  /// **'Escreva o nome de um produto para o encontrar neste carro.'**
+  /// **'Escreva o nome de um consumível para o encontrar neste carro.'**
   String get productSearchPrompt;
 
   /// No description provided for @productSearchEmpty.
   ///
   /// In pt, this message translates to:
-  /// **'Nenhum produto encontrado neste carro.'**
+  /// **'Nenhum consumível encontrado neste carro.'**
   String get productSearchEmpty;
 
   /// No description provided for @actionEdit.
@@ -683,7 +683,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionSearchProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Pesquisar produto'**
+  /// **'Pesquisar consumível'**
   String get actionSearchProduct;
 
   /// No description provided for @actionResponsible.
@@ -815,7 +815,7 @@ abstract class AppLocalizations {
   /// No description provided for @summaryGroupProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Produto'**
+  /// **'Consumível'**
   String get summaryGroupProduct;
 
   /// No description provided for @summaryGroupCart.
@@ -869,7 +869,7 @@ abstract class AppLocalizations {
   /// No description provided for @productRemoved.
   ///
   /// In pt, this message translates to:
-  /// **'Produto removido'**
+  /// **'Consumível removido'**
   String get productRemoved;
 
   /// No description provided for @cartRemoved.
@@ -935,13 +935,13 @@ abstract class AppLocalizations {
   /// No description provided for @assignConflictError.
   ///
   /// In pt, this message translates to:
-  /// **'Este produto já está atribuído a outro slot deste carro.'**
+  /// **'Este consumível já está atribuído a outro slot deste carro.'**
   String get assignConflictError;
 
   /// No description provided for @assignGenericError.
   ///
   /// In pt, this message translates to:
-  /// **'Não foi possível atribuir o produto. Tente novamente.'**
+  /// **'Não foi possível atribuir o consumível. Tente novamente.'**
   String get assignGenericError;
 
   /// No description provided for @consumeExceedsError.
@@ -971,13 +971,13 @@ abstract class AppLocalizations {
   /// No description provided for @gs1UnknownGtin.
   ///
   /// In pt, this message translates to:
-  /// **'GTIN não reconhecido no catálogo — não foi associado a nenhum produto.'**
+  /// **'GTIN não reconhecido no catálogo — não foi associado a nenhum consumível.'**
   String get gs1UnknownGtin;
 
   /// No description provided for @gs1WrongProductWarning.
   ///
   /// In pt, this message translates to:
-  /// **'Atenção: este código corresponde a \"{productName}\", não ao produto deste slot.'**
+  /// **'Atenção: este código corresponde a \"{productName}\", não ao consumível deste slot.'**
   String gs1WrongProductWarning(String productName);
 
   /// No description provided for @reconcileGenericError.
@@ -1001,25 +1001,25 @@ abstract class AppLocalizations {
   /// No description provided for @emptySlotMessage.
   ///
   /// In pt, this message translates to:
-  /// **'Este slot ainda não tem produto atribuído.'**
+  /// **'Este slot ainda não tem consumível atribuído.'**
   String get emptySlotMessage;
 
   /// No description provided for @assignDialogTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Atribuir produto'**
+  /// **'Atribuir consumível'**
   String get assignDialogTitle;
 
   /// No description provided for @noProductsMessage.
   ///
   /// In pt, this message translates to:
-  /// **'Crie primeiro um produto no catálogo da instituição.'**
+  /// **'Crie primeiro um consumível no catálogo da instituição.'**
   String get noProductsMessage;
 
   /// No description provided for @productLabel.
   ///
   /// In pt, this message translates to:
-  /// **'Produto'**
+  /// **'Consumível'**
   String get productLabel;
 
   /// No description provided for @initialQuantityLabel.
@@ -1037,7 +1037,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseProductValidation.
   ///
   /// In pt, this message translates to:
-  /// **'Escolha um produto'**
+  /// **'Escolha um consumível'**
   String get chooseProductValidation;
 
   /// No description provided for @actionAssign.
@@ -1781,7 +1781,7 @@ abstract class AppLocalizations {
   /// No description provided for @drawerGridLong.
   ///
   /// In pt, this message translates to:
-  /// **'{rows} × {columns} · {positions} posições · {withProduct} com produto'**
+  /// **'{rows} × {columns} · {positions} posições · {withProduct} com consumível'**
   String drawerGridLong(int rows, int columns, int positions, int withProduct);
 
   /// No description provided for @drawerGridShort.
@@ -1847,7 +1847,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoStateRule.
   ///
   /// In pt, this message translates to:
-  /// **'Regra automática (quando ativa): produto expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.'**
+  /// **'Regra automática (quando ativa): consumível expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.'**
   String get autoStateRule;
 
   /// No description provided for @printLabel.
@@ -1877,7 +1877,7 @@ abstract class AppLocalizations {
   /// No description provided for @drawerSelectHint.
   ///
   /// In pt, this message translates to:
-  /// **'Toque numa posição para ver o produto, a quantidade e a validade.'**
+  /// **'Toque numa posição para ver o consumível, a quantidade e a validade.'**
   String get drawerSelectHint;
 
   /// No description provided for @slotPositionInDrawer.
@@ -1931,13 +1931,13 @@ abstract class AppLocalizations {
   /// No description provided for @changeProductAction.
   ///
   /// In pt, this message translates to:
-  /// **'Trocar produto'**
+  /// **'Trocar consumível'**
   String get changeProductAction;
 
   /// No description provided for @changeProductConfirm.
   ///
   /// In pt, this message translates to:
-  /// **'O produto atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.'**
+  /// **'O consumível atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.'**
   String get changeProductConfirm;
 
   /// No description provided for @panelSubtitle.
@@ -2026,7 +2026,7 @@ abstract class AppLocalizations {
   /// No description provided for @monthlyCheckEmptyDrawer.
   ///
   /// In pt, this message translates to:
-  /// **'Esta gaveta não tem produtos atribuídos.'**
+  /// **'Esta gaveta não tem consumíveis atribuídos.'**
   String get monthlyCheckEmptyDrawer;
 
   /// No description provided for @expiresOn.
@@ -2356,13 +2356,13 @@ abstract class AppLocalizations {
   /// No description provided for @scanProductCaption.
   ///
   /// In pt, this message translates to:
-  /// **'Aponte para o código do produto'**
+  /// **'Aponte para o código do consumível'**
   String get scanProductCaption;
 
   /// No description provided for @scanModeProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Produto'**
+  /// **'Consumível'**
   String get scanModeProduct;
 
   /// No description provided for @scanModeCart.
@@ -2398,7 +2398,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanReplenishThis.
   ///
   /// In pt, this message translates to:
-  /// **'Repor este produto'**
+  /// **'Repor este consumível'**
   String get scanReplenishThis;
 
   /// No description provided for @scanEnterManually.
@@ -2434,7 +2434,7 @@ abstract class AppLocalizations {
   /// No description provided for @scanNotInAnyCart.
   ///
   /// In pt, this message translates to:
-  /// **'Este produto não está atribuído a nenhum carro a que tenha acesso.'**
+  /// **'Este consumível não está atribuído a nenhum carro a que tenha acesso.'**
   String get scanNotInAnyCart;
 
   /// No description provided for @exportReport.
@@ -2704,7 +2704,7 @@ abstract class AppLocalizations {
   /// No description provided for @columnWithProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Com produto'**
+  /// **'Com consumível'**
   String get columnWithProduct;
 
   /// No description provided for @editGrid.
@@ -2758,7 +2758,7 @@ abstract class AppLocalizations {
   /// No description provided for @mergeLosesAssignments.
   ///
   /// In pt, this message translates to:
-  /// **'{count, plural, =1{1 posição perde o produto, que fica em “sem posição” até ser reatribuído.} other{{count} posições perdem o produto, que fica em “sem posição” até ser reatribuído.}}'**
+  /// **'{count, plural, =1{1 posição perde o consumível, que fica em “sem posição” até ser reatribuído.} other{{count} posições perdem o consumível, que fica em “sem posição” até ser reatribuído.}}'**
   String mergeLosesAssignments(int count);
 
   /// No description provided for @unsavedGridTitle.
@@ -2782,7 +2782,7 @@ abstract class AppLocalizations {
   /// No description provided for @orphansTitle.
   ///
   /// In pt, this message translates to:
-  /// **'Produtos sem posição ({count})'**
+  /// **'Consumíveis sem posição ({count})'**
   String orphansTitle(int count);
 
   /// No description provided for @orphanReassignHint.
@@ -2806,7 +2806,7 @@ abstract class AppLocalizations {
   /// No description provided for @positionSelectHint.
   ///
   /// In pt, this message translates to:
-  /// **'Selecione uma posição para configurar o produto.'**
+  /// **'Selecione uma posição para configurar o consumível.'**
   String get positionSelectHint;
 
   /// No description provided for @gridUnsavedHint.
@@ -2818,13 +2818,13 @@ abstract class AppLocalizations {
   /// No description provided for @chooseProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Escolher produto'**
+  /// **'Escolher consumível'**
   String get chooseProduct;
 
   /// No description provided for @catalogNoMatches.
   ///
   /// In pt, this message translates to:
-  /// **'Nenhum produto corresponde à pesquisa.'**
+  /// **'Nenhum consumível corresponde à pesquisa.'**
   String get catalogNoMatches;
 
   /// No description provided for @expiryWarningDaysLabel.
@@ -2860,7 +2860,7 @@ abstract class AppLocalizations {
   /// No description provided for @catalogSubtitle.
   ///
   /// In pt, this message translates to:
-  /// **'{count, plural, =1{1 produto} other{{count} produtos}} · usados em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}'**
+  /// **'{count, plural, =1{1 consumível} other{{count} consumíveis}} · usados em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}'**
   String catalogSubtitle(int count, int carts);
 
   /// No description provided for @importCsv.
@@ -2872,7 +2872,7 @@ abstract class AppLocalizations {
   /// No description provided for @importCsvHelp.
   ///
   /// In pt, this message translates to:
-  /// **'Cole uma linha por produto: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os produtos com nome ou GTIN já existentes são ignorados.'**
+  /// **'Cole uma linha por consumível: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os consumíveis com nome ou GTIN já existentes são ignorados.'**
   String get importCsvHelp;
 
   /// No description provided for @importCsvHint.
@@ -2890,19 +2890,19 @@ abstract class AppLocalizations {
   /// No description provided for @importResult.
   ///
   /// In pt, this message translates to:
-  /// **'{created, plural, =1{1 produto importado} other{{created} produtos importados}} · {skipped} ignorados.'**
+  /// **'{created, plural, =1{1 consumível importado} other{{created} consumíveis importados}} · {skipped} ignorados.'**
   String importResult(int created, int skipped);
 
   /// No description provided for @newProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Novo produto'**
+  /// **'Novo consumível'**
   String get newProduct;
 
   /// No description provided for @editProduct.
   ///
   /// In pt, this message translates to:
-  /// **'Editar produto'**
+  /// **'Editar consumível'**
   String get editProduct;
 
   /// No description provided for @catalogSearchByNameOrGtin.
@@ -2986,19 +2986,19 @@ abstract class AppLocalizations {
   /// No description provided for @productCreated.
   ///
   /// In pt, this message translates to:
-  /// **'Produto “{name}” criado.'**
+  /// **'Consumível “{name}” criado.'**
   String productCreated(String name);
 
   /// No description provided for @productUpdated.
   ///
   /// In pt, this message translates to:
-  /// **'Produto atualizado.'**
+  /// **'Consumível atualizado.'**
   String get productUpdated;
 
   /// No description provided for @gtinTaken.
   ///
   /// In pt, this message translates to:
-  /// **'Já existe um produto com este GTIN.'**
+  /// **'Já existe um consumível com este GTIN.'**
   String get gtinTaken;
 
   /// No description provided for @gtinInvalid.
@@ -3580,7 +3580,7 @@ abstract class AppLocalizations {
   /// No description provided for @statTopProducts.
   ///
   /// In pt, this message translates to:
-  /// **'Produtos mais consumidos'**
+  /// **'Consumíveis mais usados'**
   String get statTopProducts;
 
   /// No description provided for @statByCart.
@@ -3682,7 +3682,7 @@ abstract class AppLocalizations {
   /// No description provided for @slotTaken.
   ///
   /// In pt, this message translates to:
-  /// **'Esta posição já tem um produto.'**
+  /// **'Esta posição já tem um consumível.'**
   String get slotTaken;
 
   /// No description provided for @signOnlyAuthorTitle.
@@ -3736,7 +3736,7 @@ abstract class AppLocalizations {
   /// No description provided for @slotInUseHint.
   ///
   /// In pt, this message translates to:
-  /// **'Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.'**
+  /// **'Esta posição já tem histórico: mantém o seu consumível e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.'**
   String get slotInUseHint;
 
   /// No description provided for @drawerInUseHint.

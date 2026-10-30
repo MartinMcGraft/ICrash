@@ -680,6 +680,17 @@ Frame ids read on 30 Oct 2026.
   - A1: a **PT / EN** switch sits on the right of "Iniciar sessão".
 - **Copy:** `languagePortuguese`, `languageEnglish` (unchanged).
 
+### DC-51 · "Produto" → "Consumível" everywhere (D19)
+- **Where:** every frame and component with "Produto(s)" / "produto": A4–A11, B1–B9,
+  p03 components (e.g. Cartão de gaveta "… com produto", Estado da posição), p04 patterns.
+- **What:** short form **Consumível / Consumíveis**; long form **Consumível clínico /
+  Consumíveis clínicos** for the catalogue title (B5) and the "new" dialog. Examples:
+  "Trocar consumível", "Atribuir consumível", "Pesquisar consumível", "Repor este
+  consumível", "Consumíveis sem posição", "… com consumível", A11 tab "Consumível", B1
+  "Consumíveis mais usados" (was "Produtos mais consumidos"). EN: "Consumable(s)",
+  "Clinical consumables".
+- **Copy:** 48 PT / 50 EN strings in the ARB files; CSV column "Consumível".
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -719,4 +730,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu) | DC-41 … DC-50 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology) | DC-41 … DC-51 |

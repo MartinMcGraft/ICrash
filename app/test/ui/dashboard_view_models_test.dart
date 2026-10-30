@@ -154,6 +154,13 @@ void main() {
       expect(lines.last.category, ProductCategory.material);
     });
 
+    test('skips the "Consumível" header and the old "Produto" one (D19)', () {
+      for (final header in ['Consumível;Apresentação;GTIN', 'Produto;Apresentação;GTIN', 'Consumable,Presentation,GTIN']) {
+        final lines = CatalogViewModel.parseCsv('$header\nAdrenalina 1 mg/ml;Ampola 1 ml;05601234567890\n');
+        expect(lines.single.name, 'Adrenalina 1 mg/ml', reason: header);
+      }
+    });
+
     test('import skips existing names and GTINs', () async {
       final products = FakeProductRepository(products: [
         const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina 1 mg/ml', gtin: '1'),

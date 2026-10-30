@@ -44,11 +44,11 @@
   "createDrawerRowsLabel": "Rows",
   "createDrawerColumnsLabel": "Columns",
   "duplicateCartTitle": "Duplicate cart",
-  "duplicateCartDescription": "Creates a new cart with the same drawers and slots. Does not copy products, stock, or history.",
+  "duplicateCartDescription": "Creates a new cart with the same drawers and slots. Does not copy consumables, stock, or history.",
   "duplicateCartNameLabel": "New cart's name",
   "editCartTitle": "Edit cart",
   "editCartStatusLabel": "Status",
-  "createProductTitle": "New product",
+  "createProductTitle": "New clinical consumable",
   "createProductNameLabel": "Name",
   "createProductUnitLabel": "Unit (optional)",
   "createProductUnitHint": "e.g.: 1 mg/mL, 1 mL ampoule",
@@ -90,9 +90,9 @@
   },
   "institutionSelectionEmpty": "You don't have access to any institution yet.\nContact your institution's administrator.",
   "connectivityOfflineMessage": "No internet connection — showing locally saved data.",
-  "productsScreenTitle": "Products",
-  "productsCreateError": "Couldn't create the product. Try again.",
-  "productsLoadError": "Couldn't load products: {error}",
+  "productsScreenTitle": "Clinical consumables",
+  "productsCreateError": "Couldn't create the consumable. Try again.",
+  "productsLoadError": "Couldn't load consumables: {error}",
   "@productsLoadError": {
     "placeholders": {
       "error": {
@@ -100,7 +100,7 @@
       }
     }
   },
-  "productsEmpty": "There are no products in this institution yet.",
+  "productsEmpty": "There are no consumables in this institution yet.",
   "membersScreenTitle": "Members",
   "membersLoadError": "Couldn't load members: {error}",
   "@membersLoadError": {
@@ -120,12 +120,12 @@
   "membersDeactivate": "Deactivate",
   "membersReactivate": "Reactivate",
   "responsibleUsersTitle": "Cart's responsible users",
-  "productSearchHint": "Product name or GTIN",
-  "productSearchPrompt": "Type a product's name to find it in this cart.",
-  "productSearchEmpty": "No product found in this cart.",
+  "productSearchHint": "Consumable name or GTIN",
+  "productSearchPrompt": "Type a consumable's name to find it in this cart.",
+  "productSearchEmpty": "No consumable found in this cart.",
   "actionEdit": "Edit",
   "actionShowQrCode": "Show QR code",
-  "actionSearchProduct": "Search product",
+  "actionSearchProduct": "Search consumable",
   "actionResponsible": "Responsible users",
   "cartDetailCreateDrawerError": "Couldn't create the drawer. Try again.",
   "cartUpdatedMessage": "Cart updated.",
@@ -185,7 +185,7 @@
   "historyPdfDocumentTitle": "Activity history",
   "summaryViewButton": "View summary",
   "summaryDialogTitle": "Summary",
-  "summaryGroupProduct": "Product",
+  "summaryGroupProduct": "Consumable",
   "summaryGroupCart": "Cart",
   "summaryGroupPeriod": "Period",
   "periodUnitDay": "Day",
@@ -211,7 +211,7 @@
       }
     }
   },
-  "productRemoved": "Removed product",
+  "productRemoved": "Removed consumable",
   "cartRemoved": "Removed cart",
   "dashboardOpenCartError": "Couldn't open this cart.",
   "dashboardCreateCartError": "Couldn't create the cart. Try again.",
@@ -229,14 +229,14 @@
   "dashboardAlertsTitle": "Alerts",
   "alertBelowMinimum": "Stock below minimum",
   "dashboardRecentActivityTitle": "Recent activity",
-  "assignConflictError": "This product is already assigned to another slot in this cart.",
-  "assignGenericError": "Couldn't assign the product. Try again.",
+  "assignConflictError": "This consumable is already assigned to another slot in this cart.",
+  "assignGenericError": "Couldn't assign the consumable. Try again.",
   "consumeExceedsError": "You can't consume more than the current quantity.",
   "consumeGenericError": "Couldn't record the consumption. Try again.",
   "replenishMissingExpiry": "Enter the batch's expiry date.",
   "replenishGenericError": "Couldn't replenish the stock. Try again.",
-  "gs1UnknownGtin": "GTIN not recognized in the catalogue — it wasn't linked to any product.",
-  "gs1WrongProductWarning": "Warning: this code matches \"{productName}\", not this slot's product.",
+  "gs1UnknownGtin": "GTIN not recognized in the catalogue — it wasn't linked to any consumable.",
+  "gs1WrongProductWarning": "Warning: this code matches \"{productName}\", not this slot's consumable.",
   "@gs1WrongProductWarning": {
     "placeholders": {
       "productName": {
@@ -247,13 +247,13 @@
   "reconcileGenericError": "Couldn't reconcile. Try again.",
   "correctGenericError": "Couldn't correct. Try again.",
   "emptySlotTitle": "Empty slot",
-  "emptySlotMessage": "This slot doesn't have a product assigned yet.",
-  "assignDialogTitle": "Assign product",
-  "noProductsMessage": "First create a product in the institution's catalogue.",
-  "productLabel": "Product",
+  "emptySlotMessage": "This slot doesn't have a consumable assigned yet.",
+  "assignDialogTitle": "Assign consumable",
+  "noProductsMessage": "First create a consumable in the institution's catalogue.",
+  "productLabel": "Consumable",
   "initialQuantityLabel": "Initial quantity",
   "targetQuantityLabel": "Target quantity",
-  "chooseProductValidation": "Choose a product",
+  "chooseProductValidation": "Choose a consumable",
   "actionAssign": "Assign",
   "recordConsumptionTitle": "Record consumption",
   "consumedQuantityLabel": "Consumed quantity",
@@ -577,7 +577,7 @@
     }
   },
   "drawersTitle": "Drawers",
-  "drawerGridLong": "{rows} × {columns} · {positions} positions · {withProduct} with product",
+  "drawerGridLong": "{rows} × {columns} · {positions} positions · {withProduct} with consumable",
   "@drawerGridLong": {
     "placeholders": {
       "rows": {
@@ -617,7 +617,7 @@
   "emergencyModeTitle": "Emergency mode",
   "emergencyShort": "Emergency",
   "emergencyResume": "Back to emergency mode",
-  "autoStateRule": "Automatic rule (when on): expired or missing product → Replenishment required; monthly check older than 31 days → Check overdue.",
+  "autoStateRule": "Automatic rule (when on): expired or missing consumable → Replenishment required; monthly check older than 31 days → Check overdue.",
   "printLabel": "Print label",
   "productLocation": "Drawer {number} · position {position}",
   "@productLocation": {
@@ -661,7 +661,7 @@
       }
     }
   },
-  "drawerSelectHint": "Tap a position to see its product, quantity and expiry.",
+  "drawerSelectHint": "Tap a position to see its consumable, quantity and expiry.",
   "slotPositionInDrawer": "Position {position} · Drawer {drawer}",
   "@slotPositionInDrawer": {
     "placeholders": {
@@ -714,8 +714,8 @@
       }
     }
   },
-  "changeProductAction": "Change product",
-  "changeProductConfirm": "The current product leaves this position together with its recorded lots. Consumption history is kept.",
+  "changeProductAction": "Change consumable",
+  "changeProductConfirm": "The current consumable leaves this position together with its recorded lots. Consumption history is kept.",
   "panelSubtitle": "{product} · {position} · now {current} of {target}",
   "@panelSubtitle": {
     "placeholders": {
@@ -771,7 +771,7 @@
       }
     }
   },
-  "monthlyCheckEmptyDrawer": "This drawer has no assigned products.",
+  "monthlyCheckEmptyDrawer": "This drawer has no assigned consumables.",
   "expiresOn": "expires on {date}",
   "@expiresOn": {
     "placeholders": {
@@ -943,8 +943,8 @@
     }
   },
   "undoLast": "Undo last",
-  "scanProductCaption": "Point at the product code",
-  "scanModeProduct": "Product",
+  "scanProductCaption": "Point at the consumable code",
+  "scanModeProduct": "Consumable",
   "scanModeCart": "Cart",
   "scanHelp": "QR, Data Matrix (GS1) or barcode. Also works with a USB reader.",
   "scanLastRead": "Last code read",
@@ -964,13 +964,13 @@
       }
     }
   },
-  "scanReplenishThis": "Replenish this product",
+  "scanReplenishThis": "Replenish this consumable",
   "scanEnterManually": "Enter manually",
   "scanOnlyConsumables": "Inside a cart you can only scan consumables.",
   "scanManual": "Manual",
   "scanManualProductLabel": "GTIN or GS1 code",
   "scanOtherInstitution": "This cart belongs to another institution.",
-  "scanNotInAnyCart": "This product is not assigned to any cart you can access.",
+  "scanNotInAnyCart": "This consumable is not assigned to any cart you can access.",
   "exportReport": "Export report",
   "metricOperational": "Operational carts",
   "metricNeedReplenishment": "{count, plural, =0{None need replenishment} =1{1 needs replenishment} other{{count} need replenishment}}",
@@ -1074,7 +1074,7 @@
   "columnNumber": "No.",
   "columnSize": "Size",
   "columnPositions": "Positions",
-  "columnWithProduct": "With product",
+  "columnWithProduct": "With consumable",
   "editGrid": "Edit grid",
   "gridEditorSubtitle": "{cart} · edit grid and positions",
   "@gridEditorSubtitle": {
@@ -1100,7 +1100,7 @@
     }
   },
   "gridSelectionHint": "Tap a position to configure it. Tap several to merge them.",
-  "mergeLosesAssignments": "{count, plural, =1{1 position loses its product, which stays “without position” until reassigned.} other{{count} positions lose their product, which stays “without position” until reassigned.}}",
+  "mergeLosesAssignments": "{count, plural, =1{1 position loses its consumable, which stays “without position” until reassigned.} other{{count} positions lose their consumable, which stays “without position” until reassigned.}}",
   "@mergeLosesAssignments": {
     "placeholders": {
       "count": {
@@ -1111,7 +1111,7 @@
   "unsavedGridTitle": "Unsaved changes",
   "unsavedGridMessage": "Leave without saving the grid?",
   "discardChanges": "Discard",
-  "orphansTitle": "Products without a position ({count})",
+  "orphansTitle": "Consumables without a position ({count})",
   "@orphansTitle": {
     "placeholders": {
       "count": {
@@ -1136,16 +1136,16 @@
       }
     }
   },
-  "positionSelectHint": "Select a position to configure its product.",
+  "positionSelectHint": "Select a position to configure its consumable.",
   "gridUnsavedHint": "Save the grid before configuring positions.",
-  "chooseProduct": "Choose product",
-  "catalogNoMatches": "No product matches the search.",
+  "chooseProduct": "Choose consumable",
+  "catalogNoMatches": "No consumable matches the search.",
   "expiryWarningDaysLabel": "Expiry warning (days)",
   "askLotOnReplenish": "Ask for expiry (and lot, if any) on replenishment",
   "applyToPosition": "Apply to position",
   "positionApplied": "Position updated.",
   "catalogTitle": "Consumables catalogue",
-  "catalogSubtitle": "{count, plural, =1{1 product} other{{count} products}} · used in {carts, plural, =1{1 cart} other{{carts} carts}}",
+  "catalogSubtitle": "{count, plural, =1{1 consumable} other{{count} consumables}} · used in {carts, plural, =1{1 cart} other{{carts} carts}}",
   "@catalogSubtitle": {
     "placeholders": {
       "count": {
@@ -1157,10 +1157,10 @@
     }
   },
   "importCsv": "Import CSV",
-  "importCsvHelp": "Paste one line per product: name; presentation; GTIN; category; expiry warning (days). Products whose name or GTIN already exists are skipped.",
+  "importCsvHelp": "Paste one line per consumable: name; presentation; GTIN; category; expiry warning (days). Consumables whose name or GTIN already exists are skipped.",
   "importCsvHint": "Paste the CSV file content here",
   "importAction": "Import",
-  "importResult": "{created, plural, =1{1 product imported} other{{created} products imported}} · {skipped} skipped.",
+  "importResult": "{created, plural, =1{1 consumable imported} other{{created} consumables imported}} · {skipped} skipped.",
   "@importResult": {
     "placeholders": {
       "created": {
@@ -1171,8 +1171,8 @@
       }
     }
   },
-  "newProduct": "New product",
-  "editProduct": "Edit product",
+  "newProduct": "New consumable",
+  "editProduct": "Edit consumable",
   "catalogSearchByNameOrGtin": "Search by name or GTIN",
   "filterAll": "All",
   "categoryDrug": "Drug",
@@ -1193,7 +1193,7 @@
       }
     }
   },
-  "productCreated": "Product “{name}” created.",
+  "productCreated": "Consumable “{name}” created.",
   "@productCreated": {
     "placeholders": {
       "name": {
@@ -1201,8 +1201,8 @@
       }
     }
   },
-  "productUpdated": "Product updated.",
-  "gtinTaken": "A product with this GTIN already exists.",
+  "productUpdated": "Consumable updated.",
+  "gtinTaken": "A consumable with this GTIN already exists.",
   "gtinInvalid": "A GTIN has 8, 12, 13 or 14 digits.",
   "scanGtin": "Scan GTIN from the box",
   "expiryWarningDefaultHint": "Empty = institution default",
@@ -1429,7 +1429,7 @@
   "statChecks": "Checks",
   "statEmergencies": "Emergencies",
   "statPendingSignatures": "To sign",
-  "statTopProducts": "Most consumed products",
+  "statTopProducts": "Most used consumables",
   "statByCart": "By cart",
   "pagerRange": "{from}–{to} of {total}",
   "@pagerRange": {
@@ -1459,7 +1459,7 @@
   "drawerNumberTaken": "This cart already has a drawer with this number.",
   "editDrawerNumber": "Change number",
   "drawerNumberSaved": "Drawer number changed.",
-  "slotTaken": "This position already has a product.",
+  "slotTaken": "This position already has a consumable.",
   "signOnlyAuthorTitle": "Only the person who did the check can sign",
   "signOnlyAuthorMessage": "This report is signed by {name}, who did the check.",
   "@signOnlyAuthorMessage": {
@@ -1475,7 +1475,7 @@
   "correctionReasonLabel": "Reason (optional)",
   "correctionReasonHint": "e.g. recorded in the wrong position",
   "slotInUse": "Position in use",
-  "slotInUseHint": "This position already has history: it keeps its product and can't be cleared. The structure of a cart in use can't be changed.",
+  "slotInUseHint": "This position already has history: it keeps its consumable and can't be cleared. The structure of a cart in use can't be changed.",
   "drawerInUseHint": "This drawer already has history: its grid can't be resized, merged or split. You can still change the positions' target quantities.",
   "templatesTabActive": "Active ({count})",
   "@templatesTabActive": {

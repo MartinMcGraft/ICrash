@@ -32,7 +32,7 @@ class ProductUsageSummary {
 List<ProductUsageSummary> summarizeByProduct(
   List<UsageEvent> events,
   List<Product> products, {
-  String removedLabel = 'Produto removido',
+  String removedLabel = 'Consumível removido',
 }) {
   final consumedByProduct = <String, int>{};
   final replenishedByProduct = <String, int>{};

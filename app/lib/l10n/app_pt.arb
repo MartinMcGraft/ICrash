@@ -44,11 +44,11 @@
   "createDrawerRowsLabel": "Linhas",
   "createDrawerColumnsLabel": "Colunas",
   "duplicateCartTitle": "Duplicar carro",
-  "duplicateCartDescription": "Cria um novo carro com as mesmas gavetas e slots. Não copia produtos, stock nem histórico.",
+  "duplicateCartDescription": "Cria um novo carro com as mesmas gavetas e slots. Não copia consumíveis, stock nem histórico.",
   "duplicateCartNameLabel": "Nome do novo carro",
   "editCartTitle": "Editar carro",
   "editCartStatusLabel": "Estado",
-  "createProductTitle": "Novo produto",
+  "createProductTitle": "Novo consumível clínico",
   "createProductNameLabel": "Nome",
   "createProductUnitLabel": "Unidade (opcional)",
   "createProductUnitHint": "ex.: 1 mg/mL, ampola 1 mL",
@@ -90,9 +90,9 @@
   },
   "institutionSelectionEmpty": "Ainda não tem acesso a nenhuma instituição.\nContacte o administrador da sua instituição.",
   "connectivityOfflineMessage": "Sem ligação à internet — a mostrar dados guardados localmente.",
-  "productsScreenTitle": "Produtos",
-  "productsCreateError": "Não foi possível criar o produto. Tente novamente.",
-  "productsLoadError": "Não foi possível carregar os produtos: {error}",
+  "productsScreenTitle": "Consumíveis clínicos",
+  "productsCreateError": "Não foi possível criar o consumível. Tente novamente.",
+  "productsLoadError": "Não foi possível carregar os consumíveis: {error}",
   "@productsLoadError": {
     "placeholders": {
       "error": {
@@ -100,7 +100,7 @@
       }
     }
   },
-  "productsEmpty": "Ainda não existem produtos nesta instituição.",
+  "productsEmpty": "Ainda não existem consumíveis nesta instituição.",
   "membersScreenTitle": "Membros",
   "membersLoadError": "Não foi possível carregar os membros: {error}",
   "@membersLoadError": {
@@ -120,12 +120,12 @@
   "membersDeactivate": "Desativar",
   "membersReactivate": "Reativar",
   "responsibleUsersTitle": "Responsáveis pelo carro",
-  "productSearchHint": "Nome do produto ou GTIN",
-  "productSearchPrompt": "Escreva o nome de um produto para o encontrar neste carro.",
-  "productSearchEmpty": "Nenhum produto encontrado neste carro.",
+  "productSearchHint": "Nome do consumível ou GTIN",
+  "productSearchPrompt": "Escreva o nome de um consumível para o encontrar neste carro.",
+  "productSearchEmpty": "Nenhum consumível encontrado neste carro.",
   "actionEdit": "Editar",
   "actionShowQrCode": "Mostrar código QR",
-  "actionSearchProduct": "Pesquisar produto",
+  "actionSearchProduct": "Pesquisar consumível",
   "actionResponsible": "Responsáveis",
   "cartDetailCreateDrawerError": "Não foi possível criar a gaveta. Tente novamente.",
   "cartUpdatedMessage": "Carro atualizado.",
@@ -185,7 +185,7 @@
   "historyPdfDocumentTitle": "Histórico de atividade",
   "summaryViewButton": "Ver resumo",
   "summaryDialogTitle": "Resumo",
-  "summaryGroupProduct": "Produto",
+  "summaryGroupProduct": "Consumível",
   "summaryGroupCart": "Carro",
   "summaryGroupPeriod": "Período",
   "periodUnitDay": "Dia",
@@ -211,7 +211,7 @@
       }
     }
   },
-  "productRemoved": "Produto removido",
+  "productRemoved": "Consumível removido",
   "cartRemoved": "Carro removido",
   "dashboardOpenCartError": "Não foi possível abrir este carro.",
   "dashboardCreateCartError": "Não foi possível criar o carro. Tente novamente.",
@@ -229,14 +229,14 @@
   "dashboardAlertsTitle": "Alertas",
   "alertBelowMinimum": "Stock abaixo do mínimo",
   "dashboardRecentActivityTitle": "Atividade recente",
-  "assignConflictError": "Este produto já está atribuído a outro slot deste carro.",
-  "assignGenericError": "Não foi possível atribuir o produto. Tente novamente.",
+  "assignConflictError": "Este consumível já está atribuído a outro slot deste carro.",
+  "assignGenericError": "Não foi possível atribuir o consumível. Tente novamente.",
   "consumeExceedsError": "Não pode consumir mais do que a quantidade atual.",
   "consumeGenericError": "Não foi possível registar o consumo. Tente novamente.",
   "replenishMissingExpiry": "Indique a validade do lote.",
   "replenishGenericError": "Não foi possível repor o stock. Tente novamente.",
-  "gs1UnknownGtin": "GTIN não reconhecido no catálogo — não foi associado a nenhum produto.",
-  "gs1WrongProductWarning": "Atenção: este código corresponde a \"{productName}\", não ao produto deste slot.",
+  "gs1UnknownGtin": "GTIN não reconhecido no catálogo — não foi associado a nenhum consumível.",
+  "gs1WrongProductWarning": "Atenção: este código corresponde a \"{productName}\", não ao consumível deste slot.",
   "@gs1WrongProductWarning": {
     "placeholders": {
       "productName": {
@@ -247,13 +247,13 @@
   "reconcileGenericError": "Não foi possível reconciliar. Tente novamente.",
   "correctGenericError": "Não foi possível corrigir. Tente novamente.",
   "emptySlotTitle": "Slot vazio",
-  "emptySlotMessage": "Este slot ainda não tem produto atribuído.",
-  "assignDialogTitle": "Atribuir produto",
-  "noProductsMessage": "Crie primeiro um produto no catálogo da instituição.",
-  "productLabel": "Produto",
+  "emptySlotMessage": "Este slot ainda não tem consumível atribuído.",
+  "assignDialogTitle": "Atribuir consumível",
+  "noProductsMessage": "Crie primeiro um consumível no catálogo da instituição.",
+  "productLabel": "Consumível",
   "initialQuantityLabel": "Quantidade inicial",
   "targetQuantityLabel": "Quantidade alvo",
-  "chooseProductValidation": "Escolha um produto",
+  "chooseProductValidation": "Escolha um consumível",
   "actionAssign": "Atribuir",
   "recordConsumptionTitle": "Registar consumo",
   "consumedQuantityLabel": "Quantidade consumida",
@@ -637,7 +637,7 @@
   },
   "drawersTitle": "Gavetas",
   "@drawersTitle": {},
-  "drawerGridLong": "{rows} × {columns} · {positions} posições · {withProduct} com produto",
+  "drawerGridLong": "{rows} × {columns} · {positions} posições · {withProduct} com consumível",
   "@drawerGridLong": {
     "placeholders": {
       "rows": {
@@ -686,7 +686,7 @@
   "@emergencyShort": {},
   "emergencyResume": "Voltar ao modo de emergência",
   "@emergencyResume": {},
-  "autoStateRule": "Regra automática (quando ativa): produto expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.",
+  "autoStateRule": "Regra automática (quando ativa): consumível expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.",
   "@autoStateRule": {},
   "printLabel": "Imprimir etiqueta",
   "@printLabel": {},
@@ -732,7 +732,7 @@
       }
     }
   },
-  "drawerSelectHint": "Toque numa posição para ver o produto, a quantidade e a validade.",
+  "drawerSelectHint": "Toque numa posição para ver o consumível, a quantidade e a validade.",
   "@drawerSelectHint": {},
   "slotPositionInDrawer": "Posição {position} · Gaveta {drawer}",
   "@slotPositionInDrawer": {
@@ -789,9 +789,9 @@
       }
     }
   },
-  "changeProductAction": "Trocar produto",
+  "changeProductAction": "Trocar consumível",
   "@changeProductAction": {},
-  "changeProductConfirm": "O produto atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.",
+  "changeProductConfirm": "O consumível atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.",
   "@changeProductConfirm": {},
   "panelSubtitle": "{product} · {position} · atual {current} de {target}",
   "@panelSubtitle": {
@@ -858,7 +858,7 @@
       }
     }
   },
-  "monthlyCheckEmptyDrawer": "Esta gaveta não tem produtos atribuídos.",
+  "monthlyCheckEmptyDrawer": "Esta gaveta não tem consumíveis atribuídos.",
   "@monthlyCheckEmptyDrawer": {},
   "expiresOn": "expira a {date}",
   "@expiresOn": {
@@ -1070,9 +1070,9 @@
   },
   "undoLast": "Desfazer último",
   "@undoLast": {},
-  "scanProductCaption": "Aponte para o código do produto",
+  "scanProductCaption": "Aponte para o código do consumível",
   "@scanProductCaption": {},
-  "scanModeProduct": "Produto",
+  "scanModeProduct": "Consumível",
   "@scanModeProduct": {},
   "scanModeCart": "Carro",
   "@scanModeCart": {},
@@ -1096,7 +1096,7 @@
       }
     }
   },
-  "scanReplenishThis": "Repor este produto",
+  "scanReplenishThis": "Repor este consumível",
   "@scanReplenishThis": {},
   "scanEnterManually": "Inserir manualmente",
   "@scanEnterManually": {},
@@ -1108,7 +1108,7 @@
   "@scanManualProductLabel": {},
   "scanOtherInstitution": "Este carro pertence a outra instituição.",
   "@scanOtherInstitution": {},
-  "scanNotInAnyCart": "Este produto não está atribuído a nenhum carro a que tenha acesso.",
+  "scanNotInAnyCart": "Este consumível não está atribuído a nenhum carro a que tenha acesso.",
   "@scanNotInAnyCart": {},
   "exportReport": "Exportar relatório",
   "@exportReport": {},
@@ -1249,7 +1249,7 @@
   "@columnSize": {},
   "columnPositions": "Posições",
   "@columnPositions": {},
-  "columnWithProduct": "Com produto",
+  "columnWithProduct": "Com consumível",
   "@columnWithProduct": {},
   "editGrid": "Editar grelha",
   "@editGrid": {},
@@ -1282,7 +1282,7 @@
   },
   "gridSelectionHint": "Toque numa posição para a configurar. Toque em várias para as juntar.",
   "@gridSelectionHint": {},
-  "mergeLosesAssignments": "{count, plural, =1{1 posição perde o produto, que fica em “sem posição” até ser reatribuído.} other{{count} posições perdem o produto, que fica em “sem posição” até ser reatribuído.}}",
+  "mergeLosesAssignments": "{count, plural, =1{1 posição perde o consumível, que fica em “sem posição” até ser reatribuído.} other{{count} posições perdem o consumível, que fica em “sem posição” até ser reatribuído.}}",
   "@mergeLosesAssignments": {
     "placeholders": {
       "count": {
@@ -1296,7 +1296,7 @@
   "@unsavedGridMessage": {},
   "discardChanges": "Descartar",
   "@discardChanges": {},
-  "orphansTitle": "Produtos sem posição ({count})",
+  "orphansTitle": "Consumíveis sem posição ({count})",
   "@orphansTitle": {
     "placeholders": {
       "count": {
@@ -1322,13 +1322,13 @@
       }
     }
   },
-  "positionSelectHint": "Selecione uma posição para configurar o produto.",
+  "positionSelectHint": "Selecione uma posição para configurar o consumível.",
   "@positionSelectHint": {},
   "gridUnsavedHint": "Guarde a grelha antes de configurar posições.",
   "@gridUnsavedHint": {},
-  "chooseProduct": "Escolher produto",
+  "chooseProduct": "Escolher consumível",
   "@chooseProduct": {},
-  "catalogNoMatches": "Nenhum produto corresponde à pesquisa.",
+  "catalogNoMatches": "Nenhum consumível corresponde à pesquisa.",
   "@catalogNoMatches": {},
   "expiryWarningDaysLabel": "Aviso de validade (dias)",
   "@expiryWarningDaysLabel": {},
@@ -1340,7 +1340,7 @@
   "@positionApplied": {},
   "catalogTitle": "Catálogo de consumíveis",
   "@catalogTitle": {},
-  "catalogSubtitle": "{count, plural, =1{1 produto} other{{count} produtos}} · usados em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}",
+  "catalogSubtitle": "{count, plural, =1{1 consumível} other{{count} consumíveis}} · usados em {carts, plural, =1{1 carrinho} other{{carts} carrinhos}}",
   "@catalogSubtitle": {
     "placeholders": {
       "count": {
@@ -1353,13 +1353,13 @@
   },
   "importCsv": "Importar CSV",
   "@importCsv": {},
-  "importCsvHelp": "Cole uma linha por produto: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os produtos com nome ou GTIN já existentes são ignorados.",
+  "importCsvHelp": "Cole uma linha por consumível: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os consumíveis com nome ou GTIN já existentes são ignorados.",
   "@importCsvHelp": {},
   "importCsvHint": "Cole aqui o conteúdo do ficheiro CSV",
   "@importCsvHint": {},
   "importAction": "Importar",
   "@importAction": {},
-  "importResult": "{created, plural, =1{1 produto importado} other{{created} produtos importados}} · {skipped} ignorados.",
+  "importResult": "{created, plural, =1{1 consumível importado} other{{created} consumíveis importados}} · {skipped} ignorados.",
   "@importResult": {
     "placeholders": {
       "created": {
@@ -1370,9 +1370,9 @@
       }
     }
   },
-  "newProduct": "Novo produto",
+  "newProduct": "Novo consumível",
   "@newProduct": {},
-  "editProduct": "Editar produto",
+  "editProduct": "Editar consumível",
   "@editProduct": {},
   "catalogSearchByNameOrGtin": "Pesquisar por nome ou GTIN",
   "@catalogSearchByNameOrGtin": {},
@@ -1406,7 +1406,7 @@
       }
     }
   },
-  "productCreated": "Produto “{name}” criado.",
+  "productCreated": "Consumível “{name}” criado.",
   "@productCreated": {
     "placeholders": {
       "name": {
@@ -1414,9 +1414,9 @@
       }
     }
   },
-  "productUpdated": "Produto atualizado.",
+  "productUpdated": "Consumível atualizado.",
   "@productUpdated": {},
-  "gtinTaken": "Já existe um produto com este GTIN.",
+  "gtinTaken": "Já existe um consumível com este GTIN.",
   "@gtinTaken": {},
   "gtinInvalid": "O GTIN tem 8, 12, 13 ou 14 algarismos.",
   "@gtinInvalid": {},
@@ -1724,7 +1724,7 @@
   "@statEmergencies": {},
   "statPendingSignatures": "Por assinar",
   "@statPendingSignatures": {},
-  "statTopProducts": "Produtos mais consumidos",
+  "statTopProducts": "Consumíveis mais usados",
   "@statTopProducts": {},
   "statByCart": "Por carrinho",
   "@statByCart": {},
@@ -1770,7 +1770,7 @@
   "@editDrawerNumber": {},
   "drawerNumberSaved": "Número da gaveta alterado.",
   "@drawerNumberSaved": {},
-  "slotTaken": "Esta posição já tem um produto.",
+  "slotTaken": "Esta posição já tem um consumível.",
   "@slotTaken": {},
   "signOnlyAuthorTitle": "Só quem fez a verificação pode assinar",
   "@signOnlyAuthorTitle": {},
@@ -1794,7 +1794,7 @@
   "@correctionReasonHint": {},
   "slotInUse": "Posição em uso",
   "@slotInUse": {},
-  "slotInUseHint": "Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.",
+  "slotInUseHint": "Esta posição já tem histórico: mantém o seu consumível e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.",
   "@slotInUseHint": {},
   "drawerInUseHint": "Esta gaveta já tem histórico: a grelha não pode ser redimensionada, fundida nem dividida. Pode alterar a quantidade alvo das posições.",
   "@drawerInUseHint": {},

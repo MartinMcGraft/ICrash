@@ -21,7 +21,7 @@ void main() {
     final csv = buildHistoryCsv([event], [product]);
     final lines = csv.trim().split('\n');
 
-    expect(lines[0], 'Data,Tipo,Produto,Quantidade');
+    expect(lines[0], 'Data,Tipo,Consumível,Quantidade');
     expect(lines[1], ',Consumo,Adrenalina,-2');
   });
 
@@ -57,7 +57,7 @@ void main() {
 
     final csv = buildHistoryCsv([event], [product]);
 
-    expect(csv, contains('Produto removido'));
+    expect(csv, contains('Consumível removido'));
   });
 
   test('quotes a product name containing a comma', () {
@@ -81,7 +81,7 @@ void main() {
   test('an empty event list yields just the header row', () {
     final csv = buildHistoryCsv(const [], const [product]);
 
-    expect(csv.trim(), 'Data,Tipo,Produto,Quantidade');
+    expect(csv.trim(), 'Data,Tipo,Consumível,Quantidade');
   });
 
   test('the B9 events export has a reason column for corrections', () {

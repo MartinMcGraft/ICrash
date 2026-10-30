@@ -464,7 +464,7 @@ the A6 lot line). The full list and the reason for each is in REVIEW_2026-10-30.
   second language. After editing either file, run `flutter gen-l10n`; the output goes to
   `lib/src/common/l10n/`.
 - Use ICU plurals for counts.
-- **Terminology (D19, 30 Oct):** never "Produto" in the UI. Short form **Consumível**
+- **Terminology (D19, done 30 Oct):** never "Produto" in the UI, the PDFs or the CSV. Short form **Consumível**
   (EN "Consumable"); long form **Consumível clínico** (EN "Clinical consumable") for titles.
   Code names (`Product`) don't change.
 - CSV/PDF exports stay in Portuguese whatever the UI language.

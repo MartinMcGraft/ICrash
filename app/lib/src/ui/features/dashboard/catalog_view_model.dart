@@ -115,7 +115,10 @@ class CatalogViewModel extends ViewModel {
       final name = cell(0);
       if (name == null) continue;
       final lower = name.toLowerCase();
-      if (lower == 'nome' || lower == 'name' || lower == 'produto' || lower == 'product') continue;
+      // A header line is skipped: the current one ("consumível", D19) and the
+      // older "produto" / "product" / "nome" / "name".
+      const headers = {'nome', 'name', 'consumível', 'consumivel', 'consumable', 'produto', 'product'};
+      if (headers.contains(lower)) continue;
       lines.add(CatalogImportLine(
         name: name,
         unitDescription: cell(1),

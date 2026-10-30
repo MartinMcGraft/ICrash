@@ -74,7 +74,7 @@ void main() {
 
     final summaries = summarizeByProduct(events, const []);
 
-    expect(summaries.single.productName, 'Produto removido');
+    expect(summaries.single.productName, 'Consumível removido');
   });
 
   test('an empty event list yields no summaries', () {

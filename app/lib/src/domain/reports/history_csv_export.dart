@@ -12,12 +12,12 @@ String buildHistoryCsv(List<UsageEvent> events, List<Product> products) {
     for (final product in products) {
       if (product.id == productId) return product.name;
     }
-    return 'Produto removido';
+    return 'Consumível removido';
   }
 
   final buffer = StringBuffer();
   buffer.writeln(
-    ['Data', 'Tipo', 'Produto', 'Quantidade'].map(_csvCell).join(','),
+    ['Data', 'Tipo', 'Consumível', 'Quantidade'].map(_csvCell).join(','),
   );
   for (final event in events) {
     buffer.writeln(
@@ -86,7 +86,7 @@ class EventCsvRow {
 String buildEventsCsv(List<EventCsvRow> rows) {
   String cell(String v) => v.contains(';') || v.contains('"') || v.contains('\n') ? '"${v.replaceAll('"', '""')}"' : v;
   final buffer = StringBuffer()
-    ..writeln(['Data', 'Carrinho', 'Local', 'Produto', 'Tipo', 'Quantidade', 'Utilizador', 'Motivo'].join(';'));
+    ..writeln(['Data', 'Carrinho', 'Local', 'Consumível', 'Tipo', 'Quantidade', 'Utilizador', 'Motivo'].join(';'));
   for (final r in rows) {
     buffer.writeln([
       r.when == null ? '' : _formatDateTime(r.when!),

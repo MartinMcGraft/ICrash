@@ -146,7 +146,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get duplicateCartDescription =>
-      'Cria um novo carro com as mesmas gavetas e slots. Não copia produtos, stock nem histórico.';
+      'Cria um novo carro com as mesmas gavetas e slots. Não copia consumíveis, stock nem histórico.';
 
   @override
   String get duplicateCartNameLabel => 'Nome do novo carro';
@@ -158,7 +158,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get editCartStatusLabel => 'Estado';
 
   @override
-  String get createProductTitle => 'Novo produto';
+  String get createProductTitle => 'Novo consumível clínico';
 
   @override
   String get createProductNameLabel => 'Nome';
@@ -254,19 +254,20 @@ class AppLocalizationsPt extends AppLocalizations {
       'Sem ligação à internet — a mostrar dados guardados localmente.';
 
   @override
-  String get productsScreenTitle => 'Produtos';
+  String get productsScreenTitle => 'Consumíveis clínicos';
 
   @override
   String get productsCreateError =>
-      'Não foi possível criar o produto. Tente novamente.';
+      'Não foi possível criar o consumível. Tente novamente.';
 
   @override
   String productsLoadError(Object error) {
-    return 'Não foi possível carregar os produtos: $error';
+    return 'Não foi possível carregar os consumíveis: $error';
   }
 
   @override
-  String get productsEmpty => 'Ainda não existem produtos nesta instituição.';
+  String get productsEmpty =>
+      'Ainda não existem consumíveis nesta instituição.';
 
   @override
   String get membersScreenTitle => 'Membros';
@@ -312,14 +313,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get responsibleUsersTitle => 'Responsáveis pelo carro';
 
   @override
-  String get productSearchHint => 'Nome do produto ou GTIN';
+  String get productSearchHint => 'Nome do consumível ou GTIN';
 
   @override
   String get productSearchPrompt =>
-      'Escreva o nome de um produto para o encontrar neste carro.';
+      'Escreva o nome de um consumível para o encontrar neste carro.';
 
   @override
-  String get productSearchEmpty => 'Nenhum produto encontrado neste carro.';
+  String get productSearchEmpty => 'Nenhum consumível encontrado neste carro.';
 
   @override
   String get actionEdit => 'Editar';
@@ -328,7 +329,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get actionShowQrCode => 'Mostrar código QR';
 
   @override
-  String get actionSearchProduct => 'Pesquisar produto';
+  String get actionSearchProduct => 'Pesquisar consumível';
 
   @override
   String get actionResponsible => 'Responsáveis';
@@ -407,7 +408,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get summaryDialogTitle => 'Resumo';
 
   @override
-  String get summaryGroupProduct => 'Produto';
+  String get summaryGroupProduct => 'Consumível';
 
   @override
   String get summaryGroupCart => 'Carro';
@@ -438,7 +439,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get productRemoved => 'Produto removido';
+  String get productRemoved => 'Consumível removido';
 
   @override
   String get cartRemoved => 'Carro removido';
@@ -476,11 +477,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get assignConflictError =>
-      'Este produto já está atribuído a outro slot deste carro.';
+      'Este consumível já está atribuído a outro slot deste carro.';
 
   @override
   String get assignGenericError =>
-      'Não foi possível atribuir o produto. Tente novamente.';
+      'Não foi possível atribuir o consumível. Tente novamente.';
 
   @override
   String get consumeExceedsError =>
@@ -499,11 +500,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get gs1UnknownGtin =>
-      'GTIN não reconhecido no catálogo — não foi associado a nenhum produto.';
+      'GTIN não reconhecido no catálogo — não foi associado a nenhum consumível.';
 
   @override
   String gs1WrongProductWarning(String productName) {
-    return 'Atenção: este código corresponde a \"$productName\", não ao produto deste slot.';
+    return 'Atenção: este código corresponde a \"$productName\", não ao consumível deste slot.';
   }
 
   @override
@@ -518,17 +519,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get emptySlotTitle => 'Slot vazio';
 
   @override
-  String get emptySlotMessage => 'Este slot ainda não tem produto atribuído.';
+  String get emptySlotMessage =>
+      'Este slot ainda não tem consumível atribuído.';
 
   @override
-  String get assignDialogTitle => 'Atribuir produto';
+  String get assignDialogTitle => 'Atribuir consumível';
 
   @override
   String get noProductsMessage =>
-      'Crie primeiro um produto no catálogo da instituição.';
+      'Crie primeiro um consumível no catálogo da instituição.';
 
   @override
-  String get productLabel => 'Produto';
+  String get productLabel => 'Consumível';
 
   @override
   String get initialQuantityLabel => 'Quantidade inicial';
@@ -537,7 +539,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get targetQuantityLabel => 'Quantidade alvo';
 
   @override
-  String get chooseProductValidation => 'Escolha um produto';
+  String get chooseProductValidation => 'Escolha um consumível';
 
   @override
   String get actionAssign => 'Atribuir';
@@ -1015,7 +1017,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String drawerGridLong(int rows, int columns, int positions, int withProduct) {
-    return '$rows × $columns · $positions posições · $withProduct com produto';
+    return '$rows × $columns · $positions posições · $withProduct com consumível';
   }
 
   @override
@@ -1053,7 +1055,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get autoStateRule =>
-      'Regra automática (quando ativa): produto expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.';
+      'Regra automática (quando ativa): consumível expirado ou em falta → Reposição necessária; verificação mensal com mais de 31 dias → Verificação em atraso.';
 
   @override
   String get printLabel => 'Imprimir etiqueta';
@@ -1075,7 +1077,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get drawerSelectHint =>
-      'Toque numa posição para ver o produto, a quantidade e a validade.';
+      'Toque numa posição para ver o consumível, a quantidade e a validade.';
 
   @override
   String slotPositionInDrawer(String position, int drawer) {
@@ -1118,11 +1120,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get changeProductAction => 'Trocar produto';
+  String get changeProductAction => 'Trocar consumível';
 
   @override
   String get changeProductConfirm =>
-      'O produto atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.';
+      'O consumível atual sai desta posição juntamente com os lotes registados. O histórico de consumos mantém-se.';
 
   @override
   String panelSubtitle(
@@ -1177,7 +1179,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get monthlyCheckEmptyDrawer =>
-      'Esta gaveta não tem produtos atribuídos.';
+      'Esta gaveta não tem consumíveis atribuídos.';
 
   @override
   String expiresOn(String date) {
@@ -1398,10 +1400,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get undoLast => 'Desfazer último';
 
   @override
-  String get scanProductCaption => 'Aponte para o código do produto';
+  String get scanProductCaption => 'Aponte para o código do consumível';
 
   @override
-  String get scanModeProduct => 'Produto';
+  String get scanModeProduct => 'Consumível';
 
   @override
   String get scanModeCart => 'Carro';
@@ -1424,7 +1426,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get scanReplenishThis => 'Repor este produto';
+  String get scanReplenishThis => 'Repor este consumível';
 
   @override
   String get scanEnterManually => 'Inserir manualmente';
@@ -1444,7 +1446,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get scanNotInAnyCart =>
-      'Este produto não está atribuído a nenhum carro a que tenha acesso.';
+      'Este consumível não está atribuído a nenhum carro a que tenha acesso.';
 
   @override
   String get exportReport => 'Exportar relatório';
@@ -1621,7 +1623,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get columnPositions => 'Posições';
 
   @override
-  String get columnWithProduct => 'Com produto';
+  String get columnWithProduct => 'Com consumível';
 
   @override
   String get editGrid => 'Editar grelha';
@@ -1658,8 +1660,8 @@ class AppLocalizationsPt extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count posições perdem o produto, que fica em “sem posição” até ser reatribuído.',
-      one: '1 posição perde o produto, que fica em “sem posição” até ser reatribuído.',
+          '$count posições perdem o consumível, que fica em “sem posição” até ser reatribuído.',
+      one: '1 posição perde o consumível, que fica em “sem posição” até ser reatribuído.',
     );
     return '$_temp0';
   }
@@ -1675,7 +1677,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String orphansTitle(int count) {
-    return 'Produtos sem posição ($count)';
+    return 'Consumíveis sem posição ($count)';
   }
 
   @override
@@ -1694,16 +1696,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get positionSelectHint =>
-      'Selecione uma posição para configurar o produto.';
+      'Selecione uma posição para configurar o consumível.';
 
   @override
   String get gridUnsavedHint => 'Guarde a grelha antes de configurar posições.';
 
   @override
-  String get chooseProduct => 'Escolher produto';
+  String get chooseProduct => 'Escolher consumível';
 
   @override
-  String get catalogNoMatches => 'Nenhum produto corresponde à pesquisa.';
+  String get catalogNoMatches => 'Nenhum consumível corresponde à pesquisa.';
 
   @override
   String get expiryWarningDaysLabel => 'Aviso de validade (dias)';
@@ -1726,8 +1728,8 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count produtos',
-      one: '1 produto',
+      other: '$count consumíveis',
+      one: '1 consumível',
     );
     String _temp1 = intl.Intl.pluralLogic(
       carts,
@@ -1743,7 +1745,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get importCsvHelp =>
-      'Cole uma linha por produto: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os produtos com nome ou GTIN já existentes são ignorados.';
+      'Cole uma linha por consumível: nome; apresentação; GTIN; categoria; aviso de validade (dias). Os consumíveis com nome ou GTIN já existentes são ignorados.';
 
   @override
   String get importCsvHint => 'Cole aqui o conteúdo do ficheiro CSV';
@@ -1756,17 +1758,17 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       created,
       locale: localeName,
-      other: '$created produtos importados',
-      one: '1 produto importado',
+      other: '$created consumíveis importados',
+      one: '1 consumível importado',
     );
     return '$_temp0 · $skipped ignorados.';
   }
 
   @override
-  String get newProduct => 'Novo produto';
+  String get newProduct => 'Novo consumível';
 
   @override
-  String get editProduct => 'Editar produto';
+  String get editProduct => 'Editar consumível';
 
   @override
   String get catalogSearchByNameOrGtin => 'Pesquisar por nome ou GTIN';
@@ -1818,14 +1820,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String productCreated(String name) {
-    return 'Produto “$name” criado.';
+    return 'Consumível “$name” criado.';
   }
 
   @override
-  String get productUpdated => 'Produto atualizado.';
+  String get productUpdated => 'Consumível atualizado.';
 
   @override
-  String get gtinTaken => 'Já existe um produto com este GTIN.';
+  String get gtinTaken => 'Já existe um consumível com este GTIN.';
 
   @override
   String get gtinInvalid => 'O GTIN tem 8, 12, 13 ou 14 algarismos.';
@@ -2184,7 +2186,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get statPendingSignatures => 'Por assinar';
 
   @override
-  String get statTopProducts => 'Produtos mais consumidos';
+  String get statTopProducts => 'Consumíveis mais usados';
 
   @override
   String get statByCart => 'Por carrinho';
@@ -2242,7 +2244,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get drawerNumberSaved => 'Número da gaveta alterado.';
 
   @override
-  String get slotTaken => 'Esta posição já tem um produto.';
+  String get slotTaken => 'Esta posição já tem um consumível.';
 
   @override
   String get signOnlyAuthorTitle => 'Só quem fez a verificação pode assinar';
@@ -2272,7 +2274,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get slotInUseHint =>
-      'Esta posição já tem histórico: mantém o seu produto e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.';
+      'Esta posição já tem histórico: mantém o seu consumível e não pode ser limpa. A estrutura de um carrinho em uso não pode ser alterada.';
 
   @override
   String get drawerInUseHint =>

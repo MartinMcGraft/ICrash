@@ -145,7 +145,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duplicateCartDescription =>
-      'Creates a new cart with the same drawers and slots. Does not copy products, stock, or history.';
+      'Creates a new cart with the same drawers and slots. Does not copy consumables, stock, or history.';
 
   @override
   String get duplicateCartNameLabel => 'New cart\'s name';
@@ -157,7 +157,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editCartStatusLabel => 'Status';
 
   @override
-  String get createProductTitle => 'New product';
+  String get createProductTitle => 'New clinical consumable';
 
   @override
   String get createProductNameLabel => 'Name';
@@ -251,18 +251,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'No internet connection — showing locally saved data.';
 
   @override
-  String get productsScreenTitle => 'Products';
+  String get productsScreenTitle => 'Clinical consumables';
 
   @override
-  String get productsCreateError => 'Couldn\'t create the product. Try again.';
+  String get productsCreateError =>
+      'Couldn\'t create the consumable. Try again.';
 
   @override
   String productsLoadError(Object error) {
-    return 'Couldn\'t load products: $error';
+    return 'Couldn\'t load consumables: $error';
   }
 
   @override
-  String get productsEmpty => 'There are no products in this institution yet.';
+  String get productsEmpty =>
+      'There are no consumables in this institution yet.';
 
   @override
   String get membersScreenTitle => 'Members';
@@ -306,14 +308,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get responsibleUsersTitle => 'Cart\'s responsible users';
 
   @override
-  String get productSearchHint => 'Product name or GTIN';
+  String get productSearchHint => 'Consumable name or GTIN';
 
   @override
   String get productSearchPrompt =>
-      'Type a product\'s name to find it in this cart.';
+      'Type a consumable\'s name to find it in this cart.';
 
   @override
-  String get productSearchEmpty => 'No product found in this cart.';
+  String get productSearchEmpty => 'No consumable found in this cart.';
 
   @override
   String get actionEdit => 'Edit';
@@ -322,7 +324,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionShowQrCode => 'Show QR code';
 
   @override
-  String get actionSearchProduct => 'Search product';
+  String get actionSearchProduct => 'Search consumable';
 
   @override
   String get actionResponsible => 'Responsible users';
@@ -400,7 +402,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryDialogTitle => 'Summary';
 
   @override
-  String get summaryGroupProduct => 'Product';
+  String get summaryGroupProduct => 'Consumable';
 
   @override
   String get summaryGroupCart => 'Cart';
@@ -431,7 +433,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get productRemoved => 'Removed product';
+  String get productRemoved => 'Removed consumable';
 
   @override
   String get cartRemoved => 'Removed cart';
@@ -469,10 +471,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assignConflictError =>
-      'This product is already assigned to another slot in this cart.';
+      'This consumable is already assigned to another slot in this cart.';
 
   @override
-  String get assignGenericError => 'Couldn\'t assign the product. Try again.';
+  String get assignGenericError =>
+      'Couldn\'t assign the consumable. Try again.';
 
   @override
   String get consumeExceedsError =>
@@ -491,11 +494,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gs1UnknownGtin =>
-      'GTIN not recognized in the catalogue — it wasn\'t linked to any product.';
+      'GTIN not recognized in the catalogue — it wasn\'t linked to any consumable.';
 
   @override
   String gs1WrongProductWarning(String productName) {
-    return 'Warning: this code matches \"$productName\", not this slot\'s product.';
+    return 'Warning: this code matches \"$productName\", not this slot\'s consumable.';
   }
 
   @override
@@ -509,17 +512,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emptySlotMessage =>
-      'This slot doesn\'t have a product assigned yet.';
+      'This slot doesn\'t have a consumable assigned yet.';
 
   @override
-  String get assignDialogTitle => 'Assign product';
+  String get assignDialogTitle => 'Assign consumable';
 
   @override
   String get noProductsMessage =>
-      'First create a product in the institution\'s catalogue.';
+      'First create a consumable in the institution\'s catalogue.';
 
   @override
-  String get productLabel => 'Product';
+  String get productLabel => 'Consumable';
 
   @override
   String get initialQuantityLabel => 'Initial quantity';
@@ -528,7 +531,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get targetQuantityLabel => 'Target quantity';
 
   @override
-  String get chooseProductValidation => 'Choose a product';
+  String get chooseProductValidation => 'Choose a consumable';
 
   @override
   String get actionAssign => 'Assign';
@@ -997,7 +1000,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String drawerGridLong(int rows, int columns, int positions, int withProduct) {
-    return '$rows × $columns · $positions positions · $withProduct with product';
+    return '$rows × $columns · $positions positions · $withProduct with consumable';
   }
 
   @override
@@ -1035,7 +1038,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoStateRule =>
-      'Automatic rule (when on): expired or missing product → Replenishment required; monthly check older than 31 days → Check overdue.';
+      'Automatic rule (when on): expired or missing consumable → Replenishment required; monthly check older than 31 days → Check overdue.';
 
   @override
   String get printLabel => 'Print label';
@@ -1057,7 +1060,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drawerSelectHint =>
-      'Tap a position to see its product, quantity and expiry.';
+      'Tap a position to see its consumable, quantity and expiry.';
 
   @override
   String slotPositionInDrawer(String position, int drawer) {
@@ -1100,11 +1103,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get changeProductAction => 'Change product';
+  String get changeProductAction => 'Change consumable';
 
   @override
   String get changeProductConfirm =>
-      'The current product leaves this position together with its recorded lots. Consumption history is kept.';
+      'The current consumable leaves this position together with its recorded lots. Consumption history is kept.';
 
   @override
   String panelSubtitle(
@@ -1158,7 +1161,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get monthlyCheckEmptyDrawer => 'This drawer has no assigned products.';
+  String get monthlyCheckEmptyDrawer =>
+      'This drawer has no assigned consumables.';
 
   @override
   String expiresOn(String date) {
@@ -1372,10 +1376,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get undoLast => 'Undo last';
 
   @override
-  String get scanProductCaption => 'Point at the product code';
+  String get scanProductCaption => 'Point at the consumable code';
 
   @override
-  String get scanModeProduct => 'Product';
+  String get scanModeProduct => 'Consumable';
 
   @override
   String get scanModeCart => 'Cart';
@@ -1398,7 +1402,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get scanReplenishThis => 'Replenish this product';
+  String get scanReplenishThis => 'Replenish this consumable';
 
   @override
   String get scanEnterManually => 'Enter manually';
@@ -1419,7 +1423,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanNotInAnyCart =>
-      'This product is not assigned to any cart you can access.';
+      'This consumable is not assigned to any cart you can access.';
 
   @override
   String get exportReport => 'Export report';
@@ -1596,7 +1600,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get columnPositions => 'Positions';
 
   @override
-  String get columnWithProduct => 'With product';
+  String get columnWithProduct => 'With consumable';
 
   @override
   String get editGrid => 'Edit grid';
@@ -1633,8 +1637,8 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count positions lose their product, which stays “without position” until reassigned.',
-      one: '1 position loses its product, which stays “without position” until reassigned.',
+          '$count positions lose their consumable, which stays “without position” until reassigned.',
+      one: '1 position loses its consumable, which stays “without position” until reassigned.',
     );
     return '$_temp0';
   }
@@ -1650,7 +1654,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String orphansTitle(int count) {
-    return 'Products without a position ($count)';
+    return 'Consumables without a position ($count)';
   }
 
   @override
@@ -1669,16 +1673,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get positionSelectHint =>
-      'Select a position to configure its product.';
+      'Select a position to configure its consumable.';
 
   @override
   String get gridUnsavedHint => 'Save the grid before configuring positions.';
 
   @override
-  String get chooseProduct => 'Choose product';
+  String get chooseProduct => 'Choose consumable';
 
   @override
-  String get catalogNoMatches => 'No product matches the search.';
+  String get catalogNoMatches => 'No consumable matches the search.';
 
   @override
   String get expiryWarningDaysLabel => 'Expiry warning (days)';
@@ -1701,8 +1705,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count products',
-      one: '1 product',
+      other: '$count consumables',
+      one: '1 consumable',
     );
     String _temp1 = intl.Intl.pluralLogic(
       carts,
@@ -1718,7 +1722,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importCsvHelp =>
-      'Paste one line per product: name; presentation; GTIN; category; expiry warning (days). Products whose name or GTIN already exists are skipped.';
+      'Paste one line per consumable: name; presentation; GTIN; category; expiry warning (days). Consumables whose name or GTIN already exists are skipped.';
 
   @override
   String get importCsvHint => 'Paste the CSV file content here';
@@ -1731,17 +1735,17 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       created,
       locale: localeName,
-      other: '$created products imported',
-      one: '1 product imported',
+      other: '$created consumables imported',
+      one: '1 consumable imported',
     );
     return '$_temp0 · $skipped skipped.';
   }
 
   @override
-  String get newProduct => 'New product';
+  String get newProduct => 'New consumable';
 
   @override
-  String get editProduct => 'Edit product';
+  String get editProduct => 'Edit consumable';
 
   @override
   String get catalogSearchByNameOrGtin => 'Search by name or GTIN';
@@ -1793,14 +1797,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String productCreated(String name) {
-    return 'Product “$name” created.';
+    return 'Consumable “$name” created.';
   }
 
   @override
-  String get productUpdated => 'Product updated.';
+  String get productUpdated => 'Consumable updated.';
 
   @override
-  String get gtinTaken => 'A product with this GTIN already exists.';
+  String get gtinTaken => 'A consumable with this GTIN already exists.';
 
   @override
   String get gtinInvalid => 'A GTIN has 8, 12, 13 or 14 digits.';
@@ -2158,7 +2162,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statPendingSignatures => 'To sign';
 
   @override
-  String get statTopProducts => 'Most consumed products';
+  String get statTopProducts => 'Most used consumables';
 
   @override
   String get statByCart => 'By cart';
@@ -2215,7 +2219,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drawerNumberSaved => 'Drawer number changed.';
 
   @override
-  String get slotTaken => 'This position already has a product.';
+  String get slotTaken => 'This position already has a consumable.';
 
   @override
   String get signOnlyAuthorTitle =>
@@ -2246,7 +2250,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get slotInUseHint =>
-      'This position already has history: it keeps its product and can\'t be cleared. The structure of a cart in use can\'t be changed.';
+      'This position already has history: it keeps its consumable and can\'t be cleared. The structure of a cart in use can\'t be changed.';
 
   @override
   String get drawerInUseHint =>
