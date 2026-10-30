@@ -450,10 +450,14 @@ reason for each is in REVIEW_2026-10-30.md §4.
   pager instead of scrolling).
 - **Enforced by:** `test/ui/layout_fit_test.dart`, which renders screens at 844×390,
   1280×800 and 1440×900 with heavy data and fails on overflow or a forbidden scroll.
-- **Target (30 Oct):** also iPhone 16 landscape **with safe-area insets** (852×393, 59 px
-  left/right, 21 px bottom) and iPad mini landscape (1133×744), for every A-screen including
-  A5, A6, A8 and A9 (signed and unsigned). Real devices overflowed where the test passed
-  (RV-5–RV-9, RV-13).
+- **Real devices** (30 Oct): the same test renders A1, A4, A5, A6, A8 and A9 as an
+  **iPhone 16** (852×393, insets 59 px left/right, 21 px bottom) and an **iPad mini**
+  (1133×744, 24 top, 20 bottom), inside `AppShellFrame` (the App rail + safe area, shared
+  with `AppShell`). It also fails when a button label is cut with "…".
+- **Safe area:** the rail is `appRailWidth` = 72/96 px **plus the left inset**; content
+  stays out of the notch and the home indicator.
+- **Side panels on phones:** use `PanelColumn` (scrolls on phones, `Spacer` becomes a
+  gap). Pick long/short labels with `textFits` instead of letting text wrap or cut.
 
 ### Localisation
 - PT-PT is the default and the template (`lib/l10n/app_pt.arb`), and English is the

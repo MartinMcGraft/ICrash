@@ -133,6 +133,30 @@ class SidePanel extends StatelessWidget {
   }
 }
 
+/// Content of a [SidePanel]: a column whose [Spacer]s push the actions to the
+/// bottom. A phone's panel can be shorter than its content, so there it
+/// scrolls vertically and each [Spacer] becomes a fixed gap, instead of
+/// overflowing or hiding actions (RV-7–RV-9, D21). Tablets keep the plain
+/// column, which must fit.
+class PanelColumn extends StatelessWidget {
+  const PanelColumn({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isCompactHeight(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+    }
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [for (final child in children) child is Spacer ? const SizedBox(height: IcSpace.s16) : child],
+      ),
+    );
+  }
+}
+
 class TabItem<T> {
   const TabItem(this.value, this.label);
   final T value;

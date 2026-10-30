@@ -120,22 +120,46 @@ class _Drawers extends StatelessWidget {
                           ),
                           const SizedBox(width: 14),
                           Expanded(
+                            // Phones give the state line more room (it may
+                            // take two lines) and drop the grid line (D21:
+                            // information, not an action).
+                            flex: compact ? 2 : 3,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(l10n.drawerShort(row.number), style: IcText.labelL, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                const SizedBox(height: 2),
-                                Text(
-                                  compact
-                                      ? l10n.drawerGridShort(row.drawer.rows, row.drawer.columns, row.health.positions)
-                                      : l10n.drawerGridLong(row.drawer.rows, row.drawer.columns, row.health.positions, row.health.withProduct),
-                                  style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
-                                ),
+                                if (!compact) ...[
+                                  const SizedBox(height: 2),
+                                  // One line only: the long form when it fits,
+                                  // otherwise the short one (RV-13, iPad mini).
+                                  LayoutBuilder(
+                                    builder: (context, box) {
+                                      final style = IcText.bodyS.copyWith(color: IcColors.textSecondary);
+                                      final long = l10n.drawerGridLong(
+                                        row.drawer.rows,
+                                        row.drawer.columns,
+                                        row.health.positions,
+                                        row.health.withProduct,
+                                      );
+                                      final short = l10n.drawerGridShort(row.drawer.rows, row.drawer.columns, row.health.positions);
+                                      final useLong = textFits(context, long, style, box.maxWidth);
+                                      return Text(useLong ? long : short, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
+                                    },
+                                  ),
+                                ],
                               ],
                             ),
                           ),
                           const SizedBox(width: IcSpace.s12),
-                          Flexible(child: ToneLine(tone: tone, icon: icon, text: text)),
+                          // State and arrow sit at the right end of the row (RV-22).
+                          Flexible(
+                            flex: compact ? 3 : 2,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: ToneLine(tone: tone, icon: icon, text: text),
+                            ),
+                          ),
                           const SizedBox(width: IcSpace.s8),
                           const IcIconView(IcIcon.seguinte, color: IcColors.textSecondary),
                         ],

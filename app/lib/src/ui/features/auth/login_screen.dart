@@ -63,8 +63,25 @@ class _LoginScreenState extends State<LoginScreen> {
       create: (services) => LoginViewModel(auth: services.auth, onSignedIn: widget.onSignedIn),
       builder: (context, vm) {
         final width = MediaQuery.sizeOf(context).width;
-        final brandWidth = (width * 0.4).clamp(220.0, 520.0);
         final compact = isCompactHeight(context);
+        // Figma A1: brand panel 280 px on phones, 40 % (up to 520) on tablets.
+        final brandWidth = compact ? 280.0 : (width * 0.4).clamp(220.0, 520.0);
+        final email = LabeledField(
+          label: l10n.loginEmailLabel,
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          validator: (v) => (v == null || v.trim().isEmpty) ? l10n.loginEmailRequired : null,
+        );
+        final password = LabeledField(
+          label: l10n.loginPasswordLabel,
+          controller: _password,
+          obscure: true,
+          autofillHints: const [AutofillHints.password],
+          validator: (v) => (v == null || v.isEmpty) ? l10n.loginPasswordRequired : null,
+          onSubmitted: (_) => _submit(vm),
+        );
+        final gap = SizedBox(height: compact ? IcSpace.s8 : IcSpace.s16);
         return Scaffold(
           body: Row(
             children: [
@@ -74,41 +91,47 @@ class _LoginScreenState extends State<LoginScreen> {
                   left: false,
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(IcSpace.s24),
+                      padding: EdgeInsets.all(compact ? IcSpace.s16 : IcSpace.s24),
+                      // 460 px (Figma A1 mobile) so "Desbloquear com PIN" and
+                      // "Entrar no carro" fit side by side, on tablets too (RV-6).
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 400),
+                        constraints: const BoxConstraints(maxWidth: 460),
                         child: AutofillGroup(
                           child: Form(
                             key: _formKey,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Semantics(header: true, child: Text(l10n.loginTitle, style: IcText.titleL)),
-                                const SizedBox(height: IcSpace.s16),
-                                LabeledField(
-                                  label: l10n.loginEmailLabel,
-                                  controller: _email,
-                                  keyboardType: TextInputType.emailAddress,
-                                  autofillHints: const [AutofillHints.email],
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? l10n.loginEmailRequired : null,
+                                Semantics(
+                                  header: true,
+                                  child: Text(l10n.loginTitle, style: compact ? IcText.titleM : IcText.titleL),
                                 ),
-                                const SizedBox(height: IcSpace.s16),
-                                LabeledField(
-                                  label: l10n.loginPasswordLabel,
-                                  controller: _password,
-                                  obscure: true,
-                                  autofillHints: const [AutofillHints.password],
-                                  validator: (v) => (v == null || v.isEmpty) ? l10n.loginPasswordRequired : null,
-                                  onSubmitted: (_) => _submit(vm),
-                                ),
+                                gap,
+                                // Figma A1 mobile: e-mail and password side by
+                                // side, so the form fits a phone without
+                                // scrolling (RV-5).
+                                if (compact)
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(child: email),
+                                      const SizedBox(width: IcSpace.s8),
+                                      Expanded(child: password),
+                                    ],
+                                  )
+                                else ...[
+                                  email,
+                                  gap,
+                                  password,
+                                ],
                                 if (vm.error != null) ...[
                                   const SizedBox(height: IcSpace.s12),
                                   Notice(kind: NoticeKind.critical, title: _errorText(l10n, vm.error!)),
                                 ],
-                                const SizedBox(height: IcSpace.s16),
+                                gap,
                                 IcButton(
                                   label: l10n.loginSubmit,
-                                  size: IcButtonSize.l,
+                                  size: compact ? IcButtonSize.m : IcButtonSize.l,
                                   expand: true,
                                   busy: vm.busy,
                                   onPressed: () => _submit(vm),
@@ -120,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   l10n.credentialsContactAdmin,
                                   style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
                                 ),
-                                const SizedBox(height: IcSpace.s12),
+                                SizedBox(height: compact ? IcSpace.s8 : IcSpace.s12),
                                 Row(
                                   children: [
                                     Expanded(
@@ -132,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         onPressed: widget.savedSessionAvailable ? widget.onUsePin : () => _needsSavedSession(l10n),
                                       ),
                                     ),
-                                    const SizedBox(width: IcSpace.s12),
+                                    SizedBox(width: compact ? IcSpace.s8 : IcSpace.s12),
                                     Expanded(
                                       child: IcButton(
                                         label: l10n.loginCartLogin,

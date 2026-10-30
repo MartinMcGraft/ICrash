@@ -1247,6 +1247,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get finishCheck => 'Concluir e gerar relatório';
 
   @override
+  String get finishCheckShort => 'Concluir';
+
+  @override
   String get reportKindMonthlyCheck => 'Verificação mensal';
 
   @override

@@ -18,6 +18,33 @@ import 'shell_navigation.dart';
 
 enum AppTab { carts, reports, scan }
 
+/// Width of the App rail: 96 px on tablet, 72 px on phone, plus the left
+/// safe-area inset (the notch side of a landscape iPhone), so the rail's own
+/// content keeps its full width (RV-14).
+double appRailWidth(BuildContext context) =>
+    (isCompactHeight(context) ? IcSize.railPhone : IcSize.railTablet) + MediaQuery.paddingOf(context).left;
+
+/// The App shell's layout without its state: the rail on the left and the
+/// section content on the right, inside the safe area. Used by [AppShell] and
+/// by the layout tests, so the tests measure what a device really shows.
+class AppShellFrame extends StatelessWidget {
+  const AppShellFrame({super.key, required this.rail, required this.child});
+
+  final Widget rail;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: appRailWidth(context), child: rail),
+        Expanded(child: SafeArea(left: false, child: child)),
+      ],
+    );
+  }
+}
+
 /// The App (Android/iOS/iPadOS, landscape): permanent side rail — 96 px with
 /// labels on tablet, 72 px icons on phone (Figma "Barra lateral · App") —
 /// and one navigation stack per tab.
@@ -76,32 +103,25 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
     return ShellNavigationScope(
       navigation: this,
       child: Scaffold(
-        body: Row(
-          children: [
-            _AppRail(tab: _tab, emergency: emergency, onSelect: _select),
-            Expanded(
-              child: SafeArea(
-                left: false,
-                child: IndexedStack(
-                  index: _tab.index,
-                  children: [
-                    SectionNavigator(
-                      navigatorKey: _keys[AppTab.carts]!,
-                      root: (_) => session.scopedCartId != null
-                          ? CartScreen(cartId: session.scopedCartId!, isRoot: true)
-                          : const CartsScreen(),
-                    ),
-                    SectionNavigator(navigatorKey: _keys[AppTab.reports]!, root: (_) => const ReportsListScreen()),
-                    // Built only while visible: the scanner owns the camera.
-                    if (_tab == AppTab.scan)
-                      SectionNavigator(navigatorKey: _keys[AppTab.scan]!, root: (_) => const ScannerScreen())
-                    else
-                      const SizedBox.shrink(),
-                  ],
-                ),
+        body: AppShellFrame(
+          rail: _AppRail(tab: _tab, emergency: emergency, onSelect: _select),
+          child: IndexedStack(
+            index: _tab.index,
+            children: [
+              SectionNavigator(
+                navigatorKey: _keys[AppTab.carts]!,
+                root: (_) => session.scopedCartId != null
+                    ? CartScreen(cartId: session.scopedCartId!, isRoot: true)
+                    : const CartsScreen(),
               ),
-            ),
-          ],
+              SectionNavigator(navigatorKey: _keys[AppTab.reports]!, root: (_) => const ReportsListScreen()),
+              // Built only while visible: the scanner owns the camera.
+              if (_tab == AppTab.scan)
+                SectionNavigator(navigatorKey: _keys[AppTab.scan]!, root: (_) => const ScannerScreen())
+              else
+                const SizedBox.shrink(),
+            ],
+          ),
         ),
       ),
     );
@@ -124,7 +144,6 @@ class _AppRail extends StatelessWidget {
     final phone = isCompactHeight(context);
     final sync = AppServicesScope.of(context).sync;
     return Container(
-      width: phone ? IcSize.railPhone : IcSize.railTablet,
       color: emergency ? IcColors.emergencyBgDeep : IcColors.bgSidebar,
       child: SafeArea(
         right: false,

@@ -924,6 +924,8 @@
   "@previousDrawer": {},
   "finishCheck": "Concluir e gerar relatório",
   "@finishCheck": {},
+  "finishCheckShort": "Concluir",
+  "@finishCheckShort": {},
   "reportKindMonthlyCheck": "Verificação mensal",
   "@reportKindMonthlyCheck": {},
   "reportKindEmergency": "Resumo de emergência",

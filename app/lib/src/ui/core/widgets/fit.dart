@@ -27,6 +27,21 @@ FormFactor formFactorOf(BuildContext context) {
 /// allowed.
 bool allowsScroll(BuildContext context) => formFactorOf(context) == FormFactor.phone;
 
+/// Whether [text] fits on one line of [maxWidth] in [style], with the
+/// device's text scale. Used to pick a long or a short label instead of
+/// wrapping or cutting it (RV-13).
+bool textFits(BuildContext context, String text, TextStyle style, double maxWidth) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    maxLines: 1,
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+  )..layout(maxWidth: maxWidth);
+  final fits = !painter.didExceedMaxLines;
+  painter.dispose();
+  return fits;
+}
+
 /// "1–10 de 212  ‹ ›".
 class Pager extends StatelessWidget {
   const Pager({super.key, required this.page, required this.pageSize, required this.total, required this.onPage});

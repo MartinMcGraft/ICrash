@@ -200,8 +200,7 @@ class _SignPanelState extends State<_SignPanel> {
       onPressed: () => downloadReportPdf(context, report),
     );
     if (report.isSigned) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return PanelColumn(
         children: [
           Text(l10n.reportSigned, style: IcText.titleS),
           const SizedBox(height: IcSpace.s12),
@@ -219,8 +218,7 @@ class _SignPanelState extends State<_SignPanel> {
     }
     // DB4: only the person who performed the check may sign it.
     if (!vm.canSign) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return PanelColumn(
         children: [
           Text(l10n.signReport, style: IcText.titleS),
           const SizedBox(height: IcSpace.s12),
@@ -234,8 +232,7 @@ class _SignPanelState extends State<_SignPanel> {
         ],
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return PanelColumn(
       children: [
         Text(l10n.signReport, style: IcText.titleS),
         const SizedBox(height: IcSpace.s8),

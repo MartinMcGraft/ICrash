@@ -582,6 +582,50 @@ check the node again before editing it.
 
 ---
 
+## 30 Oct 2026 device review (`docs/REVIEW_2026-10-30.md`)
+
+Frame ids read on 30 Oct 2026.
+
+### DC-41 · A1 on phones: fields side by side, 460 px form everywhere (RV-5, RV-6)
+- **Where:** A1 p12 `451:263` (already matches: brand 280, fields in one row, form 460);
+  p13 `447:263` → `447:272` (form 400 wide, buttons `447:291`/`447:300` 194 wide); p10/p11
+  wireframes.
+- **What:**
+  - Phones now match p12: brand panel **280 px**, e-mail and password **side by side**,
+    smaller gaps, "Entrar" button 48 high. The form fits an iPhone 16 without scrolling.
+  - Tablets: the form is **460 px** wide (was 400), so "Desbloquear com PIN" and "Entrar
+    no carro" each get about 224 px. At 194 px "Desbloquear com PIN" is cut. Update p13
+    to 460 / 224 px.
+- **Copy:** unchanged.
+- **Components:** Botão (frame only).
+
+### DC-42 · App rail grows by the notch inset (RV-14)
+- **Where:** component **Barra lateral · App** (every A-frame, e.g. p12 `451:399`).
+- **What:** on a landscape iPhone the rail is 72 px **plus the safe-area inset** (59 px
+  on an iPhone 16), so its icons keep their width beside the notch. The content keeps
+  out of the home indicator (21 px at the bottom). Figma frames have no notch, so
+  nothing to draw; note it on the component.
+
+### DC-43 · A5 drawer row: state at the right end; one-line grid text (RV-13, RV-22 part)
+- **Where:** component **Cartão de gaveta** `444:631`; A5 p12 `451:608` → `451:667` …,
+  p13 `447:669` → `447:729` ….
+- **What:**
+  - The state line (e.g. "1 expirado · 2 em falta") and the arrow are **right-aligned**
+    at the end of the row, not in the middle.
+  - The grid line ("5 × 7 · 35 posições · 32 com produto") stays on **one line**: when
+    the long form doesn't fit (iPad mini) it shows the short form "5 × 7 · 35 posições".
+  - Phones: no grid line; the state line gets more room and may take two lines.
+  - The drawer's optional name comes in phase 4 (D20).
+- **Copy:** `drawerGridLong`, `drawerGridShort` (unchanged).
+
+### DC-44 · Side panels scroll on phones (A8, A9) (RV-7–RV-9)
+- **Where:** A8 p12 `451:1317` → `451:1414`; A9 p12 `451:1439` → `451:1521`.
+- **What:** on phones the right-hand panel scrolls vertically when its content is taller
+  than the screen; its bottom actions follow the content instead of being pinned to the
+  bottom. Tablets unchanged. A8's last-drawer button reads **"Concluir"** on phones.
+- **Copy:** new `finishCheckShort` "Concluir" / "Finish".
+- **Note:** A8 is rewritten in phase 5 (D22), which replaces this frame.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -621,3 +665,4 @@ check the node again before editing it.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
+| 30 Oct review (A1, rail, A5, A8, A9) | DC-41 … DC-44 |

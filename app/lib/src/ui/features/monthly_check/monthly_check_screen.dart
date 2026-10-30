@@ -198,8 +198,7 @@ class _Summary extends StatelessWidget {
             Expanded(child: Text(text, style: IcText.labelM.copyWith(color: color))),
           ]),
         );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return PanelColumn(
       children: [
         Text(drawerLabel, style: IcText.titleS),
         const SizedBox(height: IcSpace.s12),
@@ -229,7 +228,8 @@ class _Summary extends StatelessWidget {
         ),
         const SizedBox(height: IcSpace.s12),
         IcButton(
-          label: vm.isLastDrawer ? l10n.finishCheck : l10n.nextDrawer,
+          // Phones: "Concluir", so the label fits the narrower panel (RV-8).
+          label: vm.isLastDrawer ? (compact ? l10n.finishCheckShort : l10n.finishCheck) : l10n.nextDrawer,
           icon: vm.isLastDrawer ? IcIcon.confirmar : IcIcon.seguinte,
           size: compact ? IcButtonSize.m : IcButtonSize.l,
           expand: true,

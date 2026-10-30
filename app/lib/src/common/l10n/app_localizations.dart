@@ -2113,6 +2113,12 @@ abstract class AppLocalizations {
   /// **'Concluir e gerar relatório'**
   String get finishCheck;
 
+  /// No description provided for @finishCheckShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'Concluir'**
+  String get finishCheckShort;
+
   /// No description provided for @reportKindMonthlyCheck.
   ///
   /// In pt, this message translates to:

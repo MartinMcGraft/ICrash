@@ -1222,6 +1222,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get finishCheck => 'Finish and create report';
 
   @override
+  String get finishCheckShort => 'Finish';
+
+  @override
   String get reportKindMonthlyCheck => 'Monthly check';
 
   @override
