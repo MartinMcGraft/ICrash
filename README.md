@@ -196,7 +196,7 @@ three user types, **Super** = `platformSuperAdmin` (the I-Crash team; reaches an
 institution only through a time-limited support grant from its Admin, D18), **Admin** =
 `institutionAdmin` (the institution's IT) and **Manager** = `manager` (a health
 professional, limited to the carts they're registered to). The `user` role is dropped.
-Until the code catches up, `docs/APP.md` §2 says what runs. The 30 Oct device review and
+Implemented in the app and `firestore.rules` on 30 Oct (a stored `user` reads as Manager). The 30 Oct device review and
 its fixes are in `docs/REVIEW_2026-10-30.md`.
 
 ---

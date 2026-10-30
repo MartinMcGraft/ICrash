@@ -23,7 +23,6 @@ String roleText(AppLocalizations l10n, Role role) => switch (role) {
       Role.platformSuperAdmin => l10n.roleSuperAdmin,
       Role.institutionAdmin => l10n.roleInstitutionAdmin,
       Role.manager => l10n.roleManager,
-      Role.user => l10n.roleUser,
     };
 
 String? roleTextFromId(AppLocalizations l10n, String? id) {
@@ -46,4 +45,5 @@ String usageEventText(AppLocalizations l10n, UsageEventType type) => switch (typ
     };
 
 /// Roles an institution admin may give (super admin is provisioned outside the app).
-const assignableRoles = [Role.user, Role.manager, Role.institutionAdmin];
+/// D16: an Admin creates Managers and other Admins; Super is never a membership.
+const assignableRoles = [Role.manager, Role.institutionAdmin];

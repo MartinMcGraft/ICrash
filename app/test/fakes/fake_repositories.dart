@@ -8,6 +8,7 @@ import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/cart_responsible_user.dart';
+import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
@@ -195,6 +196,14 @@ class FakeCartRepository extends UnimplementedFake implements CartRepository {
       if (cart.id == cartId) return cart;
     }
     return null;
+  }
+
+  @override
+  Future<void> updateCartStatus(String institutionId, String cartId, CartStatus status) async {
+    final index = carts.indexWhere((c) => c.id == cartId);
+    if (index == -1) return;
+    carts[index] = carts[index].copyWith(status: status);
+    _emit();
   }
 
   @override

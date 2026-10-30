@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/entities/cart.dart';
 import '../../domain/entities/cart_responsible_user.dart';
+import '../../domain/entities/cart_status.dart';
 import '../../domain/repositories/cart_repository.dart';
+import 'firestore_access.dart';
 import 'firestore_codec.dart';
 import 'firestore_exception_mapper.dart';
 import 'firestore_paths.dart';
@@ -27,10 +29,12 @@ class FirestoreCartRepository implements CartRepository {
     // array-contains <their uid>` (matching the rule's other branch, kept
     // in sync by assignResponsibleUser/removeResponsibleUser below). Which
     // query to run is decided once per call from the caller's own
-    // membership, then the chosen query is watched reactively.
+    // membership, then the chosen query is watched reactively. D16: only an
+    // Admin or Super lists every cart; a Manager lists the carts they're
+    // registered to.
     final collectionRef = _firestore.collection(FirestorePaths.carts(institutionId));
-    return Stream.fromFuture(_isManagerOrAbove(institutionId)).asyncExpand((managerOrAbove) {
-      final query = managerOrAbove ? collectionRef : collectionRef.where('responsibleUserIds', arrayContains: _uid);
+    return Stream.fromFuture(seesWholeInstitution(_firestore, institutionId, _uid)).asyncExpand((all) {
+      final query = all ? collectionRef : collectionRef.where('responsibleUserIds', arrayContains: _uid);
       return query.snapshots();
     }).map((snapshot) => snapshot.docs
             .map((doc) => Cart.fromMap(doc.id, institutionId, normalizeTimestamps(doc.data(), const ['createdAt', 'updatedAt'])))
@@ -38,11 +42,6 @@ class FirestoreCartRepository implements CartRepository {
         .handleError((Object error) => throw mapFirebaseException(error));
   }
 
-  Future<bool> _isManagerOrAbove(String institutionId) async {
-    final doc = await _firestore.collection(FirestorePaths.memberships(institutionId)).doc(_uid).get();
-    final role = doc.data()?['role'] as String?;
-    return role == 'institutionAdmin' || role == 'manager';
-  }
 
   @override
   Future<Cart?> getCart(String institutionId, String cartId) async {
@@ -71,6 +70,19 @@ class FirestoreCartRepository implements CartRepository {
       });
       final created = await ref.get();
       return Cart.fromMap(ref.id, institutionId, normalizeTimestamps(created.data()!, const ['createdAt', 'updatedAt']));
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
+  Future<void> updateCartStatus(String institutionId, String cartId, CartStatus status) async {
+    try {
+      await _firestore.collection(FirestorePaths.carts(institutionId)).doc(cartId).update({
+        'status': status.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': _uid,
+      });
     } catch (error) {
       throw mapFirebaseException(error);
     }

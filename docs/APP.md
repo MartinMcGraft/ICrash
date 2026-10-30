@@ -41,10 +41,10 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 |---|---|
 | Carrinhos (carts) | Visão geral (overview) |
 | Relatórios (reports) | Carrinhos (carts) |
-| Ler código (scan) | Catálogo: manager+ |
-| Perfil (profile menu, bottom) | Modelos (templates): manager+ |
-| | Utilizadores (users): institution admin+ |
-| | Turnos (shifts): manager+ |
+| Ler código (scan) | Catálogo: Admin |
+| Perfil (profile menu, bottom) | Modelos (templates): Admin |
+| | Utilizadores (users): Admin |
+| | Turnos (shifts): Admin |
 | | Relatórios (reports) |
 | | Histórico (history) |
 
@@ -74,16 +74,13 @@ The **`user` role is dropped** (existing `user` memberships become `manager`). S
 (drawers, grid, catalogue, templates) stays Dashboard work and Admin-only by default (R7); B7
 toggles can grant it to Managers. Support access rules: REVIEW_2026-10-30.md §2.2.
 
-**What the code does today** (until D16 is implemented):
-
-| Code role (`Role`) | Old product name (D2) | Scope today |
-|---|---|---|
-| `platformSuperAdmin` | Engineer Admin | Every institution |
-| `institutionAdmin` | Institution Manager | Everything in one institution, including users |
-| `manager` | Institution Manager (without user management) | Configuration and stock in **every cart** of one institution |
-| `user` | Health Professional | The carts they're responsible for |
-
-"Manager+" in this document means `manager`, `institutionAdmin` or `platformSuperAdmin`.
+**In the code (done 30 Oct):** `Role` has `platformSuperAdmin`, `institutionAdmin` and
+`manager`; a stored `user` reads as `manager`. Session helpers: `isInstitutionAdmin`
+(Admin/Super: structure, catalogue, templates, users, shifts, every cart),
+`canConsume`, `canReplenish`, `canChangeCartState`, `canMonthlyCheck` (cart actions, B7
+toggles), `canEditStructure` (= Admin). A Manager's carts and "all assignments" are read per
+registered cart (`firestore_access.dart`). There's no institution picker for Admins and
+Managers; an old account with several institutions opens the first by name.
 
 **Database model:** user types and their permissions are tables (UserType, Permission,
 UserTypePermission), so the B7 toggles become shared data instead of a local stub. A user
@@ -91,24 +88,17 @@ belongs to one institution, so the institution picker isn't needed on a local se
 
 ### Permission toggles (B7)
 
-`AppPermission` (`domain/entities/app_permission.dart`) holds the fine-grained switches
-shown in **B7 Users & permissions**:
+`AppPermission` (`domain/entities/app_permission.dart`) holds the switches shown in **B7
+Users & permissions**. Since D16 only the **Manager's** cart actions are listed
+(`managerPermissions`): `viewCarts`, `recordConsumption`, `replenish`, `monthlyCheck`,
+`signReports`, `emergencyMode`, `changeCartState`, all on by default. An Admin has every
+permission. Structure (`editDrawers`) and users/shifts aren't toggles: they stay the Admin's,
+as in the Firestore Rules. The toggles are stored **locally on the device** for now (a stub),
+so they shape what the UI offers; the Rules are the real enforcement.
 
-`viewCarts`, `recordConsumption`, `replenish`, `monthlyCheck`, `signReports`,
-`emergencyMode`, `changeCartState`, `editDrawers`, `manageUsersAndShifts`.
-
-- **Defaults:** a Health Professional (`user`) gets view carts, record consumption,
-  replenish, monthly check, sign reports and emergency mode. Manager+ roles get all.
-- An institution admin can change the toggles per role in B7. They're stored **locally
-  on the device** for now (a stub), so they shape what the UI offers.
-- **Firestore Rules are the real enforcement** and are role-based. For example, the
-  rules let a `user` change only `currentQuantity`, so in practice **replenishing,
-  assigning products and changing cart state need manager+** even if the toggle is on.
-  `SessionController` combines both: `canReplenish = isManager && can(replenish)`.
-
-Session helpers (`ui/core/session/session.dart`): `isManager`, `isInstitutionAdmin`,
-`can(permission)`, `canConsume`, `canReplenish`, `canChangeCartState`,
-`canEditStructure`, `canUseEmergency`, `canMonthlyCheck`.
+Session helpers (`ui/core/session/session.dart`): `isInstitutionAdmin`, `can(permission)`,
+`canConsume`, `canReplenish`, `canChangeCartState`, `canEditStructure`, `canUseEmergency`,
+`canMonthlyCheck`.
 
 ---
 
@@ -149,8 +139,8 @@ isn't one (no Cloud Functions on Spark). New flow:
 4. Personal devices (laptop, a Manager's phone) keep e-mail + password.
 5. Admins list and revoke devices in the Dashboard.
 
-The **institution picker** is shown **only to Super**, listing institutions with an open
-support grant (RV-1, RV-2). Rules changes and the prototype's security limits:
+The **institution picker** is shown **only to Super** (RV-1, done 30 Oct); listing the
+institutions with an open support grant is part of D18 (RV-2). Rules changes and the prototype's security limits:
 REVIEW_2026-10-30.md §3.2.
 
 **Credentials (DB3, done 29 Oct):** only the administration sets or resets a user's

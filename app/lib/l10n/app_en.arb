@@ -18,9 +18,9 @@
   "cartStatusReplenishmentRequired": "Replenishment required",
   "cartStatusAuditRequired": "Check overdue",
   "cartStatusOutOfService": "Out of service",
-  "roleSuperAdmin": "Engineer (support)",
-  "roleInstitutionAdmin": "Institution manager",
-  "roleManager": "Service manager",
+  "roleSuperAdmin": "Super (I-Crash)",
+  "roleInstitutionAdmin": "Admin",
+  "roleManager": "Manager",
   "roleUser": "Health professional",
   "membershipStatusActive": "Active",
   "membershipStatusInvited": "Invited",
@@ -1580,5 +1580,6 @@
   "leaveUnsignedTitle": "Report not signed",
   "leaveUnsignedMessage": "This report isn't signed yet. You can sign it later in Reports → To sign.",
   "leaveUnsignedExit": "Leave",
-  "leaveUnsignedSignNow": "Sign now"
+  "leaveUnsignedSignNow": "Sign now",
+  "usersFilterAdmins": "Admins ({count})"
 }

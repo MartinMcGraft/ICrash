@@ -16,7 +16,7 @@ SessionController _session(AppServices services, String uid) => SessionControlle
       services: services,
       user: AuthUser(uid: uid, email: '$uid@h.pt'),
       institution: _institution,
-      membership: Membership(uid: uid, institutionId: 'inst', role: Role.user, status: MembershipStatus.active, displayName: uid),
+      membership: Membership(uid: uid, institutionId: 'inst', role: Role.manager, status: MembershipStatus.active, displayName: uid),
       institutionCount: 1,
     );
 

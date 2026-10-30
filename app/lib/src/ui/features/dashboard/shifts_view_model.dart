@@ -1,5 +1,4 @@
 import '../../../common/app_services.dart';
-import '../../../domain/entities/app_permission.dart';
 import '../../../domain/entities/cart.dart';
 import '../../../domain/entities/membership.dart';
 import '../../../domain/entities/role.dart';
@@ -51,7 +50,7 @@ class ShiftsViewModel extends ViewModel {
   List<DateTime> get days => [for (var i = 0; i < 7; i++) DateTime(weekStart.year, weekStart.month, weekStart.day + i)];
   DateTime get weekEnd => days.last;
 
-  bool get canEdit => session.isManager && session.can(AppPermission.manageUsersAndShifts);
+  bool get canEdit => session.isInstitutionAdmin;
 
   void previousWeek() {
     weekStart = DateTime(weekStart.year, weekStart.month, weekStart.day - 7);

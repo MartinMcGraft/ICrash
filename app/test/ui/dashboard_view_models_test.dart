@@ -231,7 +231,7 @@ void main() {
       final vm = UsersViewModel(services, _session(services));
       await _settle();
       final result =
-          await vm.createUser(name: 'Ana Silva', email: 'Ana.Silva@H.pt', role: Role.user, password: 'segura-123', pin: '2468');
+          await vm.createUser(name: 'Ana Silva', email: 'Ana.Silva@H.pt', role: Role.manager, password: 'segura-123', pin: '2468');
       expect(result.isOk, isTrue);
       final member = institutions.members.single;
       expect(member.displayName, 'Ana Silva');
@@ -241,7 +241,7 @@ void main() {
       expect(hash, isNot(contains('2468')));
       expect(await services.pinHasher.verify('2468', hash), isTrue);
       await _settle();
-      final again = await vm.createUser(name: 'Ana', email: 'ana.silva@h.pt', role: Role.user, password: 'segura-123', pin: '2468');
+      final again = await vm.createUser(name: 'Ana', email: 'ana.silva@h.pt', role: Role.manager, password: 'segura-123', pin: '2468');
       expect(again.code, 'emailTaken');
       vm.dispose();
     });
@@ -251,9 +251,9 @@ void main() {
       final services = buildTestServices(institutions: institutions);
       final vm = UsersViewModel(services, _session(services));
       await _settle();
-      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.user, password: 'curta', pin: '1234')).code,
+      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.manager, password: 'curta', pin: '1234')).code,
           'passwordTooShort');
-      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.user, password: 'segura-123', pin: '12')).code,
+      expect((await vm.createUser(name: 'A', email: 'a@h.pt', role: Role.manager, password: 'segura-123', pin: '12')).code,
           'pinInvalid');
       expect(institutions.members, isEmpty);
       vm.dispose();
@@ -261,7 +261,7 @@ void main() {
 
     test('an administrator sets a new PIN for someone else, never for themselves', () async {
       const me = Membership(uid: 'me', institutionId: 'inst', role: Role.institutionAdmin, status: MembershipStatus.active);
-      const ana = Membership(uid: 'ana', institutionId: 'inst', role: Role.user, status: MembershipStatus.active);
+      const ana = Membership(uid: 'ana', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active);
       final credentials = FakeCredentialRepository();
       final services = buildTestServices(institutions: FakeInstitutionRepository(members: [me, ana]), credentials: credentials);
       final vm = UsersViewModel(services, _session(services));
@@ -278,7 +278,7 @@ void main() {
       final services = buildTestServices(institutions: FakeInstitutionRepository(members: [me]));
       final vm = UsersViewModel(services, _session(services));
       await _settle();
-      final result = await vm.changeRole(me, Role.user);
+      final result = await vm.changeRole(me, Role.manager);
       expect(result.code, 'self');
       vm.dispose();
     });
@@ -286,15 +286,17 @@ void main() {
     test('filters by role and status', () async {
       final services = buildTestServices(
         institutions: FakeInstitutionRepository(members: const [
-          Membership(uid: 'a', institutionId: 'inst', role: Role.user, status: MembershipStatus.active, displayName: 'Ana'),
-          Membership(uid: 'b', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active, displayName: 'Bruno'),
-          Membership(uid: 'c', institutionId: 'inst', role: Role.user, status: MembershipStatus.invited, displayName: 'Carla'),
+          Membership(uid: 'a', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active, displayName: 'Ana'),
+          Membership(uid: 'b', institutionId: 'inst', role: Role.institutionAdmin, status: MembershipStatus.active, displayName: 'Bruno'),
+          Membership(uid: 'c', institutionId: 'inst', role: Role.manager, status: MembershipStatus.invited, displayName: 'Carla'),
         ]),
       );
       final vm = UsersViewModel(services, _session(services));
       await _settle();
-      expect(vm.managerCount, 1);
-      expect(vm.professionalCount, 2);
+      expect(vm.adminCount, 1);
+      expect(vm.managerCount, 2);
+      vm.setFilter(UsersFilter.admins);
+      expect(vm.visible.single.uid, 'b');
       vm.setFilter(UsersFilter.invited);
       expect(vm.visible.single.uid, 'c');
       vm.setFilter(UsersFilter.all);

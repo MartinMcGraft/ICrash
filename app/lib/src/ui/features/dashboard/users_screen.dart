@@ -65,8 +65,8 @@ class UsersScreen extends StatelessWidget {
                       onChanged: vm.setFilter,
                       items: [
                         TabItem(UsersFilter.all, l10n.cartsFilterAll(vm.total)),
+                        TabItem(UsersFilter.admins, l10n.usersFilterAdmins(vm.adminCount)),
                         TabItem(UsersFilter.managers, l10n.usersFilterManagers(vm.managerCount)),
-                        TabItem(UsersFilter.professionals, l10n.usersFilterProfessionals(vm.professionalCount)),
                         // DB3: users are created active; only members invited
                         // before 29 Oct 2026 can still be "invited".
                         if (vm.invitedCount > 0) TabItem(UsersFilter.invited, l10n.usersFilterInvited(vm.invitedCount)),
@@ -100,7 +100,7 @@ class UsersScreen extends StatelessWidget {
                                   CellText(m.label, primary: true),
                                   CellText(m.email ?? '—'),
                                   CellText(roleText(l10n, m.role)),
-                                  CellText(m.service ?? (m.role == Role.user ? '—' : l10n.allServices)),
+                                  CellText(m.service ?? (m.role == Role.manager ? '—' : l10n.allServices)),
                                   _MemberStatus(status: m.status),
                                   if (vm.canManage) _MemberMenu(vm: vm, member: m),
                                 ],
@@ -270,16 +270,12 @@ class _PermissionsPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: IcSpace.s12),
-          SegmentedTabs<Role>(
-            selected: vm.permissionRole,
-            onChanged: vm.setPermissionRole,
-            items: [
-              TabItem(Role.user, l10n.roleUser),
-              TabItem(Role.manager, l10n.roleManager),
-            ],
-          ),
+          // D16: only the Manager's cart actions can be switched; an Admin
+          // has everything, and structure, users and shifts stay with the
+          // Admin (the Firestore Rules allow them only to Admin/Super).
+          Text(roleText(l10n, Role.manager), style: IcText.labelM.copyWith(color: IcColors.textSecondary)),
           const SizedBox(height: IcSpace.s12),
-          for (final p in AppPermission.values)
+          for (final p in managerPermissions)
             CheckRow(
               label: permissionText(l10n, p),
               value: granted.contains(p),
@@ -333,7 +329,7 @@ Future<_NewUser?> _showCreateUserDialog(BuildContext context) {
   final password2 = TextEditingController();
   final pin = TextEditingController();
   final pin2 = TextEditingController();
-  var role = Role.user;
+  var role = Role.manager;
   final pinFormatters = [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)];
   return showDialog<_NewUser>(
     context: context,

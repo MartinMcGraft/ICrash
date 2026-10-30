@@ -51,25 +51,27 @@ class SessionController extends ViewModel {
   Map<String, EmergencySession> _emergencies = {};
   Map<Role, Set<AppPermission>> _permissions = {};
 
-  Role get role => membership?.role ?? Role.user;
+  Role get role => membership?.role ?? Role.manager;
   bool get _active => membership?.isActive ?? false;
 
-  /// Firestore Rules: manager+ may change structure, batches and status.
-  bool get isManager =>
-      _active && (role == Role.manager || role == Role.institutionAdmin || role == Role.platformSuperAdmin);
-
-  /// Firestore Rules: institution admin manages members.
+  /// D16: an **Admin** (or Super) does everything in the institution: every
+  /// cart, the structure (drawers, grid, catalogue, templates), users and
+  /// shifts. Firestore Rules enforce the same split.
   bool get isInstitutionAdmin => _active && (role == Role.institutionAdmin || role == Role.platformSuperAdmin);
 
-  /// UI permission toggles (stub, proposal D2) on top of the role.
+  /// UI permission toggles (stub, B7) on top of the role.
   bool can(AppPermission permission) =>
       (_permissions[role] ?? defaultPermissionsFor(role)).contains(permission);
 
-  /// Replenishing writes batches, which Rules restrict to manager+.
-  bool get canReplenish => isManager && can(AppPermission.replenish);
-  bool get canConsume => can(AppPermission.recordConsumption);
-  bool get canChangeCartState => isManager && can(AppPermission.changeCartState);
-  bool get canEditStructure => isManager && can(AppPermission.editDrawers);
+  /// D16: a **Manager** has every cart action on the carts they're
+  /// registered to (the only carts they see; the Rules check the
+  /// registration); B7 can switch actions off.
+  bool get canReplenish => _active && can(AppPermission.replenish);
+  bool get canConsume => _active && can(AppPermission.recordConsumption);
+  bool get canChangeCartState => _active && can(AppPermission.changeCartState);
+
+  /// Structure stays with the Admin (D16; the Rules allow only Admin/Super).
+  bool get canEditStructure => isInstitutionAdmin;
   bool get canUseEmergency => can(AppPermission.emergencyMode);
   bool get canMonthlyCheck => can(AppPermission.monthlyCheck);
 

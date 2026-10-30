@@ -218,7 +218,7 @@ class _Preview extends StatelessWidget {
         if (template.archived) ...[
           Notice(kind: NoticeKind.info, title: l10n.templateArchivedTitle, message: l10n.templateArchivedMessage),
           const SizedBox(height: IcSpace.s8),
-        ] else if (SessionScope.of(context).isManager)
+        ] else if (SessionScope.of(context).canEditStructure)
           IcButton(
             label: l10n.createCartFromThisTemplate,
             icon: IcIcon.mais,

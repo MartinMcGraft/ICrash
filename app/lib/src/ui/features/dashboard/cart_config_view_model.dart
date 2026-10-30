@@ -71,7 +71,7 @@ class CartConfigViewModel extends ViewModel {
     final current = cart;
     return run(() async {
       if (current == null) return;
-      await services.sync.track(services.carts.updateCart(session.institution.id, current.copyWith(status: status)));
+      await services.sync.track(services.carts.updateCartStatus(session.institution.id, current.id, status));
     });
   }
 

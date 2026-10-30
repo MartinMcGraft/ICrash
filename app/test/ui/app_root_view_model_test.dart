@@ -18,7 +18,7 @@ Future<void> _settle() async {
 void main() {
   group('AppRootViewModel: the administrator-set PIN is copied to the device (DB3)', () {
     const institution = Institution(id: 'inst', name: 'Hospital da Ribeira');
-    const membership = Membership(uid: 'ana', institutionId: 'inst', role: Role.user, status: MembershipStatus.active);
+    const membership = Membership(uid: 'ana', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active);
 
     test('after sign-in the device holds the PIN hash and can check the PIN offline', () async {
       final hasher = PinHasher(iterations: 1000);

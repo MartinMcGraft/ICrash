@@ -113,14 +113,14 @@ class CartViewModel extends ViewModel {
     );
     if (next == current.status) return;
     _applyingAutoStatus = true;
-    await run(() => services.sync.track(services.carts.updateCart(session.institution.id, current.copyWith(status: next))));
+    await run(() => services.sync.track(services.carts.updateCartStatus(session.institution.id, current.id, next)));
     _applyingAutoStatus = false;
   }
 
   Future<ActionResult<void>> changeStatus(CartStatus status) {
     final current = cart;
     if (current == null) return Future.value(const ActionResult.ok(null));
-    return run(() => services.sync.track(services.carts.updateCart(session.institution.id, current.copyWith(status: status))));
+    return run(() => services.sync.track(services.carts.updateCartStatus(session.institution.id, current.id, status)));
   }
 
   /// Opens (or reuses) the emergency session for this cart.

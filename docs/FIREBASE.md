@@ -281,11 +281,10 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
   29 Oct 2026 have no marker; the app also reads the cart's history
   (`UsageRepository.watchUsedAssignmentIds`), so the UI blocks them anyway.
 - **Values:**
-  - Roles: `platformSuperAdmin`, `institutionAdmin`, `manager`, `user`.
-    **Target (30 Oct, D16–D18, `docs/REVIEW_2026-10-30.md`):** `user` goes away (its
-    memberships become `manager`, limited to carts in `responsibleUsers`); a new `device`
-    role for registered tablets (D17); Super reaches an institution only with an open support
-    grant (D18). Not implemented yet; the rules tests must cover each before any deploy.
+  - Roles (D16, done 30 Oct): `institutionAdmin` (**Admin**) and `manager` (**Manager**);
+    **Super** is a `platformAdmins/{uid}` marker. A stored `user` membership reads as
+    `manager` (app and rules). Still to come: a `device` role for registered tablets (D17)
+    and Super's support grants (D18).
   - Membership status: `active`, `invited`, `disabled`.
   - Cart status: `operational`, `replenishmentRequired`, `auditRequired`,
     `outOfService`.
@@ -341,13 +340,13 @@ it.
 | `memberships/{uid}` | Members | Institution admin, **never your own document** (no self-escalation or self-reactivation) |
 | `memberships/{uid}/private/credentials` | That user (active) and institution admins | Institution admin, **never for yourself**, only a `pbkdf2-sha256$…` hash. Delete: nobody |
 | `memberIndex/{uid}` | Only your own entry | Institution admin |
-| `products` | Members | Manager+ |
-| `carts/{c}` | Get: `canAccessCart`. List: manager+ unfiltered; others must filter `responsibleUserIds array-contains <uid>` | Create/update: manager+. **Delete: nobody** (archive instead) |
-| `responsibleUsers` | `canAccessCart` | Manager+ |
-| `drawers` | `canAccessCart` | Create/update: manager+. **Delete: nobody.** A used drawer keeps `rows`, `columns` and `number` (a used drawer that never had a number may get one, Q8). Anyone who can access the cart may set `usedAt` once |
-| `slots` | `canAccessCart` | Create/update: manager+; a used slot keeps `row`, `column` and spans. **Delete: manager+, only while unused.** Anyone who can access the cart may set `usedAt` once |
-| `assignments` | `canAccessCart` | Manager+. An assigned non-manager may change **only** `currentQuantity`, `updatedAt`, `updatedBy` and `usedAt`. Always `0 ≤ currentQuantity ≤ targetQuantity` and `targetQuantity > 0` (P5); an old overfilled placement may still be lowered. A used placement keeps `slotId`, `drawerId` and `productId`. **Delete: manager+, only while unused.** `institutionId`/`cartId` must match the path and never change |
-| `batches` | `canAccessCart` | Create: manager+, with `quantity > 0` and `expiryDate`. Update: manager+ (e.g. `removedAt`). **Delete: nobody** (DB1) |
+| `products` | Members | Admin (D16) |
+| `carts/{c}` | Get: `canAccessCart` (Admin, or a Manager registered to the cart). List: Admin/Super unfiltered; a Manager must filter `responsibleUserIds array-contains <uid>` | Create: Admin. Update: Admin; a registered Manager **only `status`** (`updateCartStatus`). **Delete: nobody** (archive instead) |
+| `responsibleUsers` | `canAccessCart` | Admin (P18) |
+| `drawers` | `canAccessCart` | Create/update: Admin. **Delete: nobody.** A used drawer keeps `rows`, `columns` and `number` (a used drawer that never had a number may get one, Q8); it may be renamed (D20). Anyone who can access the cart may set `usedAt` once |
+| `slots` | `canAccessCart` | Create/update: Admin; a used slot keeps `row`, `column` and spans. **Delete: Admin, only while unused.** Anyone who can access the cart may set `usedAt` once |
+| `assignments` | `canAccessCart` | Admin. A registered Manager may change **only** `currentQuantity`, `earliestKnownExpiry`, `updatedAt`, `updatedBy` and `usedAt` (consumption, replenishment, monthly check). Always `0 ≤ currentQuantity ≤ targetQuantity` and `targetQuantity > 0` (P5); an old overfilled placement may still be lowered. A used placement keeps `slotId`, `drawerId` and `productId`. **Delete: Admin, only while unused.** `institutionId`/`cartId` must match the path and never change |
+| `batches` | `canAccessCart` | Create: whoever may access the cart, with `quantity > 0`, `expiryDate` and no `removedAt`. Update: **only** setting `removedAt` (+ `updatedAt`), once; it can't be cleared, not even by an Admin (P21). **Delete: nobody** (DB1) |
 | `usedAt` (drawers, slots, assignments) | — | May only go from absent to the request time; never changes or disappears afterwards |
 | `usageEvents` | Members | Create only, as yourself, for a cart you can access; `reason` optional, ≤ 500 characters. **Update and delete: nobody, not even admins** |
 | `auditEvents` | Manager+ | Create only, as yourself. **Update and delete: nobody** |
@@ -359,7 +358,7 @@ it.
    - Inside a `list` rule, the path wildcard right after `{path=**}` can't be used.
      Read `resource.data.uid` instead (that's why the documents store their own `uid`).
 2. **A `list` rule may only read `resource.data` fields the query filters on.**
-   - That's why the cross-cart `assignments` query is **manager+ only**: checking the
+   - That's why the cross-cart `assignments` query is **Admin/Super only** (D16; a Manager reads their carts one by one): checking the
      user's cart would need `cartId`, which the query doesn't filter on, and the whole
      query fails.
    - A normal user still sees their own carts' assignments through the per-cart query.

@@ -1,6 +1,7 @@
 // One-off seed script for the full manual QA test run (not part of the
 // automated rules test suite). Builds a richer, deterministic dataset than
-// seed_emulator.mjs: two institutions, four users across every role, and one
+// seed_emulator.mjs: two institutions, users of every type (D16: Super,
+// Admin, Manager; one institution per user), and one
 // cart with deliberately-crafted products/lots/expiry dates so the
 // consumption/replenishment/expiry-warning scenarios in the QA plan are
 // reproducible. Never touches the cloud project.
@@ -21,12 +22,29 @@ const PASSWORD = 'icrash-teste-123';
 // DB3: the administration sets every user's PIN. Same test PIN for everyone.
 const PIN = '1234';
 
+// D16 (30 Oct 2026): enfermeira = Admin of hospital-teste only; gestor and
+// utilizador = Managers (health professionals) registered to some carts;
+// adminb = Admin of hospital-teste-b (isolation tests); super = Super.
 const USERS = {
   admin: 'enfermeira.teste@icrash.pt',
   manager: 'gestor.teste@icrash.pt',
   user: 'utilizador.teste@icrash.pt',
   super: 'super.teste@icrash.pt',
+  adminB: 'admin.b.teste@icrash.pt',
 };
+
+// The v2 membership fields the app shows (name, e-mail, service).
+const PROFILES = {
+  admin: { displayName: 'Rita Lopes', service: null },
+  manager: { displayName: 'Gonçalo Mendes', service: 'Urgência' },
+  user: { displayName: 'Ana Silva', service: 'Medicina Interna' },
+  adminB: { displayName: 'Paulo Reis', service: null },
+};
+
+function member(key, uid, role) {
+  const { displayName, service } = PROFILES[key];
+  return { uid, role, status: 'active', displayName, email: USERS[key], ...(service ? { service } : {}) };
+}
 
 async function createOrGetAuthUser(email) {
   const signUp = await fetch(
@@ -89,31 +107,20 @@ async function main() {
       expiryWarningDays: 30,
     });
 
-    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.admin), {
-      uid: uids.admin,
-      role: 'institutionAdmin',
-      status: 'active',
-    });
+    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.admin), member('admin', uids.admin, 'institutionAdmin'));
     await setDoc(doc(db, 'institutions/hospital-teste/memberIndex/' + uids.admin), {
       uid: uids.admin,
       status: 'active',
     });
 
-    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.manager), {
-      uid: uids.manager,
-      role: 'manager',
-      status: 'active',
-    });
+    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.manager), member('manager', uids.manager, 'manager'));
     await setDoc(doc(db, 'institutions/hospital-teste/memberIndex/' + uids.manager), {
       uid: uids.manager,
       status: 'active',
     });
 
-    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.user), {
-      uid: uids.user,
-      role: 'user',
-      status: 'active',
-    });
+    // D16: there is no 'user' type any more; utilizador is a Manager.
+    await setDoc(doc(db, 'institutions/hospital-teste/memberships/' + uids.user), member('user', uids.user, 'manager'));
     await setDoc(doc(db, 'institutions/hospital-teste/memberIndex/' + uids.user), {
       uid: uids.user,
       status: 'active',
@@ -143,9 +150,10 @@ async function main() {
       layoutVersion: 1,
       // Denormalized, kept in sync with responsibleUsers below -- see
       // firestore.rules' carts/{cartId} `allow list` for why this exists.
-      responsibleUserIds: [uids.admin, uids.manager, uids.user],
+      // D16: Managers registered to the cart (the Admin sees every cart anyway).
+      responsibleUserIds: [uids.manager, uids.user],
     });
-    for (const uid of [uids.admin, uids.manager, uids.user]) {
+    for (const uid of [uids.manager, uids.user]) {
       await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/responsibleUsers/${uid}`), { uid });
     }
     // Drawers have a number and an optional name (D20, 30 Oct; drawer 3 has
@@ -255,14 +263,15 @@ async function main() {
     await updateDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-1/slots/r0c0'), { usedAt });
     await updateDoc(doc(db, 'institutions/hospital-teste/carts/carro-1/drawers/gaveta-1'), { usedAt });
 
-    // Cart 2: bare, only the manager+admin are responsible (not the normal user) — cross-cart access test.
+    // Cart 2: bare, only gestor is registered (not utilizador): utilizador
+    // sees carro-1 only (D16).
     await setDoc(doc(db, 'institutions/hospital-teste/carts/carro-2'), {
       name: 'Carro de Emergência 2',
       status: 'operational',
       layoutVersion: 1,
-      responsibleUserIds: [uids.admin, uids.manager],
+      responsibleUserIds: [uids.manager],
     });
-    for (const uid of [uids.admin, uids.manager]) {
+    for (const uid of [uids.manager]) {
       await setDoc(doc(db, `institutions/hospital-teste/carts/carro-2/responsibleUsers/${uid}`), { uid });
     }
 
@@ -271,24 +280,18 @@ async function main() {
       name: 'Hospital Teste B',
       expiryWarningDays: 30,
     });
-    await setDoc(doc(db, 'institutions/hospital-teste-b/memberships/' + uids.admin), {
-      uid: uids.admin,
-      role: 'institutionAdmin',
+    // RV-1 / D16: a user belongs to one institution, so B has its own Admin.
+    await setDoc(doc(db, 'institutions/hospital-teste-b/memberships/' + uids.adminB), member('adminB', uids.adminB, 'institutionAdmin'));
+    await setDoc(doc(db, 'institutions/hospital-teste-b/memberIndex/' + uids.adminB), {
+      uid: uids.adminB,
       status: 'active',
     });
-    await setDoc(doc(db, 'institutions/hospital-teste-b/memberIndex/' + uids.admin), {
-      uid: uids.admin,
-      status: 'active',
-    });
-    await setDoc(doc(db, `institutions/hospital-teste-b/memberships/${uids.admin}/private/credentials`), { pinHash: hashPin(PIN) });
+    await setDoc(doc(db, `institutions/hospital-teste-b/memberships/${uids.adminB}/private/credentials`), { pinHash: hashPin(PIN) });
     await setDoc(doc(db, 'institutions/hospital-teste-b/carts/carro-b1'), {
       name: 'Carro B1',
       status: 'operational',
       layoutVersion: 1,
-      responsibleUserIds: [uids.admin],
-    });
-    await setDoc(doc(db, 'institutions/hospital-teste-b/carts/carro-b1/responsibleUsers/' + uids.admin), {
-      uid: uids.admin,
+      responsibleUserIds: [],
     });
   });
 

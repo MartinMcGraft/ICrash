@@ -54,7 +54,7 @@ class AppServices {
           carts: FirestoreCartRepository(firestore, auth),
           drawers: FirestoreDrawerRepository(firestore),
           products: FirestoreProductRepository(firestore),
-          inventory: FirestoreInventoryRepository(firestore),
+          inventory: FirestoreInventoryRepository(firestore, auth),
           usage: FirestoreUsageRepository(firestore),
           audit: FirestoreAuditRepository(firestore),
           credentials: FirestoreCredentialRepository(firestore, auth),

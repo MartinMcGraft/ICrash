@@ -146,9 +146,9 @@ class EmergencyViewModel extends ViewModel {
         final ended = await services.emergency.end(session.institution.id, cartId);
         if (ended == null) return null;
         final cart = data.cart;
-        if (cart != null && session.isManager && ended.consumptions.isNotEmpty) {
+        if (cart != null && session.canChangeCartState && ended.consumptions.isNotEmpty) {
           unawaited(services.sync
-              .track(services.carts.updateCart(session.institution.id, cart.copyWith(status: CartStatus.replenishmentRequired)))
+              .track(services.carts.updateCartStatus(session.institution.id, cart.id, CartStatus.replenishmentRequired))
               .catchError((Object _) {}));
         }
         final report = await services.reports.createReport(CartReport(

@@ -209,19 +209,19 @@ abstract class AppLocalizations {
   /// No description provided for @roleSuperAdmin.
   ///
   /// In pt, this message translates to:
-  /// **'Engenheiro (suporte)'**
+  /// **'Super (I-Crash)'**
   String get roleSuperAdmin;
 
   /// No description provided for @roleInstitutionAdmin.
   ///
   /// In pt, this message translates to:
-  /// **'Gestor da instituição'**
+  /// **'Admin'**
   String get roleInstitutionAdmin;
 
   /// No description provided for @roleManager.
   ///
   /// In pt, this message translates to:
-  /// **'Gestor de serviço'**
+  /// **'Gestor'**
   String get roleManager;
 
   /// No description provided for @roleUser.
@@ -4074,6 +4074,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Assinar agora'**
   String get leaveUnsignedSignNow;
+
+  /// No description provided for @usersFilterAdmins.
+  ///
+  /// In pt, this message translates to:
+  /// **'Admins ({count})'**
+  String usersFilterAdmins(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -746,6 +746,20 @@ Frame ids read on 30 Oct 2026.
 - **Copy:** `checkLotsTitle`, `leaveUnsignedTitle`, `leaveUnsignedMessage`,
   `leaveUnsignedExit`, `leaveUnsignedSignNow`.
 
+### DC-55 · User types Super / Admin / Gestor (D16, RV-1, RV-4)
+- **Where:** B7 p21 `456:1969` (filters, role column, permissions panel, create dialog);
+  Dashboard sidebar (all B-frames); profile menu subtitle.
+- **What:**
+  - Role labels: **"Super (I-Crash)"**, **"Admin"**, **"Gestor"** (EN "Manager"); no
+    "Profissional de saúde" type.
+  - B7 filters: Todos · **Admins (N)** · **Gestores (N)** · Convites pendentes.
+  - B7 permissions panel: no role tabs; it shows "Gestor" and only the cart actions (7
+    switches); "Editar gavetas" and "Gerir utilizadores e turnos" are gone (Admin only).
+  - "Criar utilizador": type Gestor (default) or Admin.
+  - Sidebar: Catálogo, Modelos, Utilizadores and Turnos only for an Admin.
+- **Copy:** `roleSuperAdmin`, `roleInstitutionAdmin`, `roleManager` changed; new
+  `usersFilterAdmins` "Admins ({count})".
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -761,7 +775,7 @@ Frame ids read on 30 Oct 2026.
 | `weight` / `volume` instead of "Apresentação" | B5 table and form | DB10 (decided; not in this task) |
 | Who assigns responsible people to carts (no screen) | B3 or B8 | P18 |
 | Corrections: same-slot rule and whether the reason becomes mandatory | DC-13 Corrigir panel | P15 |
-| Roles: map the 4 code roles to Engineer Admin / Institution Manager / Health Professional; permissions shared and enforced | B7 | D2 |
+| ~~Roles~~ done on 30 Oct (DC-55, D16) | — | — |
 | Report "In progress" status and reports shared between tablets | A9, B9 | Local stubs (out of scope) |
 | Annotations "Proposta (D3)…" next to A2/A3 (p10 `455:1091`, `455:1093`; p11 `454:1528`, `454:1530`; p12 `451:1964`, `451:1966`; p13 `447:1162`, `447:1164`) describe the old device-only PIN | Annotations | DC-07 |
 
@@ -785,4 +799,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology, drawer name) | DC-41 … DC-54 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles) | DC-41 … DC-55 |

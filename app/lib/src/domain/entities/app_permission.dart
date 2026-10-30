@@ -17,15 +17,22 @@ enum AppPermission {
   manageUsersAndShifts,
 }
 
-/// Defaults per role, matching the B7 mockup for "Profissional de saúde".
+/// The cart actions a Manager may be given in B7 (D16: full access to their
+/// carts). Structure ([AppPermission.editDrawers]) and users/shifts stay
+/// with the Admin: the Firestore Rules allow them only to Admin/Super.
+const managerPermissions = [
+  AppPermission.viewCarts,
+  AppPermission.recordConsumption,
+  AppPermission.replenish,
+  AppPermission.monthlyCheck,
+  AppPermission.signReports,
+  AppPermission.emergencyMode,
+  AppPermission.changeCartState,
+];
+
+/// Defaults per role (D16): a Manager gets every cart action; Admin and
+/// Super everything.
 Set<AppPermission> defaultPermissionsFor(Role role) => switch (role) {
-      Role.user => {
-          AppPermission.viewCarts,
-          AppPermission.recordConsumption,
-          AppPermission.replenish,
-          AppPermission.monthlyCheck,
-          AppPermission.signReports,
-          AppPermission.emergencyMode,
-        },
-      Role.manager || Role.institutionAdmin || Role.platformSuperAdmin => AppPermission.values.toSet(),
+      Role.manager => managerPermissions.toSet(),
+      Role.institutionAdmin || Role.platformSuperAdmin => AppPermission.values.toSet(),
     };

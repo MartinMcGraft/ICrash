@@ -122,10 +122,14 @@ class AppRootViewModel extends ViewModel {
       institutions = const [];
     }
     if (isDisposed) return;
-    if (institutions.length == 1) {
-      await selectInstitution(institutions.single);
+    // D16: a user belongs to one institution, so there's no picker for them;
+    // an old account with several memberships opens the first by name. Only
+    // Super moves between institutions (support access, D18).
+    if (institutions.isNotEmpty) {
+      final sorted = List.of(institutions)..sort((a, b) => a.name.compareTo(b.name));
+      await selectInstitution(sorted.first);
     } else {
-      stage = institutions.isEmpty ? RootStage.noInstitution : RootStage.pickingInstitution;
+      stage = RootStage.noInstitution;
       notify();
     }
   }

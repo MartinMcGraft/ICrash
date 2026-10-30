@@ -39,10 +39,11 @@ class _DashboardShellState extends State<DashboardShell> implements ShellNavigat
   List<DashboardSection> _visible(SessionController session) => [
         DashboardSection.overview,
         DashboardSection.carts,
-        if (session.isManager) DashboardSection.catalog,
-        if (session.isManager) DashboardSection.templates,
+        // D16: catalogue, templates, users and shifts are the Admin's.
+        if (session.isInstitutionAdmin) DashboardSection.catalog,
+        if (session.isInstitutionAdmin) DashboardSection.templates,
         if (session.isInstitutionAdmin) DashboardSection.users,
-        if (session.isManager) DashboardSection.shifts,
+        if (session.isInstitutionAdmin) DashboardSection.shifts,
         DashboardSection.reports,
         DashboardSection.history,
       ];

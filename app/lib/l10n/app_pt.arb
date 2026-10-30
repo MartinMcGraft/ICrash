@@ -18,9 +18,9 @@
   "cartStatusReplenishmentRequired": "Reposição necessária",
   "cartStatusAuditRequired": "Verificação em atraso",
   "cartStatusOutOfService": "Fora de serviço",
-  "roleSuperAdmin": "Engenheiro (suporte)",
-  "roleInstitutionAdmin": "Gestor da instituição",
-  "roleManager": "Gestor de serviço",
+  "roleSuperAdmin": "Super (I-Crash)",
+  "roleInstitutionAdmin": "Admin",
+  "roleManager": "Gestor",
   "roleUser": "Profissional de saúde",
   "membershipStatusActive": "Ativo",
   "membershipStatusInvited": "Convidado",
@@ -1949,5 +1949,7 @@
   "leaveUnsignedExit": "Sair",
   "@leaveUnsignedExit": {},
   "leaveUnsignedSignNow": "Assinar agora",
-  "@leaveUnsignedSignNow": {}
+  "@leaveUnsignedSignNow": {},
+  "usersFilterAdmins": "Admins ({count})",
+  "@usersFilterAdmins": {"placeholders": {"count": {"type": "int"}}}
 }

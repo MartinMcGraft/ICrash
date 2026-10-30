@@ -39,7 +39,7 @@ class DashboardCartsScreen extends StatelessWidget {
                 title: l10n.navCarts,
                 subtitle: l10n.cartsServicesSubtitle(vm.total, vm.serviceCount),
                 trailing: [
-                  if (SessionScope.of(context).isManager) ...[
+                  if (SessionScope.of(context).isInstitutionAdmin) ...[
                     IcButton(
                       label: l10n.createFromTemplate,
                       icon: IcIcon.modelo,

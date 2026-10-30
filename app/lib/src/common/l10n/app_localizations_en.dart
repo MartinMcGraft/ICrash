@@ -64,13 +64,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartStatusOutOfService => 'Out of service';
 
   @override
-  String get roleSuperAdmin => 'Engineer (support)';
+  String get roleSuperAdmin => 'Super (I-Crash)';
 
   @override
-  String get roleInstitutionAdmin => 'Institution manager';
+  String get roleInstitutionAdmin => 'Admin';
 
   @override
-  String get roleManager => 'Service manager';
+  String get roleManager => 'Manager';
 
   @override
   String get roleUser => 'Health professional';
@@ -2478,4 +2478,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leaveUnsignedSignNow => 'Sign now';
+
+  @override
+  String usersFilterAdmins(int count) {
+    return 'Admins ($count)';
+  }
 }

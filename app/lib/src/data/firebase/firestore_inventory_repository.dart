@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../common/repository_failure.dart';
 import '../../domain/entities/batch.dart';
@@ -6,6 +9,7 @@ import '../../domain/entities/cart_product_assignment.dart';
 import '../../domain/entities/usage_event.dart';
 import '../../domain/inventory_rules.dart';
 import '../../domain/repositories/inventory_repository.dart';
+import 'firestore_access.dart';
 import 'firestore_codec.dart';
 import 'firestore_exception_mapper.dart';
 import 'firestore_paths.dart';
@@ -20,9 +24,12 @@ const _assignmentTimestampFields = ['updatedAt', 'earliestKnownExpiry', 'usedAt'
 /// from different devices cannot silently clobber one another
 /// (spec sections 22-28, offline/concurrency note in docs/FIREBASE.md).
 class FirestoreInventoryRepository implements InventoryRepository {
-  FirestoreInventoryRepository(this._firestore);
+  FirestoreInventoryRepository(this._firestore, this._auth);
 
   final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+
+  String get _uid => _auth.currentUser?.uid ?? '';
 
   @override
   Stream<List<CartProductAssignment>> watchAssignments(String institutionId, String cartId) {
@@ -36,8 +43,60 @@ class FirestoreInventoryRepository implements InventoryRepository {
         .handleError((Object error) => throw mapFirebaseException(error));
   }
 
+  /// D16: an Admin or Super reads every assignment with one collection-group
+  /// query (the rules allow it only to them); a Manager gets the assignments
+  /// of the carts they're registered to, one listener per cart.
   @override
   Stream<List<CartProductAssignment>> watchAllAssignments(String institutionId) {
+    final uid = _uid;
+    return Stream.fromFuture(seesWholeInstitution(_firestore, institutionId, uid)).asyncExpand(
+      (all) => all ? _watchInstitutionAssignments(institutionId) : _watchMyCartsAssignments(institutionId, uid),
+    );
+  }
+
+  Stream<List<CartProductAssignment>> _watchMyCartsAssignments(String institutionId, String uid) {
+    final perCart = <String, List<CartProductAssignment>>{};
+    final subs = <String, StreamSubscription<List<CartProductAssignment>>>{};
+    StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? cartsSub;
+    late final StreamController<List<CartProductAssignment>> controller;
+    void emit() => controller.add([for (final list in perCart.values) ...list]);
+    controller = StreamController<List<CartProductAssignment>>(
+      onListen: () {
+        cartsSub = _firestore
+            .collection(FirestorePaths.carts(institutionId))
+            .where('responsibleUserIds', arrayContains: uid)
+            .snapshots()
+            .listen((snapshot) {
+          final ids = snapshot.docs.map((d) => d.id).toSet();
+          for (final id in subs.keys.toList()) {
+            if (!ids.contains(id)) {
+              unawaited(subs.remove(id)!.cancel());
+              perCart.remove(id);
+            }
+          }
+          for (final id in ids) {
+            subs.putIfAbsent(
+              id,
+              () => watchAssignments(institutionId, id).listen((list) {
+                perCart[id] = list;
+                emit();
+              }, onError: controller.addError),
+            );
+          }
+          if (ids.isEmpty) emit();
+        }, onError: (Object error) => controller.addError(mapFirebaseException(error)));
+      },
+      onCancel: () async {
+        await cartsSub?.cancel();
+        for (final sub in subs.values) {
+          await sub.cancel();
+        }
+      },
+    );
+    return controller.stream;
+  }
+
+  Stream<List<CartProductAssignment>> _watchInstitutionAssignments(String institutionId) {
     return _firestore
         .collectionGroup(FirestorePaths.assignmentsCollectionGroup)
         .where('institutionId', isEqualTo: institutionId)

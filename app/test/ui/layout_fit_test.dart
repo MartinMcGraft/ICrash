@@ -151,7 +151,7 @@ AppServices _services({int carts = 1, int rows = 5, int columns = 6, int product
     products: FakeProductRepository(products: productList),
     institutions: FakeInstitutionRepository(members: const [
       Membership(uid: 'me', institutionId: 'inst', role: Role.institutionAdmin, status: MembershipStatus.active, displayName: 'Rui Costa'),
-      Membership(uid: 'u1', institutionId: 'inst', role: Role.user, status: MembershipStatus.active, displayName: 'Ana Silva'),
+      Membership(uid: 'u1', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active, displayName: 'Ana Silva'),
     ]),
   );
 }

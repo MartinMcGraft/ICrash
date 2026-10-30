@@ -1,14 +1,22 @@
-/// Institution-scoped role, except [platformSuperAdmin] which is granted
-/// platform-wide via the separate `platformAdmins` collection rather than a
-/// membership document.
-enum Role { platformSuperAdmin, institutionAdmin, manager, user }
+/// The user types (D16, 30 Oct 2026):
+/// - [platformSuperAdmin] = **Super**, the I-Crash team's IT staff, granted
+///   by a `platformAdmins/{uid}` document, not a membership; reaches an
+///   institution only with its support grant (D18);
+/// - [institutionAdmin] = **Admin**, the institution's IT staff: everything
+///   in one institution;
+/// - [manager] = **Manager**, a health professional with full access to the
+///   carts they're registered to.
+///
+/// The old `user` role is gone: stored `user` memberships read as [manager].
+enum Role { platformSuperAdmin, institutionAdmin, manager }
 
 extension RoleCodec on Role {
   String get id => name;
 
+  /// Unknown and old values (`user`) read as [manager], the narrowest type.
   static Role fromId(String id) => Role.values.firstWhere(
         (role) => role.name == id,
-        orElse: () => Role.user,
+        orElse: () => Role.manager,
       );
 }
 

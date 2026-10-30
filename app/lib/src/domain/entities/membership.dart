@@ -43,7 +43,7 @@ class Membership {
     return Membership(
       uid: uid,
       institutionId: institutionId,
-      role: RoleCodec.fromId(map['role'] as String? ?? Role.user.id),
+      role: RoleCodec.fromId(map['role'] as String? ?? Role.manager.id),
       status: MembershipStatusCodec.fromId(map['status'] as String? ?? MembershipStatus.disabled.id),
       displayName: map['displayName'] as String?,
       email: map['email'] as String?,

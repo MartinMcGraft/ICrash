@@ -80,7 +80,7 @@ class CartSummaries {
         lastCheck: check,
         checkOverdueDays: age != null && age > monthlyCheckMaxAgeDays ? age - monthlyCheckMaxAgeDays : null,
         emergencyActive: session.isEmergencyActive(cart.id),
-        mine: myCarts.contains(cart.id) || !session.isManager,
+        mine: myCarts.contains(cart.id) || !session.isInstitutionAdmin,
       );
     }
 

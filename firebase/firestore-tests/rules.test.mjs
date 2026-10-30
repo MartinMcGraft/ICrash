@@ -19,8 +19,9 @@ const INST_B = 'inst-b';
 const CART_ID = 'cart-1';
 const ASSIGNMENT_ID = 'assign-1';
 const ADMIN_UID = 'admin-a';
-const MANAGER_UID = 'manager-a';
-const USER_UID = 'user-a'; // assigned to CART_ID
+const MANAGER_UID = 'manager-a'; // role 'manager', NOT registered to any cart
+const REG_MANAGER_UID = 'manager-reg'; // role 'manager', registered to CART_ID (D16)
+const USER_UID = 'user-a'; // old role 'user' (reads as Manager, D16), registered to CART_ID
 const USER2_UID = 'user-a2'; // member of A, but not assigned to any cart
 const OTHER_INST_UID = 'user-b'; // member of institution B only
 const SUPER_ADMIN_UID = 'super-admin';
@@ -61,6 +62,9 @@ async function seedBaseline() {
     await setDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}`), {
       uid: USER_UID, role: 'user', status: 'active',
     });
+    await setDoc(doc(db, `institutions/${INST_A}/memberships/${REG_MANAGER_UID}`), {
+      uid: REG_MANAGER_UID, role: 'manager', status: 'active',
+    });
     await setDoc(doc(db, `institutions/${INST_A}/memberships/${USER2_UID}`), {
       uid: USER2_UID, role: 'user', status: 'active',
     });
@@ -75,10 +79,13 @@ async function seedBaseline() {
 
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`), {
       name: 'Cart 1', status: 'operational', layoutVersion: 1,
-      responsibleUserIds: [USER_UID],
+      responsibleUserIds: [USER_UID, REG_MANAGER_UID],
     });
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/responsibleUsers/${USER_UID}`), {
       uid: USER_UID,
+    });
+    await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/responsibleUsers/${REG_MANAGER_UID}`), {
+      uid: REG_MANAGER_UID,
     });
     await setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
       institutionId: INST_A, cartId: CART_ID,
@@ -115,10 +122,10 @@ describe('cart access (spec section 17)', () => {
     await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`)));
   });
 
-  test('a manager can read every cart in the institution without an explicit assignment', async () => {
+  test('an Admin reads every cart; a Manager not registered to it can\'t (D16)', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
-    await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}`)));
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), `institutions/${INST_A}/carts/${CART_ID}`)));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(MANAGER_UID).firestore(), `institutions/${INST_A}/carts/${CART_ID}`)));
   });
 
   // Regression coverage for a real bug found via live QA testing (not just
@@ -128,11 +135,12 @@ describe('cart access (spec section 17)', () => {
   // exercise `getDocs`/`list`, not `getDoc`/`get`, specifically because the
   // bug only manifested on `list` and every pre-existing test here only
   // ever called `getDoc`.
-  test('a manager can list every cart in the institution unfiltered', async () => {
+  test('an Admin lists every cart unfiltered; a Manager can\'t (D16)', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     const snapshot = await assertSucceeds(getDocs(collection(db, `institutions/${INST_A}/carts`)));
     assert.equal(snapshot.size, 1);
+    await assertFails(getDocs(collection(testEnv.authenticatedContext(REG_MANAGER_UID).firestore(), `institutions/${INST_A}/carts`)));
   });
 
   test('the assigned user can list carts by filtering on responsibleUserIds array-contains their uid', async () => {
@@ -195,12 +203,11 @@ describe('drawer/slot structure changes (spec section 38)', () => {
     }));
   });
 
-  test('a manager can create a drawer', async () => {
+  test('an Admin can create a drawer; a Manager, even registered to the cart, can\'t (D16)', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
-    await assertSucceeds(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/drawers/drawer-1`), {
-      number: 1, rows: 2, columns: 2,
-    }));
+    const path = `institutions/${INST_A}/carts/${CART_ID}/drawers/drawer-1`;
+    await assertFails(setDoc(doc(testEnv.authenticatedContext(REG_MANAGER_UID).firestore(), path), { number: 1, rows: 2, columns: 2 }));
+    await assertSucceeds(setDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), path), { number: 1, rows: 2, columns: 2 }));
   });
 });
 
@@ -335,10 +342,10 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
     });
   }
 
-  test('a manager can list every assignment across every cart in their institution', async () => {
+  test('an Admin can list every assignment across every cart in their institution', async () => {
     await seedBaseline();
     await seedSecondCart();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
     const snapshot = await assertSucceeds(getDocs(q));
     assert.equal(snapshot.size, 2);
@@ -353,12 +360,14 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
   // user still reads their own responsible carts' assignments in full via
   // the ordinary per-cart nested rule (see "daily consumption write scope"
   // above); they just don't get this cross-cart aggregate view.
-  test('a normal user cannot use the cross-cart assignments query at all', async () => {
+  test('a Manager cannot use the cross-cart assignments query at all (D16)', async () => {
     await seedBaseline();
     await seedSecondCart();
-    const db = testEnv.authenticatedContext(USER_UID).firestore();
-    const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
-    await assertFails(getDocs(q));
+    for (const uid of [USER_UID, REG_MANAGER_UID, MANAGER_UID]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      const q = query(collectionGroup(db, 'assignments'), where('institutionId', '==', INST_A));
+      await assertFails(getDocs(q));
+    }
   });
 
   test('a member of a different institution cannot use it either, even filtering by institution A\'s id', async () => {
@@ -369,18 +378,18 @@ describe('cross-cart assignment alerts (spec section 49)', () => {
     await assertFails(getDocs(q));
   });
 
-  test('a manager cannot create an assignment whose institutionId/cartId do not match its own path', async () => {
+  test('an Admin cannot create an assignment whose institutionId/cartId do not match its own path', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/bad-1`), {
       institutionId: INST_B, cartId: CART_ID,
       slotId: 'slot-2', productId: 'product-3', currentQuantity: 0, targetQuantity: 1,
     }));
   });
 
-  test('institutionId/cartId can never be changed after creation, even by a manager', async () => {
+  test('institutionId/cartId can never be changed after creation, even by an Admin', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}`), {
       institutionId: INST_B,
     }));
@@ -398,20 +407,20 @@ describe('no overfill: 0 ≤ currentQuantity ≤ targetQuantity (P5)', () => {
 
   test('nobody can take the stock below zero', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, path), { currentQuantity: -1 }));
   });
 
-  test('a manager cannot lower the target below the current stock', async () => {
+  test('an Admin cannot lower the target below the current stock', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, path), { targetQuantity: 4 }));
     await assertSucceeds(updateDoc(doc(db, path), { targetQuantity: 5 }));
   });
 
-  test('a manager cannot create a placement whose initial stock exceeds its target', async () => {
+  test('an Admin cannot create a placement whose initial stock exceeds its target', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(setDoc(doc(db, `institutions/${INST_A}/carts/${CART_ID}/assignments/over-1`), {
       institutionId: INST_A, cartId: CART_ID, slotId: 'slot-2', productId: 'product-3', currentQuantity: 3, targetQuantity: 2,
     }));
@@ -439,9 +448,9 @@ describe('no overfill: 0 ≤ currentQuantity ≤ targetQuantity (P5)', () => {
 describe('batches are never deleted (DB1); lot optional, quantity required (P9)', () => {
   const batchPath = `institutions/${INST_A}/carts/${CART_ID}/assignments/${ASSIGNMENT_ID}/batches`;
 
-  test('a manager can create a batch without a lot number, but not without a quantity', async () => {
+  test('a registered Manager can create a batch without a lot number, but not without a quantity', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
     await assertSucceeds(setDoc(doc(db, `${batchPath}/b-1`), { expiryDate: new Date('2027-01-31'), quantity: 2, source: 'manual' }));
     await assertFails(setDoc(doc(db, `${batchPath}/b-2`), { expiryDate: new Date('2027-01-31'), source: 'manual' }));
     await assertFails(setDoc(doc(db, `${batchPath}/b-3`), { expiryDate: new Date('2027-01-31'), quantity: 0, source: 'manual' }));
@@ -491,9 +500,9 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
     await assertFails(deleteDoc(doc(db, drawerPath)));
   });
 
-  test('a manager may delete an unused slot and placement', async () => {
+  test('an Admin may delete an unused slot and placement', async () => {
     await seedStructure({ used: false });
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(deleteDoc(doc(db, slotPath)));
     await assertSucceeds(deleteDoc(doc(db, assignmentPath)));
   });
@@ -530,7 +539,7 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
 
   test('a used placement keeps its slot and product; its target and stock may change', async () => {
     await seedStructure({ used: true });
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, assignmentPath), { slotId: 'r0c1' }));
     await assertFails(updateDoc(doc(db, assignmentPath), { productId: 'product-2' }));
     await assertSucceeds(updateDoc(doc(db, assignmentPath), { targetQuantity: 12, currentQuantity: 6 }));
@@ -538,7 +547,7 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
 
   test('a used drawer keeps its grid and number; an unused one may change', async () => {
     await seedStructure({ used: true });
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertFails(updateDoc(doc(db, drawerPath), { rows: 3 }));
     await assertFails(updateDoc(doc(db, drawerPath), { number: 2 }));
     await assertFails(updateDoc(doc(db, slotPath), { columnSpan: 2 }));
@@ -546,7 +555,7 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
 
   test('a drawer\'s optional name: 1–50 characters; a used drawer may be renamed (D20)', async () => {
     await seedStructure({ used: true });
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(updateDoc(doc(db, drawerPath), { name: 'Via aérea' }));
     await assertSucceeds(updateDoc(doc(db, drawerPath), { name: deleteField() }));
     await assertFails(updateDoc(doc(db, drawerPath), { name: '' }));
@@ -558,7 +567,7 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
 
   test('a new drawer may have a name, within the limit (D20)', async () => {
     await seedBaseline();
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     const drawers = `institutions/${INST_A}/carts/${CART_ID}/drawers`;
     await assertSucceeds(setDoc(doc(db, `${drawers}/drawer-2`), { number: 2, name: 'Circulação', rows: 1, columns: 2 }));
     await assertSucceeds(setDoc(doc(db, `${drawers}/drawer-3`), { number: 3, rows: 1, columns: 2 }));
@@ -570,8 +579,89 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), drawerPath), { rows: 2, columns: 2, usedAt: new Date('2026-10-29T10:00:00Z') });
     });
-    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(updateDoc(doc(db, drawerPath), { number: 1 }));
+  });
+});
+
+describe('user types: Super, Admin, Manager (D16)', () => {
+  const cartPath = `institutions/${INST_A}/carts/${CART_ID}`;
+  const assignmentPath = `${cartPath}/assignments/${ASSIGNMENT_ID}`;
+  const batchPath = `${assignmentPath}/batches`;
+
+  test('a Manager registered to the cart replenishes: new batch, stock and earliest expiry, event', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    await assertSucceeds(setDoc(doc(db, `${batchPath}/b-new`), { expiryDate: new Date('2027-06-30'), quantity: 2, lotNumber: 'L2' }));
+    await assertSucceeds(updateDoc(doc(db, assignmentPath), {
+      currentQuantity: 7, earliestKnownExpiry: new Date('2027-06-30'), updatedAt: serverTimestamp(), updatedBy: REG_MANAGER_UID,
+    }));
+    await assertSucceeds(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), {
+      actorUid: REG_MANAGER_UID, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'replenishment', amount: 2,
+    }));
+  });
+
+  test('a registered Manager records a correction and changes the cart state, but not its name', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    await assertSucceeds(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), {
+      actorUid: REG_MANAGER_UID, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'correction', amount: 1,
+    }));
+    await assertSucceeds(updateDoc(doc(db, cartPath), { status: 'replenishmentRequired', updatedAt: serverTimestamp(), updatedBy: REG_MANAGER_UID }));
+    await assertFails(updateDoc(doc(db, cartPath), { name: 'Outro nome' }));
+  });
+
+  test('a registered Manager can\'t change the structure: target, product, slot', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, assignmentPath), { targetQuantity: 12 }));
+    await assertFails(updateDoc(doc(db, assignmentPath), { productId: 'product-2' }));
+    await assertFails(setDoc(doc(db, `${cartPath}/assignments/new-1`), {
+      institutionId: INST_A, cartId: CART_ID, slotId: 'slot-2', productId: 'product-3', currentQuantity: 0, targetQuantity: 1,
+    }));
+  });
+
+  test('a batch is marked removed once and nothing else about it changes (P21)', async () => {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), `${batchPath}/b-1`), { expiryDate: new Date('2026-10-01'), quantity: 2 });
+    });
+    const db = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    await assertFails(updateDoc(doc(db, `${batchPath}/b-1`), { expiryDate: new Date('2028-01-01') }));
+    await assertSucceeds(updateDoc(doc(db, `${batchPath}/b-1`), { removedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db, `${batchPath}/b-1`), { removedAt: deleteField() }));
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(updateDoc(doc(admin, `${batchPath}/b-1`), { removedAt: deleteField() }));
+  });
+
+  test('a Manager not registered to the cart is refused everything on it', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertFails(getDoc(doc(db, assignmentPath)));
+    await assertFails(updateDoc(doc(db, assignmentPath), { currentQuantity: 4 }));
+    await assertFails(setDoc(doc(db, `${batchPath}/b-x`), { expiryDate: new Date('2027-06-30'), quantity: 1 }));
+    await assertFails(updateDoc(doc(db, cartPath), { status: 'outOfService' }));
+    await assertFails(addDoc(collection(db, `institutions/${INST_A}/usageEvents`), {
+      actorUid: MANAGER_UID, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'consumption', amount: -1,
+    }));
+  });
+
+  test('the old \'user\' role works as a Manager on the carts it\'s registered to', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertSucceeds(setDoc(doc(db, `${batchPath}/b-u`), { expiryDate: new Date('2027-06-30'), quantity: 1 }));
+    await assertSucceeds(updateDoc(doc(db, cartPath), { status: 'operational', updatedAt: serverTimestamp(), updatedBy: USER_UID }));
+  });
+
+  test('the catalogue, responsible users and audit trail are the Admin\'s', async () => {
+    await seedBaseline();
+    const manager = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(setDoc(doc(manager, `institutions/${INST_A}/products/p-new`), { name: 'Adrenalina' }));
+    await assertSucceeds(setDoc(doc(admin, `institutions/${INST_A}/products/p-new`), { name: 'Adrenalina' }));
+    await assertFails(setDoc(doc(manager, `${cartPath}/responsibleUsers/${USER2_UID}`), { uid: USER2_UID }));
+    await assertSucceeds(setDoc(doc(admin, `${cartPath}/responsibleUsers/${USER2_UID}`), { uid: USER2_UID }));
+    await assertFails(getDocs(collection(manager, `institutions/${INST_A}/auditEvents`)));
   });
 });
 

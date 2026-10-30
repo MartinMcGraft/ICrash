@@ -6,7 +6,8 @@ import '../../../services/pin_hasher.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 
-enum UsersFilter { all, managers, professionals, invited }
+/// D16: Admins (the institution's IT) and Managers (health professionals).
+enum UsersFilter { all, admins, managers, invited }
 
 /// B7 · Utilizadores e permissões.
 class UsersViewModel extends ViewModel {
@@ -36,17 +37,18 @@ class UsersViewModel extends ViewModel {
   UsersFilter filter = UsersFilter.all;
   String query = '';
 
-  /// Role whose permissions are shown in the side panel.
-  Role permissionRole = Role.user;
+  /// Role whose permissions are shown in the side panel: the Manager (an
+  /// Admin has every permission, D16).
+  Role permissionRole = Role.manager;
 
   List<Membership> _members = const [];
   Map<Role, Set<AppPermission>> _permissions = const {};
 
-  static bool _isManagerRole(Role r) => r == Role.manager || r == Role.institutionAdmin;
+  static bool _isAdminRole(Role r) => r == Role.institutionAdmin || r == Role.platformSuperAdmin;
 
   int get total => _members.length;
-  int get managerCount => _members.where((m) => _isManagerRole(m.role)).length;
-  int get professionalCount => _members.where((m) => m.role == Role.user).length;
+  int get adminCount => _members.where((m) => _isAdminRole(m.role)).length;
+  int get managerCount => _members.where((m) => m.role == Role.manager).length;
   int get invitedCount => _members.where((m) => m.status == MembershipStatus.invited).length;
 
   bool get canManage => session.isInstitutionAdmin;
@@ -61,8 +63,8 @@ class UsersViewModel extends ViewModel {
     return _members.where((m) {
       final inFilter = switch (effectiveFilter) {
         UsersFilter.all => true,
-        UsersFilter.managers => _isManagerRole(m.role),
-        UsersFilter.professionals => m.role == Role.user,
+        UsersFilter.admins => _isAdminRole(m.role),
+        UsersFilter.managers => m.role == Role.manager,
         UsersFilter.invited => m.status == MembershipStatus.invited,
       };
       if (!inFilter) return false;

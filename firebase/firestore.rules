@@ -9,9 +9,13 @@ rules_version = '2';
 // - Institution isolation: every path is rooted at institutions/{institutionId};
 //   access always checks a membership document scoped to that institution.
 // - No privilege escalation: a user can never write their own membership doc.
-// - Cart access: institution admins/managers see every cart; a normal user
-//   only sees carts they were explicitly assigned to via responsibleUsers
-//   (spec section 17).
+// - User types (D16, 30 Oct 2026): Super (platformAdmins marker, the I-Crash
+//   team) and Admin (membership 'institutionAdmin', the institution's IT) see
+//   and change everything in the institution; a Manager (membership
+//   'manager'; the old 'user' role counts as Manager) sees only the carts
+//   they're registered to (responsibleUsers) and has every cart action there
+//   (stock, batches, cart state), but no structure, catalogue, users or
+//   shifts.
 // - Immutable audit trail: usageEvents/auditEvents are create-only, never
 //   updated or deleted by clients (spec sections 18, 45, 60).
 service cloud.firestore {
@@ -44,12 +48,9 @@ service cloud.firestore {
       return isMember(institutionId) && role(institutionId) in roles;
     }
 
+    // D16: Admin or Super — everything in the institution.
     function isInstitutionAdmin(institutionId) {
       return hasRole(institutionId, ['institutionAdmin']) || isPlatformSuperAdmin();
-    }
-
-    function isManagerOrAbove(institutionId) {
-      return hasRole(institutionId, ['institutionAdmin', 'manager']) || isPlatformSuperAdmin();
     }
 
     function isAssignedToCart(institutionId, cartId) {
@@ -57,8 +58,10 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/institutions/$(institutionId)/carts/$(cartId)/responsibleUsers/$(request.auth.uid));
     }
 
+    // D16: the Admin, or a Manager registered to the cart. Whoever may read a
+    // cart may also do every cart action on it (stock, batches, state).
     function canAccessCart(institutionId, cartId) {
-      return isManagerOrAbove(institutionId) || isAssignedToCart(institutionId, cartId);
+      return isInstitutionAdmin(institutionId) || isAssignedToCart(institutionId, cartId);
     }
 
     function onlyChangedFields(fields) {
@@ -91,8 +94,6 @@ service cloud.firestore {
       return request.resource.data.get(field, null) == resource.data.get(field, null);
     }
 
-    // P5 (no overfill) and DATABASE.md `0 ≤ currNumberCC ≤ maxNumberCC`,
-    // `maxNumberCC > 0`. Mirrors InventoryRules.checkStock in the app.
     // D20: a drawer's optional descriptive name is text of 1–50 characters.
     function drawerNameValid() {
       return !('name' in request.resource.data) ||
@@ -101,6 +102,8 @@ service cloud.firestore {
           request.resource.data.name.size() <= 50);
     }
 
+    // P5 (no overfill) and DATABASE.md `0 ≤ currNumberCC ≤ maxNumberCC`,
+    // `maxNumberCC > 0`. Mirrors InventoryRules.checkStock in the app.
     function stockWithinTarget(data) {
       return data.targetQuantity > 0 &&
         data.currentQuantity >= 0 &&
@@ -170,8 +173,9 @@ service cloud.firestore {
     // user already sees their own responsible carts' assignments in full
     // via the ordinary per-cart `watchAssignments` reads below; they simply
     // don't get the cross-cart aggregate view.
+    // D16: Admin/Super only; a Manager reads their carts one by one.
     match /{path=**}/assignments/{assignmentId} {
-      allow read: if isManagerOrAbove(resource.data.institutionId);
+      allow read: if isInstitutionAdmin(resource.data.institutionId);
     }
 
     match /institutions/{institutionId} {
@@ -208,9 +212,10 @@ service cloud.firestore {
         }
       }
 
+      // D16: the catalogue is the Admin's.
       match /products/{productId} {
         allow read: if isMember(institutionId);
-        allow write: if isManagerOrAbove(institutionId);
+        allow write: if isInstitutionAdmin(institutionId);
       }
 
       match /carts/{cartId} {
@@ -220,14 +225,14 @@ service cloud.firestore {
         // the `cartId` path wildcard nor `resource.data`/`resource.id` --
         // without throwing "Null value error"/"Property ... is undefined
         // on object" for every candidate document, even for a caller whose
-        // first `||` branch (`isManagerOrAbove`) is staticaly true and
+        // first `||` branch (`isInstitutionAdmin`) is statically true and
         // never itself touches `resource`. `get` (single-document reads,
         // used by `getCart`) has no such limitation and keeps using the
         // richer `responsibleUsers`-subcollection check via
         // `canAccessCart`. `list` (used by `watchAccessibleCarts`) instead
         // needs the caller to shape its query to match this rule exactly:
-        // manager+ lists the collection unfiltered (this branch never
-        // touches `resource`, so it is safe); a normal user must filter by
+        // an Admin/Super lists the collection unfiltered (this branch never
+        // touches `resource`, so it is safe); a Manager must filter by
         // `responsibleUserIds array-contains <their uid>`, matching the
         // denormalized array field `FirestoreCartRepository.assignResponsibleUser`/
         // `removeResponsibleUser` keep in sync on the cart doc itself. See
@@ -237,23 +242,27 @@ service cloud.firestore {
         // manifesting on a plain (non-collection-group) nested collection
         // this time.
         allow get: if canAccessCart(institutionId, cartId);
-        allow list: if isManagerOrAbove(institutionId) ||
+        allow list: if isInstitutionAdmin(institutionId) ||
           (isMember(institutionId) && request.auth.uid in resource.data.responsibleUserIds);
-        allow create, update: if isManagerOrAbove(institutionId);
+        allow create: if isInstitutionAdmin(institutionId);
+        // D16: a Manager registered to the cart may change its state only.
+        allow update: if isInstitutionAdmin(institutionId) ||
+          (canAccessCart(institutionId, cartId) && onlyChangedFields(['status', 'updatedAt', 'updatedBy']));
         allow delete: if false;
 
+        // Who is registered to the cart: set by the Admin (P18).
         match /responsibleUsers/{uid} {
           allow read: if canAccessCart(institutionId, cartId);
-          allow write: if isManagerOrAbove(institutionId);
+          allow write: if isInstitutionAdmin(institutionId);
         }
 
         // Drawers are never deleted. A used drawer keeps its grid, and its
         // number unless it never had one (P1/P2, Q8).
         match /drawers/{drawerId} {
           allow read: if canAccessCart(institutionId, cartId);
-          allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data) && drawerNameValid();
+          allow create: if isInstitutionAdmin(institutionId) && !('usedAt' in request.resource.data) && drawerNameValid();
           // The optional name (D20) isn't structure: a used drawer may be renamed.
-          allow update: if (isManagerOrAbove(institutionId) && usedAtKept() && drawerNameValid() &&
+          allow update: if (isInstitutionAdmin(institutionId) && usedAtKept() && drawerNameValid() &&
               (!isUsed() || (unchanged('rows') && unchanged('columns') &&
                 (!('number' in resource.data) || unchanged('number'))))) ||
             (canAccessCart(institutionId, cartId) && onlyMarksUsed());
@@ -262,11 +271,11 @@ service cloud.firestore {
           // A used slot keeps its place and size and can't be deleted.
           match /slots/{slotId} {
             allow read: if canAccessCart(institutionId, cartId);
-            allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data);
-            allow update: if (isManagerOrAbove(institutionId) && usedAtKept() &&
+            allow create: if isInstitutionAdmin(institutionId) && !('usedAt' in request.resource.data);
+            allow update: if (isInstitutionAdmin(institutionId) && usedAtKept() &&
                 (!isUsed() || (unchanged('row') && unchanged('column') && unchanged('rowSpan') && unchanged('columnSpan')))) ||
               (canAccessCart(institutionId, cartId) && onlyMarksUsed());
-            allow delete: if isManagerOrAbove(institutionId) && !isUsed();
+            allow delete: if isInstitutionAdmin(institutionId) && !isUsed();
           }
         }
 
@@ -278,21 +287,21 @@ service cloud.firestore {
           // anyone — otherwise a manager of one institution could make an
           // assignment readable to a different institution's `list` query
           // via the collection-group rule above, which trusts these fields.
-          allow create: if isManagerOrAbove(institutionId) &&
+          allow create: if isInstitutionAdmin(institutionId) &&
             request.resource.data.institutionId == institutionId &&
             request.resource.data.cartId == cartId &&
             stockWithinTarget(request.resource.data) &&
             !('usedAt' in request.resource.data);
           // P1: a placement with History can't be deleted.
-          allow delete: if isManagerOrAbove(institutionId) && !isUsed();
-          // A normal assigned user may only ever move currentQuantity during
-          // daily consumption; every structural field stays manager+ only
-          // (spec sections 22-24, 43).
+          allow delete: if isInstitutionAdmin(institutionId) && !isUsed();
+          // D16: a Manager registered to the cart changes the stock
+          // (consumption, replenishment, the monthly check) but no structural
+          // field: slot, drawer, product and target stay the Admin's.
           // A used placement keeps its slot and its product (P1, DATABASE.md
           // §2.3 trigger on SLOTCC).
-          allow update: if (isManagerOrAbove(institutionId) ||
+          allow update: if (isInstitutionAdmin(institutionId) ||
               (canAccessCart(institutionId, cartId) &&
-                onlyChangedFields(['currentQuantity', 'updatedAt', 'updatedBy', 'usedAt']))) &&
+                onlyChangedFields(['currentQuantity', 'earliestKnownExpiry', 'updatedAt', 'updatedBy', 'usedAt']))) &&
             request.resource.data.institutionId == resource.data.institutionId &&
             request.resource.data.cartId == resource.data.cartId &&
             stockUpdateAllowed() &&
@@ -301,15 +310,20 @@ service cloud.firestore {
 
           // DB1: a batch is the units of one slot with the same expiry date.
           // Batches are never deleted; a batch confirmed gone gets `removedAt`.
+          // D16: whoever works on the cart adds and removes batches.
           match /batches/{batchId} {
             allow read: if canAccessCart(institutionId, cartId);
             // A new batch needs its quantity (> 0) and expiry date; the lot
             // number is optional (P9).
-            allow create: if isManagerOrAbove(institutionId) &&
+            allow create: if canAccessCart(institutionId, cartId) &&
               request.resource.data.quantity is int &&
               request.resource.data.quantity > 0 &&
-              request.resource.data.expiryDate is timestamp;
-            allow update: if isManagerOrAbove(institutionId);
+              request.resource.data.expiryDate is timestamp &&
+              !('removedAt' in request.resource.data);
+            // The only change is marking it removed, once (P21).
+            allow update: if canAccessCart(institutionId, cartId) &&
+              !('removedAt' in resource.data) &&
+              onlyChangedFields(['removedAt', 'updatedAt']);
             allow delete: if false;
           }
         }
@@ -328,7 +342,7 @@ service cloud.firestore {
 
       // Immutable administrative/audit trail (spec sections 18, 45, 60).
       match /auditEvents/{eventId} {
-        allow read: if isManagerOrAbove(institutionId);
+        allow read: if isInstitutionAdmin(institutionId);
         allow create: if isMember(institutionId) && request.resource.data.actorUid == request.auth.uid;
         allow update, delete: if false;
       }
