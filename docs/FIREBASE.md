@@ -281,6 +281,10 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
   (`UsageRepository.watchUsedAssignmentIds`), so the UI blocks them anyway.
 - **Values:**
   - Roles: `platformSuperAdmin`, `institutionAdmin`, `manager`, `user`.
+    **Target (30 Oct, D16–D18, `docs/REVIEW_2026-10-30.md`):** `user` goes away (its
+    memberships become `manager`, limited to carts in `responsibleUsers`); a new `device`
+    role for registered tablets (D17); Super reaches an institution only with an open support
+    grant (D18). Not implemented yet; the rules tests must cover each before any deploy.
   - Membership status: `active`, `invited`, `disabled`.
   - Cart status: `operational`, `replenishmentRequired`, `auditRequired`,
     `outOfService`.

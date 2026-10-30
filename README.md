@@ -191,9 +191,13 @@ Key conventions:
 ### Roles
 
 The code has `platformSuperAdmin`, `institutionAdmin`, `manager` and `user`
-(`domain/entities/role.dart`). The product direction uses **Engineer Admin**,
-**Institution Manager** and **Health Professional**, with a fourth type still
-undecided. Mapping the two is open decision **D2**.
+(`domain/entities/role.dart`). **Decided on 30 Oct (D16, `docs/OPEN_DECISIONS.md`):**
+three user types, **Super** = `platformSuperAdmin` (the I-Crash team; reaches an
+institution only through a time-limited support grant from its Admin, D18), **Admin** =
+`institutionAdmin` (the institution's IT) and **Manager** = `manager` (a health
+professional, limited to the carts they're registered to). The `user` role is dropped.
+Until the code catches up, `docs/APP.md` §2 says what runs. The 30 Oct device review and
+its fixes are in `docs/REVIEW_2026-10-30.md`.
 
 ---
 
@@ -286,7 +290,8 @@ clinical questions for the nurses are in `docs/OPEN_DECISIONS.md`.
 | `docs/FIREBASE.md` | Backend: local emulators, cloud project, deploying rules, creating admins, a new project from zero, data model, security rules and their quirks, indexes, inventory rules |
 | `docs/DESIGN.md` | Figma file and pages, design principles, colour/type/spacing tokens, components, state system, layout per screen size |
 | `docs/DESIGN_CHANGES.md` | Visible changes made in code that the Figma file doesn't show yet (frame and node ids, PT/EN copy, components), as input for a Figma session |
-| `docs/OPEN_DECISIONS.md` | Decisions D1–D15 with their status, and the clinical questions; never answer those in code by guesswork |
+| `docs/OPEN_DECISIONS.md` | Decisions D1–D22 with their status, and the clinical questions; never answer those in code by guesswork |
+| `docs/REVIEW_2026-10-30.md` | Martim's device review of 30 Oct (iPhone 16, iPad mini, iPad Pro, laptop): findings RV-1–RV-26 with cause and fix, user types, device setup, support access, phone vs tablet differences |
 | `docs/RELEASE_CHECKLIST.md` | What a real store release requires (signing, accounts) |
 | `docs/DATABASE.md` | Database design for the relational/PostgreSQL version. Part 1: the conceptual ER model (every entity, attribute and relationship explained, with cardinalities, rules and open items; diagram in `docs/ICrash_ERD_Conceptual.png`). Part 2: the logical model (tables, types, NULL/NOT NULL, keys, constraints; diagram in `docs/ICrash_ERD_Logical.png`) |
 | `docs/DOMAIN.md` | The domain rules and why they exist (stock, lots, expiry, audits, roles, scanning, no patient data). Code comments "spec section N" refer to §N here |

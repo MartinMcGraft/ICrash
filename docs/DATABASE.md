@@ -4,8 +4,12 @@ The relational database design for I-Crash, to be implemented and tested in Post
 
 | Part | Content | Status |
 |---|---|---|
-| **1. Conceptual model** | Entity–relationship (ER) diagram: entities, attributes, relationships and cardinalities | **Finished** (18 Oct 2026, updated 28 Oct), being validated |
-| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026, updated 28 Oct). The PostgreSQL script with realistic data comes next |
+| **1. Conceptual model** | Entity–relationship (ER) diagram: entities, attributes, relationships and cardinalities | **Finished** (18 Oct 2026, updated 28 and 30 Oct), being validated |
+| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026, updated 28 and 30 Oct). The PostgreSQL script with realistic data comes next |
+
+**30 Oct 2026 (app review, `docs/REVIEW_2026-10-30.md`):** drawers get an optional `name` (D20);
+the user types are Super, Admin and Manager (D16); support access (D18) and registered devices
+(D17) are new open points DB13 and DB14. **The ERD PNGs don't show these yet.**
 
 **Diagrams:**
 - Conceptual: [`ICrash_ERD_Conceptual.png`](ICrash_ERD_Conceptual.png). Part 1 explains it; if the two
@@ -141,6 +145,7 @@ exists inside its cart, so it's a weak entity.
 |---|---|---|
 | `idDrawer` | Partially unique | Identifies the drawer within its cart |
 | `number` | Unique within its cart | The drawer's position in the cart (1 = top), as printed on the cart. Two drawers of one cart never share a number |
+| `name` | Optional | A descriptive name ("Via aérea", "Circulação"), shown next to the number. When empty the app shows "Gaveta N" (D20, 30 Oct; reverses the drawer half of P17) |
 | `rows` | | Number of rows in the drawer's grid |
 | `columns` | | Number of columns in the drawer's grid |
 
@@ -252,9 +257,12 @@ can't change their own (DB3).
 | `pinHash` | | The short PIN used to unlock a cart tablet and to sign reports, stored as a hash. **Not unique**: two people may pick the same PIN, and identity comes from `userNumber` |
 
 #### UserType
-**What it is:** a kind of user: Engineer Admin, Institution Manager, Health Professional (a
-fourth type is still to be defined). The Engineer Admin is the institution's IT department, with
-administrative access to I-Crash; when they need help, they contact the I-Crash team (P14).
+**What it is:** a kind of user (D16, 30 Oct): **Super** (the I-Crash team's IT staff; reaches an
+institution only through a support grant, D18/DB13), **Admin** (the institution's IT staff,
+everything in the institution) and **Manager** (a health professional, full access to the carts
+they're registered to through CrashCartUser). The former "Health Professional" type is dropped;
+this replaces P14. Open: whether a Super is a USER row on each institution's server or lives only
+on the I-Crash side (DB13).
 **Why it's here:** permissions are given per type of user, not per person.
 
 | Attribute | Marking | What it is and why it exists |
@@ -535,8 +543,10 @@ Also decided on 28 Oct, from the comparison of this design with the code (questi
   checked by hand.
 - **P11:** month-only expiry dates are stored as the last day of the month.
 - **P14:** the Engineer Admin is the institution's IT department, with administrative access. When
-  they need help, they contact the I-Crash team.
-- **P17:** users have no department, and drawers have no name.
+  they need help, they contact the I-Crash team. **Superseded on 30 Oct by D16:** that role is
+  now **Admin**, and **Super** is the I-Crash team, with support access (D18).
+- **P17:** users have no department, and drawers have no name. **Changed on 30 Oct (D20):** drawers
+  have an optional `name`; users still have no department.
 
 ---
 
@@ -642,6 +652,7 @@ One row: the hospital or clinic this server belongs to.
 | `idDrawer` | PK | INTEGER, auto | NOT NULL | Partial key |
 | `idCrashCart` | PK, FK → CRASHCART | INTEGER | NOT NULL | R6 |
 | `number` | | SMALLINT | NOT NULL | CHECK `> 0` |
+| `name` | | VARCHAR(50) | NULL | D20. Not unique |
 | `rows` | | SMALLINT | NOT NULL | CHECK `> 0` |
 | `columns` | | SMALLINT | NOT NULL | CHECK `> 0` |
 
@@ -738,7 +749,7 @@ one expiry date, so stocking more units with the same date adds to the existing 
 | Column | Key | Type (size) | Null | Notes |
 |---|---|---|---|---|
 | `idUserType` | PK | INTEGER, auto | NOT NULL | |
-| `type` | UNIQUE | VARCHAR(50) | NOT NULL | Engineer Admin, Institution Manager, Health Professional |
+| `type` | UNIQUE | VARCHAR(50) | NOT NULL | Super, Admin, Manager (D16) |
 
 #### PERMISSION
 | Column | Key | Type (size) | Null | Notes |
@@ -879,6 +890,7 @@ These are the places where the 28 Oct diagram differs from them:
 | 2 | DRAWER `number` is marked (U), i.e. unique across all carts | UNIQUE (`idCrashCart`, `number`) | A drawer number is unique within its cart; every cart has a drawer 1. ERDplus can't show a uniqueness rule over two columns |
 | 3 | No UNIQUE on SLOTCC's slot columns | UNIQUE (`idSlot`, `idDrawer`, `idCrashCart`) | R8 is 1 : 0..1. Without it, a slot could hold two consumables |
 | 4 | — | UNIQUE pairs on USERTYPEPERMISSION, CRASHCARTUSER and REPORTITEM; UNIQUE (`idCrashCart`, `idClinicalConsumable`) on SLOTCC; the CHECKs in §2.2 and the triggers in §2.3 | Rules the diagram doesn't show |
+| 5 | DRAWER has no `name` | `name` VARCHAR(50) NULL | Added on 30 Oct (D20), after the diagrams were drawn. Both PNGs need it |
 
 Fixed in the 28 Oct diagram, so no longer differences: SLOT's three-column PK, SLOTCC's three-column
 FK to SLOT, drawer `number` out of DRAWER's PK, and the duplicate column names in CRASHCART and
@@ -896,6 +908,8 @@ To settle before the PostgreSQL script. Also tracked in `docs/OPEN_DECISIONS.md`
 | DB10 | `weight` and `volume` as text | **Decided (28 Oct):** descriptive text with the unit ("30 mg", "3 ml"). The list of units is an app configuration setting, not a table, so countries that don't use the metric system can be supported |
 | DB11 | Deactivating users | USER has no active/disabled status (the Firebase version has one), and a user can't be deleted once History or a Report points to them. Something like an `active` boolean is needed to block people who leave |
 | DB12 | Not modelled yet | A per-product expiry warning (the app has one; the model only has the institution's `expiryWarningDays`); drawer layout versions (`DOMAIN.md` §38); the administrative audit log of roles, permissions and layout changes (`DOMAIN.md` §45), left to the security phase |
+| DB13 | Support access (D18, 30 Oct) | Not modelled. A grant (institution, granted by an Admin, reason, start, end, closed at) and an append-only access log (who, when, which grant). Also open: is a Super a USER of each institution's server, or an account on the I-Crash side reached over the hospital's remote-access window? |
+| DB14 | Registered devices (D17, 30 Oct) | Not modelled. A device (institution, name, registered by, registered at, revoked at) and the carts it's bound to; History rows made on it could reference it |
 
 ## 2.7 Names in PostgreSQL
 

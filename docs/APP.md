@@ -9,6 +9,10 @@ Updated 29 Oct 2026 (design v2, branch `DEV-Martim`; aligned with the database d
 of 28 Oct: no minimum stock, no overfill, drawer numbers, batches never deleted, structure
 fixed once used, templates archived, credentials set by the administration).
 
+**30 Oct 2026 review:** Martim's device review and decisions **D16–D22** are in
+[REVIEW_2026-10-30.md](REVIEW_2026-10-30.md). Sections below marked **"Target (30 Oct)"**
+describe what the code must become; until it's done, the rest of the section is what runs.
+
 This describes the app **as it runs today, on Firebase**. The relational database designed
 on 18 Oct for the local-server version is in [DATABASE.md](DATABASE.md); where it changes
 how a screen should work, a "Database model" note says so.
@@ -22,8 +26,8 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 
 | Shell | Platforms | For | Layout |
 |---|---|---|---|
-| **App** | Android, iOS, iPadOS (phone and tablet) | Health professionals at the cart: monthly checks, replenishing, emergencies | Landscape only. Navy side rail (96 px on tablet, 72 px on phone) |
-| **Dashboard** | Web, Windows, macOS, Linux | Managers and admins: configuration, catalogue, users, shifts, reports | 240 px navy sidebar |
+| **App** | Android, iOS, iPadOS (phone and tablet) | Managers (health professionals) at the cart: monthly checks, replenishing; Admin and Super to test | Landscape only. Navy side rail (96 px on tablet, 72 px on phone) |
+| **Dashboard** | Web, Windows, macOS, Linux | Admins (institution IT) and Super (I-Crash team): configuration, catalogue, users, devices, shifts, reports; Managers may use it for their carts | 240 px navy sidebar |
 
 - Override for testing: `flutter run --dart-define=ICRASH_SHELL=app` (or `dashboard`).
 - In **debug builds** the profile menu has "Ver como App / Ver como Dashboard" to switch
@@ -52,17 +56,34 @@ PIN), switch institution (only with more than one), the debug-only shell switch,
 out. There is no "set/change PIN" any more (DB3): a line says "Para alterar as suas
 credenciais, contacte a administração." 
 
+**Target (30 Oct, RV-15):** in release builds the profile menu shows only **Bloquear
+agora** and **Terminar sessão** (plus the credentials line). The shell switch stays behind
+`kDebugMode`; the language switch moves to A1 and the Dashboard settings; "Mudar de
+instituição" is for Super only (D18).
+
 ---
 
 ## 2. Users and permissions
 
-### Roles in the code
+### User types (D16, decided 30 Oct)
 
-| Code role (`Role`) | Product name (D2) | Scope |
+| Type | Who | Scope | Uses | Code role |
+|---|---|---|---|---|
+| **Super** | I-Crash team IT staff | App problems, updates, helping the institution's IT. Several institutions, **one at a time and only while that institution has granted support access** (D18) | Dashboard, tablet and phone | `platformSuperAdmin` (a `platformAdmins/{uid}` document, not a membership) |
+| **Admin** | The institution's IT staff | Everything in **one** institution: all carts, users, devices, catalogue, templates, settings. No other institution | Dashboard; tablet or phone to test | `institutionAdmin` |
+| **Manager** | A health professional | Full access to the **carts they're registered to** (`responsibleUsers`), nothing else | Tablet or phone; may use the Dashboard | `manager` |
+
+The **`user` role is dropped** (existing `user` memberships become `manager`). Structure editing
+(drawers, grid, catalogue, templates) stays Dashboard work and Admin-only by default (R7); B7
+toggles can grant it to Managers. Support access rules: REVIEW_2026-10-30.md §2.2.
+
+**What the code does today** (until D16 is implemented):
+
+| Code role (`Role`) | Old product name (D2) | Scope today |
 |---|---|---|
-| `platformSuperAdmin` | Engineer Admin | Every institution. Granted by a `platformAdmins/{uid}` document, not a membership |
+| `platformSuperAdmin` | Engineer Admin | Every institution |
 | `institutionAdmin` | Institution Manager | Everything in one institution, including users |
-| `manager` | Institution Manager (without user management) | Configuration and stock in one institution |
+| `manager` | Institution Manager (without user management) | Configuration and stock in **every cart** of one institution |
 | `user` | Health Professional | The carts they're responsible for |
 
 "Manager+" in this document means `manager`, `institutionAdmin` or `platformSuperAdmin`.
@@ -117,6 +138,24 @@ start ─▶ saved session on this device?
 The flow lives in `ui/app/app_root_view_model.dart` (stages:
 `starting → signedOut | locked | pin | cartLogin → pickingInstitution → ready`).
 
+**Target (30 Oct, D17 device setup):** today A2/A3 only work after the user signed in with
+e-mail + password on that device, because Firebase Auth needs a signed-in account and a PIN
+isn't one (no Cloud Functions on Spark). New flow:
+
+1. I-Crash delivers the tablet with the app installed.
+2. **"Configurar dispositivo"** (once per device): an Admin, or Super with an open grant,
+   signs in, names the device and optionally binds carts. The app creates a **device
+   account** (a `device` membership of the institution) and keeps its credentials on the
+   device; the Admin's session ends.
+3. On a registered device, A1 offers **"Desbloquear com PIN"** (user number or e-mail +
+   PIN) and **"Entrar no carro"** (scan the cart's QR, then PIN). Nobody types a password.
+4. Personal devices (laptop, a Manager's phone) keep e-mail + password.
+5. Admins list and revoke devices in the Dashboard.
+
+The **institution picker** is shown **only to Super**, listing institutions with an open
+support grant (RV-1, RV-2). Rules changes and the prototype's security limits:
+REVIEW_2026-10-30.md §3.2.
+
 **Credentials (DB3, done 29 Oct):** only the administration sets or resets a user's
 password and PIN (B7); users can't change their own, and the app offers no way to.
 **Interim, under Firebase:** the PIN hash is readable by its user so the device can check
@@ -144,7 +183,15 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 - The cart's **drawers**, shown as **"Gaveta N"** in number order (P17: drawers have a
   number and no name), each with its own state (worst slot wins) and counts.
 - **Cart menu:** monthly check · search product (shows "Gaveta N · posição B3") · show
-  the cart QR code · change state (manager+) · the cart's reports. The **Modo de
+  the cart QR code · change state (manager+) · the cart's reports.
+- **Target (30 Oct):**
+  - Drawer rows: number badge on the left, then the drawer's **optional name** (D20;
+    "Gaveta N" only when it has none), then the grid line; state and arrow at the **right
+    end** of the row (RV-22).
+  - "Mostrar código QR" leaves the App; the QR is printed or downloaded from **B3** (RV-21).
+  - "Relatórios" switches to the **Relatórios** section filtered by this cart, so the rail
+    highlights Relatórios (RV-12).
+  - Phones show **every** action (change state, reports); the menu may scroll vertically (D21). The **Modo de
   emergência** button is **hidden** for now (P12; `kEmergencyModeEnabled` in
   `cart_screen.dart`); A10's code is kept.
 - **Automatic state (D7)**, when switched on for the cart in B3:
@@ -172,6 +219,7 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
   The panel shows the product, quantity vs target, earliest known expiry, lots, and
   actions:
   - **Registar consumo:** lower the quantity (anyone with `recordConsumption`).
+    **Target (30 Oct, RV-23):** the panel closes after a successful consumption.
   - **Repor stock (A7):** add units with an **expiry date** (required), a quantity > 0
     and an **optional lot** (P9). Can be pre-filled by a GS1 scan; month-only GS1 dates
     become the **last day of the month** (P11). The event records the batch it created.
@@ -193,6 +241,11 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 ### A8 Monthly check
 `features/monthly_check/`
 
+**Target (30 Oct, D22): rewrite to D4 now** (REVIEW_2026-10-30.md §5.5): only expired and
+expiring batches, one explicit outcome each, **autosave** after every answer, back goes to the
+previous step, no "Marcar restantes", resume from the cart menu. The bullets below describe the
+old screen until the rewrite lands.
+
 - Decision D4 (half-confirmed): go **drawer by drawer**. Tap each position: unchecked →
   verified, or → problem (positions that already show an issue start as problem).
   Long-press clears. "Marcar restantes" verifies the rest of the drawer.
@@ -213,6 +266,9 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 - **Only the person who performed the check signs it** (DB4): anyone else sees "Só quem
   fez a verificação pode assinar" instead of the PIN field.
 - PDF export (`report_pdf.dart`). Reports and signatures are a **local stub** for now.
+- **Target (30 Oct, RV-19, RV-20, RV-25):** an unsigned report is a draft that survives back;
+  leaving it asks whether to sign now or later ("Relatórios → Por assinar"); a badge shows
+  pending signatures; more space between the PIN field and "Assinar".
 
 ### A10 Emergency mode
 `features/emergency/`
@@ -240,6 +296,9 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
   (lot and expiry from the GS1 code). An unknown GTIN is never linked silently.
 - **Cart mode:** the cart's internal QR (`icrash://v1/...`) opens that cart. A code from
   another institution is rejected.
+- **Target (30 Oct, RV-26):** inside a cart (a cart-limited session, or opened from a cart)
+  only consumables can be read; the mode tabs are hidden. In the drawer's scan sheet,
+  "Cancelar e inserir manualmente" opens the manual-entry field (RV-24).
 - Error messages: unreadable, unknown product, not a cart, other institution, not in any
   cart.
 
@@ -251,7 +310,7 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 |---|---|---|
 | **B1 Overview** | `overview_*` | Metrics: operational carts, needing replenishment, expiring within 30 days (and in how many carts), overdue checks, emergencies this month. "Carrinhos que precisam de atenção" list and recent activity (stock events + reports). PDF of the overview |
 | **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers, responsible now. Filters and search. **New cart**, from scratch or **from a template** |
-| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
+| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **Target (30 Oct):** print/download the cart QR (RV-21); drawer **name** (optional, D20) in the drawer form and table. Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
 | **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, expiry warning ("Aplicar à posição"), "Limpar posição". A target below the current stock is refused. **Once the drawer has History** (P1/P2) the layout is locked (steppers, merge, split disabled; a warning replaces the hint), used slots keep their product and can't be cleared; targets can still change. **Orphaned assignments** (old data): reassign, or remove only when unused (Q7) |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
 | **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture; create a cart from it. Templates never carry stock, lots or history. **Archived, never deleted** (P3): tabs "Ativos / Arquivados", "Arquivar modelo" and "Restaurar"; archived templates aren't offered for new carts but can still be edited (local stub) |
@@ -369,6 +428,14 @@ app/lib/
   `belowZero`, `targetBelowCurrent`, `invalidTarget`, `slotTaken`, `slotInUse`,
   `drawerInUse`, `drawerNumberTaken`, `quantityRequired`.
 
+### Phone vs tablet (D21, 30 Oct)
+
+A phone may change **how** things are shown (shorter labels, smaller buttons, vertical
+scrolling, a "Mais ações" menu), never **what** the user can do. Today some actions are hidden
+on phones behind `if (!compact)` (A5 change state and reports, A6 Trocar produto / Limpar
+posição / Corrigir / Reconciliar); those are bugs to fix. The full list of differences and the
+reason for each is in REVIEW_2026-10-30.md §4.
+
 ### Layout rule (no sideways scrolling, ever)
 
 | Form factor (`formFactorOf`) | Rule |
@@ -383,12 +450,19 @@ app/lib/
   pager instead of scrolling).
 - **Enforced by:** `test/ui/layout_fit_test.dart`, which renders screens at 844×390,
   1280×800 and 1440×900 with heavy data and fails on overflow or a forbidden scroll.
+- **Target (30 Oct):** also iPhone 16 landscape **with safe-area insets** (852×393, 59 px
+  left/right, 21 px bottom) and iPad mini landscape (1133×744), for every A-screen including
+  A5, A6, A8 and A9 (signed and unsigned). Real devices overflowed where the test passed
+  (RV-5–RV-9, RV-13).
 
 ### Localisation
 - PT-PT is the default and the template (`lib/l10n/app_pt.arb`), and English is the
   second language. After editing either file, run `flutter gen-l10n`; the output goes to
   `lib/src/common/l10n/`.
 - Use ICU plurals for counts.
+- **Terminology (D19, 30 Oct):** never "Produto" in the UI. Short form **Consumível**
+  (EN "Consumable"); long form **Consumível clínico** (EN "Clinical consumable") for titles.
+  Code names (`Product`) don't change.
 - CSV/PDF exports stay in Portuguese whatever the UI language.
 
 ### Adding a screen
@@ -430,7 +504,8 @@ Run with `flutter test` in `app/`.
 4. **Local stubs** (reports, signatures, templates, shifts, permissions, emergencies,
    D7 switch) live on one device until they get Firestore implementations.
 5. CSV export is a copy dialog (no file saver yet). CSV import is by paste. NFC is a stub.
-6. iOS doesn't run yet.
+6. iOS ran in debug against the emulator for the 30 Oct review; the cloud project's
+   `GoogleService-Info.plist` is still missing.
 7. **Uniqueness the rules can't check:** a drawer number per cart, one product per slot
    and one slot per product are checked by the app with queries (two devices could race).
    The database enforces them with UNIQUE constraints later.

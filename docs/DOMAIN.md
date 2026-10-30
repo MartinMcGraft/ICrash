@@ -112,15 +112,20 @@ Each institution chooses its login method, last.
 | **Manager** | Operational and configuration work on assigned carts and users, per granted permissions; may configure carts and drawers. Whether a Manager may change the layout of an **active** drawer stays open |
 | **User** | Normal health professional; sees only the institutions and carts explicitly assigned |
 
-**Today:** D2 renames these as Engineer Admin, Institution Manager and Health
-Professional, with a fourth type to define, and gives the Health Professional more
-actions. See OPEN_DECISIONS.md.
+**Today:** D2 renamed these as Engineer Admin, Institution Manager and Health
+Professional. **Superseded on 30 Oct by D16** (OPEN_DECISIONS.md): three types only,
+**Super** (I-Crash team IT; reaches an institution only through a time-limited support grant
+from its Admin, D18), **Admin** (the institution's IT; everything in one institution) and
+**Manager** (a health professional; full access to the carts they're registered to). The
+**User** type is dropped. The table above is kept for history.
 
 **Database model:** user types and permissions are tables (UserType, Permission and
 UserTypePermission), so the actions allowed to each type are configurable data, not code.
 
 ### 16. Multi-institution
-- Several independent institutions; one user may belong to several.
+- Several independent institutions; one user may belong to several. **Changed (28 Oct, and
+  D16 on 30 Oct):** a user belongs to one institution; only Super reaches several, one at a
+  time, through support grants (D18).
 - Membership and permissions are per institution.
 - **Access to institution A never grants access to institution B.**
 - Initially only a platform admin creates institutions.

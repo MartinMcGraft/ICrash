@@ -1,7 +1,7 @@
 # Open decisions
 
 What is decided, what is only proposed, and what still needs the team or the clinicians.
-Updated 28 Oct 2026 (database decisions DB1–DB4, DB7, DB8, DB10 and P1–P3, P5, P6, P9, P11, P12, P14, P16, P17; see `docs/DATABASE.md`).
+Updated 30 Oct 2026 (app review: D16–D22, see `docs/REVIEW_2026-10-30.md`). Before that, 28 Oct (database decisions DB1–DB4, DB7, DB8, DB10 and P1–P3, P5, P6, P9, P11, P12, P14, P16, P17; see `docs/DATABASE.md`).
 
 **Sources:**
 - Product decisions: the design audit of 12 Oct 2026 (claude.ai project "I-Crash",
@@ -17,22 +17,23 @@ depends on an open question, make it configurable or leave it visibly undecided.
 
 | # | Decision | Resolution |
 |---|---|---|
-| R1 | Platform split | One Flutter codebase: **App** on Android/iOS/iPadOS, **Dashboard** on web/Windows/macOS/Linux |
+| R1 | Platform split | One Flutter codebase: **App** on all platforms, **Dashboard** on web/Windows/macOS/Linux |
 | R2 | Monthly management | In scope, and the App's **default mode** |
 | R3 | Phones | In scope, landscape |
 | R4 | Orientation and navigation | Landscape only; permanent side bar |
 | R5 | Offline | Required, with sync on reconnect |
 | R6 | Cart state | Manual, with an optional automatic rule (D7) |
-| R7 | Structure editing (drawers, grid, catalogue, templates, users) | Dashboard only |
+| R7 | Structure editing (drawers, grid, catalogue, templates, users) | Dashboard only, only Super and Admin are allowed |
+| R8 | Design is responsive, **App** fits on all screens because it is made mobile first, **Dashboard** is only for large devices, laptops/desktops, with minimal width of 992px |
 
 ## 2. Design decisions
 
 | # | Decision | Status | What was chosen / proposed | Where in the app |
 |---|---|---|---|---|
 | D1 | Shell by platform or by role | **Decided** | The platform picks the shell; the role decides what's visible inside it | `resolveShellKind()` in `app_root.dart` |
-| D2 | User types and permissions | **Confirmed** (13 Oct) | Engineer Admin, Institution Manager, Health Professional (a 4th type still undefined). The Engineer Admin is the institution's IT department (28 Oct, P14). The Health Professional may view carts, record consumption, replenish, do the monthly check, sign reports and use emergency mode; structure stays with managers. **Still to do:** map it to the code roles and update `firestore.rules` (today a HP may change only `currentQuantity`). Database: UserType, Permission and UserTypePermission tables | B7, `AppPermission` |
-| D3 | Cart login and PIN | **Changed** (18 Oct) | Scanning the cart QR opens a session limited to that cart. **New direction (database design, 18 Oct):** the institution issues each employee's credentials (`userNumber`, password and PIN), and the PIN is checked by the institution's server, so it works on any cart tablet. This replaces the device-only PIN of 13 Oct. **Decided (28 Oct, DB3):** only the administration generates, changes or resets credentials; users can't change their own. Each institution chooses how it logs in (I-Crash offers options); this is defined last | A2, A3 |
-| D4 | Monthly check content | **Decided** (18 Oct, Martim) | The whole cart is checked in one go (breaks allowed; the app remembers where the nurse was). **Only items that are expired or expiring are checked**; everything else counts as valid by default. No drawer-by-drawer confirmation. Still open: the checklist items, the frequency (clinical Q7), and whether hospital procedure still requires a quick check of the rest (DATABASE.md DB6). Replaces the drawer-by-drawer proposal of 13 Oct and `DOMAIN.md` §46 "every drawer must be verified" | A8 |
+| D2 | User types and permissions | **Superseded by D16** (30 Oct) for the types; the permission list below still applies to Managers | Engineer Admin, Institution Manager, Health Professional (a 4th type still undefined). The Engineer Admin is the institution's IT department (28 Oct, P14). The Health Professional may view carts, record consumption, replenish, do the monthly check, sign reports and use emergency mode; structure stays with managers. **Still to do:** map it to the code roles and update `firestore.rules` (today a HP may change only `currentQuantity`). Database: UserType, Permission and UserTypePermission tables | B7, `AppPermission` |
+| D3 | Cart login and PIN | **Changed** (18 Oct); device setup added by **D17** (30 Oct) | Scanning the cart QR opens a session limited to that cart. **New direction (database design, 18 Oct):** the institution issues each employee's credentials (`userNumber`, password and PIN), and the PIN is checked by the institution's server, so it works on any cart tablet. This replaces the device-only PIN of 13 Oct. **Decided (28 Oct, DB3):** only the administration generates, changes or resets credentials; users can't change their own. Each institution chooses how it logs in (I-Crash offers options); this is defined last | A2, A3 |
+| D4 | Monthly check content | **Decided** (18 Oct, Martim); **build now** (D22, 30 Oct) | The whole cart is checked in one go (breaks allowed; the app remembers where the nurse was). **Only items that are expired or expiring are checked**; everything else counts as valid by default. No drawer-by-drawer confirmation. Still open: the checklist items, the frequency (clinical Q7), and whether hospital procedure still requires a quick check of the rest (DATABASE.md DB6). Replaces the drawer-by-drawer proposal of 13 Oct and `DOMAIN.md` §46 "every drawer must be verified" | A8 |
 | D5 / §9 | Emergency mode | **Idea kept, out of the final prototype.** No emergency mode for now (28 Oct, P12) | Consumption only, tap = −1 unit, a red shell, and ending it sets "Reposição necessária" and creates a summary. Open questions are in §4 | A10 |
 | D6 | Report signing | **Confirmed** (13 Oct) | Name + PIN + timestamp; the report is read-only once signed. Not a qualified digital signature (CMD / Cartão de Cidadão). **Decided (28 Oct, DB4):** the person who performs the check signs it; there is no separate signer | A9 |
 | D7 | Automatic cart state | **Confirmed** (13 Oct) | Expired or missing product → Reposição necessária; check older than 31 days → Verificação em atraso; otherwise Operacional; Fora de serviço is always manual. Switchable per cart | B3, `suggestedCartStatus` |
@@ -43,6 +44,13 @@ depends on an open question, make it configurable or leave it visibly undecided.
 | D12 | Slot interaction | Default implemented | Tap opens the side panel (no long-press) | A6 |
 | D13 | What a Health Professional sees on the carts list | Default implemented | Their carts with state; cross-cart alerts are manager+ (a Firestore limitation, see FIREBASE.md §6) | A4 |
 | D14 | Offline conflicts (two devices, same slot) | **Open** | Proposal: increments + append-only events for stock; last write wins for structure. Blocked on the offline-write fix | — |
+| D16 | User types | **Decided** (30 Oct, Martim) | **Super** = the I-Crash team's IT staff: full access to fix problems, ship updates and help the institution's IT; reaches several institutions, one at a time, only on request (D18); every screen type. **Admin** = the institution's IT staff: everything in one institution (all carts, users, devices, settings), no other institution; Dashboard, tablet/phone to test. **Manager** = a health professional: full access to the carts they're registered to; tablet or phone, may use the Dashboard. **User is dropped.** Code: `platformSuperAdmin`, `institutionAdmin`, `manager` (narrowed to registered carts); `user` removed. Replaces D2's types and P14 | B7, `Role`, `firestore.rules` |
+| D17 | Device setup and sign-in | **Decided** (30 Oct, Martim) | I-Crash delivers the tablet with the app installed; Admin and/or Super set it up once (device account, users, carts). On a registered device people use PIN or cart login without ever typing a password there; personal devices keep e-mail + password. Needed because Firebase Auth can't sign in with a PIN without server code. Rules: a `device` membership may read its institution's PIN hashes; writes carry the acting member. Prototype limit: the rules can't prove who typed the PIN | A1–A3, new "Configurar dispositivo", Dashboard device list |
+| D18 | Support access for Super | **Decided** (30 Oct, Martim) | Off by default. The institution's Admin grants it for a limited time with a reason and can close it; Super sees only institutions with an open grant; every access is logged and readable by the Admin; a banner shows while Super is inside. Maximum duration still to fix. Database: DB13 | Institution picker (Super only), Dashboard "Acesso do suporte" |
+| D19 | Terminology | **Decided** (30 Oct) | "Produto" → **Consumível** (short) and **Consumível clínico** (long); EN "Consumable" / "Clinical consumable". UI, PDF and CSV; code names unchanged | ARB files |
+| D20 | Drawer name | **Decided** (30 Oct), reverses the drawer half of P17 | Drawers get an **optional descriptive name** (e.g. "Via aérea") shown after the number badge; empty → "Gaveta N". Users still have no department | A5, B3, DATABASE.md DRAWER |
+| D21 | Phone vs tablet | **Decided** (30 Oct) | Same actions on every form factor. Phones may shorten labels, scroll vertically or group secondary actions in "Mais ações", never hide an action | A5, A6, all screens |
+| D22 | Monthly check rewrite | **Decided** (30 Oct) | Build D4 now: only expired/expiring batches, one outcome each, autosave, resume; "Marcar restantes" removed. An unsigned report survives back and is signed later from "Por assinar" | A8, A9 |
 | D15 | Deleting things that have history | Partly decided | **Archive, never delete.** Carts can be archived (the rules forbid deleting them). Drawers, slots and placements: once History refers to them they can't be deleted, and a used slot keeps its consumable; a cart's structure is expected to stay as built (28 Oct, P1/P2). Products: still to define. Database: carts have `archived`, batches `removedAt`; History and Report rows reference users, slots and products, so those can't be deleted once used (see DB11 for users) | B3 |
 
 **Infrastructure:**
@@ -71,6 +79,8 @@ Details and reasoning in `docs/DATABASE.md` §1.6 (conceptual model) and §2.6 (
 | DB10 | `weight` and `volume` as text with unit, or numbers with a fixed unit | **Decided (28 Oct):** descriptive text ("30 mg", "3 ml"); the list of units is an app setting, for non-metric countries |
 | DB11 | Deactivating users (no active/disabled status; used users can't be deleted) | **Open** |
 | DB12 | Not modelled yet: per-product expiry warning, drawer layout versions, administrative audit log | **Open**: the audit log goes to the security phase |
+| DB13 | Support access grant and its access log (D18) | **Open** (30 Oct): not modelled yet. Likely a SUPPORTGRANT table (institution, granted by, reason, from, until, closed at) and a SUPPORTACCESSLOG |
+| DB14 | Registered devices (D17) | **Open** (30 Oct): not modelled yet. Likely a DEVICE table (institution, name, registered by/at, revoked at) and the carts it's bound to |
 
 **From the design-vs-code comparison** (questions P1–P18 in the claude.ai project,
 `claude/db-design-vs-code-gap-report-2026-10-19.md`):
@@ -85,8 +95,8 @@ Details and reasoning in `docs/DATABASE.md` §1.6 (conceptual model) and §2.6 (
 | P6 | Is the first stock in a slot a Replenishment row? | **Not applicable (28 Oct):** there's no first-stock event; a cart is configured with the stock it already holds. Follow-up: P19 |
 | P9 | Lot number required at replenishment? | **Decided (28 Oct): optional.** Some items show only an expiry date; then it's entered and checked by hand |
 | P11 | Month-only expiry dates | **Decided (28 Oct):** last day of the month |
-| P14 | What is an Engineer Admin on a one-institution server? | **Decided (28 Oct):** the institution's IT department, with administrative access; they contact the I-Crash team for help |
-| P17 | Department for users, name for drawers? | **Decided (28 Oct): neither** |
+| P14 | What is an Engineer Admin on a one-institution server? | **Superseded (30 Oct) by D16:** the institution's IT department is the **Admin**; **Super** is the I-Crash team, with support access per D18 |
+| P17 | Department for users, name for drawers? | **Decided (28 Oct): neither. Changed (30 Oct, D20):** drawers get an optional name; users still have no department |
 | P19 | New (28 Oct): how does configuring a cart record the stock it already holds (`currNumberCC` and the batches' expiry dates), given that stock otherwise changes only through History? | **Open** |
 | P4 | Slot-state priority values | **Deferred (28 Oct):** set once the database design is closed. The order is "worst wins" (DB9) |
 | P7 | History types. The model has five: Consumption, Replenishment, Discard, Correction, Count. The code has neither Discard nor Count; it has a "reconciliation" after an audit. (a) Is **Count** the same thing: the nurse counts the units in a slot and the app records the difference? (b) Can units be thrown away (e.g. a broken ampoule) outside a monthly check, recorded as **Discard**? | **Open** |
