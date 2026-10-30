@@ -2366,4 +2366,116 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get resetPasswordSupport =>
       'In this version, another person\'s password can\'t be changed from the app. Ask technical support (the IT department) to reset it.';
+
+  @override
+  String get checkOutcomeReplaced => 'Replaced';
+
+  @override
+  String get checkOutcomeRemoved => 'Removed, not replaced';
+
+  @override
+  String get checkOutcomeKept => 'Kept';
+
+  @override
+  String get checkPendingLabel => 'To handle';
+
+  @override
+  String checkToHandle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count to handle',
+      one: '1 to handle',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String checkHandled(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count handled',
+      one: '1 handled',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checkOnlyFlaggedHelp =>
+      'Only expired and expiring lots are listed; everything else counts as valid. Each answer is saved at once.';
+
+  @override
+  String get checkNothingToHandle =>
+      'Nothing expired or expiring in this cart.';
+
+  @override
+  String checkStepSubtitle(String cart, String drawer, int index, int total) {
+    return '$cart · $drawer ($index of $total)';
+  }
+
+  @override
+  String get checkStockWarning =>
+      'Confirming updates the cart\'s stock. This answer can\'t be changed afterwards.';
+
+  @override
+  String get checkKeptHelp =>
+      'It stays in the cart and shows up again at the next check.';
+
+  @override
+  String get checkRemovedHelp =>
+      'The units leave the cart with nothing in their place; the position then needs replenishing.';
+
+  @override
+  String get checkNewExpiryLabel => 'New expiry';
+
+  @override
+  String checkNewExpiryShort(String date) {
+    return 'new expiry $date';
+  }
+
+  @override
+  String checkUnits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count units',
+      one: '1 unit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checkClearAnswer => 'Clear answer';
+
+  @override
+  String get checkNewExpiryRequired => 'Enter the new expiry date.';
+
+  @override
+  String get checkNewExpiryNotLater =>
+      'The new expiry must be later than the old one and not already past.';
+
+  @override
+  String get checkIncomplete => 'Handle every lot before finishing.';
+
+  @override
+  String get resumeCheck => 'Resume check';
+
+  @override
+  String checkLotsTitle(int count) {
+    return 'Lots handled ($count)';
+  }
+
+  @override
+  String get leaveUnsignedTitle => 'Report not signed';
+
+  @override
+  String get leaveUnsignedMessage =>
+      'This report isn\'t signed yet. You can sign it later in Reports → To sign.';
+
+  @override
+  String get leaveUnsignedExit => 'Leave';
+
+  @override
+  String get leaveUnsignedSignNow => 'Sign now';
 }

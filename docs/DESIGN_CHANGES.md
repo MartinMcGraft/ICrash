@@ -709,12 +709,49 @@ Frame ids read on 30 Oct 2026.
   `drawerNumberLocked` "Esta gaveta já tem histórico: o número não pode mudar. O nome
   pode." / "This drawer already has history: its number can't change. Its name can."
 
+### DC-53 · A8 rebuilt as "Gestão mensal" (D22, D23, RV-16–RV-18)
+- **Where:** A8 all pages: p12 `451:1317`, p13 `449:1225`, p10/p11 wireframes. Replaces
+  DC-17 and DC-44's A8 part. Frame needs redrawing.
+- **What:**
+  - Lists only **expired and expiring lots**, one drawer per step (progress bar = drawers
+    with something to handle; a finished step turns green).
+  - Row: state icon (alerta red / relógio amber), consumable name, "Expirado · A1 · Lote L1 ·
+    expira a 12/10/2026", and on the right **"Por resolver"** or the outcome with a green
+    tick. No checkboxes, no "Marcar restantes", no "Guardar e sair" (everything autosaves).
+  - Tapping a row opens a dialog: state line, outcome tabs (**Substituído / Retirado sem
+    reposição** for expired; **Mantido / Substituído** for expiring), units stepper, **Nova
+    validade** and **Lote (opcional)** for Substituído, a warning "Ao confirmar, o stock do
+    carro é atualizado…", buttons Cancelar / Confirmar (and "Limpar resposta" for Mantido).
+  - Right panel: drawer title ("Gaveta 1 · Via aérea"), "N por resolver", "N resolvidos",
+    help line, Adicionar nota, **Gaveta seguinte** / **Concluir e gerar relatório**
+    ("Concluir" on phones), Gaveta anterior.
+  - Empty cart state: "Nada expirado nem a expirar neste carro."
+  - Cart menu: **"Retomar verificação"** when a check was left half-way.
+- **Copy:** new keys `checkOutcomeReplaced`, `checkOutcomeRemoved`, `checkOutcomeKept`,
+  `checkPendingLabel`, `checkToHandle`, `checkHandled`, `checkOnlyFlaggedHelp`,
+  `checkNothingToHandle`, `checkStepSubtitle`, `checkStockWarning`, `checkKeptHelp`,
+  `checkRemovedHelp`, `checkNewExpiryLabel`, `checkClearAnswer`, `resumeCheck`.
+
+### DC-54 · A9: "Lotes tratados", leave prompt, badges, PIN spacing (RV-19, RV-20, RV-25)
+- **Where:** A9 p12 `451:1439`, p13 `449:1380`; rail component "Barra lateral · App"
+  (Relatórios item); A5 cart menu.
+- **What:**
+  - Monthly report list title **"Lotes tratados (N)"**, one line per lot with drawer,
+    position, lot, expiry and outcome.
+  - Leaving a report you still have to sign: dialog **"Relatório por assinar"** — "Este
+    relatório ainda não está assinado. Pode assiná-lo mais tarde em Relatórios → Por
+    assinar." [Sair] [Assinar agora].
+  - A red **count badge** on the Relatórios rail icon; "Relatórios do carro (N)".
+  - 16 px between the PIN field and "Assinar".
+- **Copy:** `checkLotsTitle`, `leaveUnsignedTitle`, `leaveUnsignedMessage`,
+  `leaveUnsignedExit`, `leaveUnsignedSignNow`.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
 |---|---|---|
 | **Emergency mode hidden**, not removed: the A10 frames, the A5 button (DC-08), p04 section `459:338`, B1 "Emergências este mês" (p21 `I456:432;444:701`, p20 `458:328`) and "Modo de emergência · 6 consumos" (`I456:523;444:691`), B7 permission "Usar o modo de emergência" (`I456:2214;442:640`), B9 "Resumo de emergência" | A10 p10 `455:900`, p11 `454:1226`, p12 `451:1540`, p13 `449:1496`; B1, B7, B9 | P12 |
-| **A8 rewrite**: only expired/expiring batches, results Replaced / Discarded / Kept / Not found, pause and resume, finish when all are handled | A8 all pages; A9 report content | Separate task (D4); DB6 |
+| ~~A8 rewrite~~ done on 30 Oct (DC-53) | — | — |
 | **Login by `userNumber`** (or the hospital's directory) instead of e-mail; A2 checked by the server | A1, A2, A3; B7 create dialog (number field) | DB3 login method, defined last |
 | One institution per user: the institution picker and "Mudar de instituição" go | Picker, Profile menu | Out of scope |
 | **Departments** (with floor) instead of free-text "Serviço" | B2, B3 "Serviço", A4/A5 subtitles | DATABASE.md DEPARTMENT |
@@ -748,4 +785,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology, drawer name) | DC-41 … DC-52 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology, drawer name) | DC-41 … DC-54 |

@@ -343,7 +343,7 @@ void main() {
       for (final (step, index) in [('middle drawer', 1), ('last drawer', 2)]) {
         testWidgets('A8 monthly check ($name): $step', (tester) async {
           final services = _services(drawers: 3, products: 90);
-          await services.reports.saveCheckDraft('inst', 'c0', {'drawerIndex': index, 'notes': '', 'states': <String, Object?>{}});
+          await services.reports.saveCheckDraft('inst', 'c0', {'version': 2, 'step': index, 'notes': '', 'answers': <String, Object?>{}});
           await _pump(tester, device.size, services, const MonthlyCheckScreen(cartId: 'c0'),
               padding: device.padding, appShell: true);
           _expectFits(tester, device);

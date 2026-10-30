@@ -2390,4 +2390,115 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get resetPasswordSupport =>
       'Nesta versão, a palavra-passe de outra pessoa não pode ser alterada a partir da aplicação. Peça ao suporte técnico (departamento de informática) que a redefina.';
+
+  @override
+  String get checkOutcomeReplaced => 'Substituído';
+
+  @override
+  String get checkOutcomeRemoved => 'Retirado sem reposição';
+
+  @override
+  String get checkOutcomeKept => 'Mantido';
+
+  @override
+  String get checkPendingLabel => 'Por resolver';
+
+  @override
+  String checkToHandle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count por resolver',
+      one: '1 por resolver',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String checkHandled(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count resolvidos',
+      one: '1 resolvido',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checkOnlyFlaggedHelp =>
+      'Só aparecem os lotes expirados ou a expirar; o resto conta como válido. Cada resposta fica guardada logo.';
+
+  @override
+  String get checkNothingToHandle => 'Nada expirado nem a expirar neste carro.';
+
+  @override
+  String checkStepSubtitle(String cart, String drawer, int index, int total) {
+    return '$cart · $drawer ($index de $total)';
+  }
+
+  @override
+  String get checkStockWarning =>
+      'Ao confirmar, o stock do carro é atualizado. Esta resposta já não pode ser alterada.';
+
+  @override
+  String get checkKeptHelp =>
+      'Fica no carro e volta a aparecer na próxima verificação.';
+
+  @override
+  String get checkRemovedHelp =>
+      'As unidades saem do carro sem reposição; a posição fica a precisar de reposição.';
+
+  @override
+  String get checkNewExpiryLabel => 'Nova validade';
+
+  @override
+  String checkNewExpiryShort(String date) {
+    return 'nova validade $date';
+  }
+
+  @override
+  String checkUnits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unidades',
+      one: '1 unidade',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checkClearAnswer => 'Limpar resposta';
+
+  @override
+  String get checkNewExpiryRequired => 'Indique a nova validade.';
+
+  @override
+  String get checkNewExpiryNotLater =>
+      'A nova validade tem de ser posterior à antiga e não pode já ter passado.';
+
+  @override
+  String get checkIncomplete => 'Resolva todos os lotes antes de concluir.';
+
+  @override
+  String get resumeCheck => 'Retomar verificação';
+
+  @override
+  String checkLotsTitle(int count) {
+    return 'Lotes tratados ($count)';
+  }
+
+  @override
+  String get leaveUnsignedTitle => 'Relatório por assinar';
+
+  @override
+  String get leaveUnsignedMessage =>
+      'Este relatório ainda não está assinado. Pode assiná-lo mais tarde em Relatórios → Por assinar.';
+
+  @override
+  String get leaveUnsignedExit => 'Sair';
+
+  @override
+  String get leaveUnsignedSignNow => 'Assinar agora';
 }

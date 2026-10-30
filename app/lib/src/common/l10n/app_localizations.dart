@@ -3924,6 +3924,156 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Nesta versão, a palavra-passe de outra pessoa não pode ser alterada a partir da aplicação. Peça ao suporte técnico (departamento de informática) que a redefina.'**
   String get resetPasswordSupport;
+
+  /// No description provided for @checkOutcomeReplaced.
+  ///
+  /// In pt, this message translates to:
+  /// **'Substituído'**
+  String get checkOutcomeReplaced;
+
+  /// No description provided for @checkOutcomeRemoved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Retirado sem reposição'**
+  String get checkOutcomeRemoved;
+
+  /// No description provided for @checkOutcomeKept.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mantido'**
+  String get checkOutcomeKept;
+
+  /// No description provided for @checkPendingLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Por resolver'**
+  String get checkPendingLabel;
+
+  /// No description provided for @checkToHandle.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 por resolver} other{{count} por resolver}}'**
+  String checkToHandle(int count);
+
+  /// No description provided for @checkHandled.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 resolvido} other{{count} resolvidos}}'**
+  String checkHandled(int count);
+
+  /// No description provided for @checkOnlyFlaggedHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Só aparecem os lotes expirados ou a expirar; o resto conta como válido. Cada resposta fica guardada logo.'**
+  String get checkOnlyFlaggedHelp;
+
+  /// No description provided for @checkNothingToHandle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nada expirado nem a expirar neste carro.'**
+  String get checkNothingToHandle;
+
+  /// No description provided for @checkStepSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'{cart} · {drawer} ({index} de {total})'**
+  String checkStepSubtitle(String cart, String drawer, int index, int total);
+
+  /// No description provided for @checkStockWarning.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ao confirmar, o stock do carro é atualizado. Esta resposta já não pode ser alterada.'**
+  String get checkStockWarning;
+
+  /// No description provided for @checkKeptHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fica no carro e volta a aparecer na próxima verificação.'**
+  String get checkKeptHelp;
+
+  /// No description provided for @checkRemovedHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'As unidades saem do carro sem reposição; a posição fica a precisar de reposição.'**
+  String get checkRemovedHelp;
+
+  /// No description provided for @checkNewExpiryLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova validade'**
+  String get checkNewExpiryLabel;
+
+  /// No description provided for @checkNewExpiryShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'nova validade {date}'**
+  String checkNewExpiryShort(String date);
+
+  /// No description provided for @checkUnits.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 unidade} other{{count} unidades}}'**
+  String checkUnits(int count);
+
+  /// No description provided for @checkClearAnswer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limpar resposta'**
+  String get checkClearAnswer;
+
+  /// No description provided for @checkNewExpiryRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique a nova validade.'**
+  String get checkNewExpiryRequired;
+
+  /// No description provided for @checkNewExpiryNotLater.
+  ///
+  /// In pt, this message translates to:
+  /// **'A nova validade tem de ser posterior à antiga e não pode já ter passado.'**
+  String get checkNewExpiryNotLater;
+
+  /// No description provided for @checkIncomplete.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resolva todos os lotes antes de concluir.'**
+  String get checkIncomplete;
+
+  /// No description provided for @resumeCheck.
+  ///
+  /// In pt, this message translates to:
+  /// **'Retomar verificação'**
+  String get resumeCheck;
+
+  /// No description provided for @checkLotsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Lotes tratados ({count})'**
+  String checkLotsTitle(int count);
+
+  /// No description provided for @leaveUnsignedTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Relatório por assinar'**
+  String get leaveUnsignedTitle;
+
+  /// No description provided for @leaveUnsignedMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este relatório ainda não está assinado. Pode assiná-lo mais tarde em Relatórios → Por assinar.'**
+  String get leaveUnsignedMessage;
+
+  /// No description provided for @leaveUnsignedExit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sair'**
+  String get leaveUnsignedExit;
+
+  /// No description provided for @leaveUnsignedSignNow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Assinar agora'**
+  String get leaveUnsignedSignNow;
 }
 
 class _AppLocalizationsDelegate

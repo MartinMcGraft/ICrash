@@ -53,6 +53,9 @@ String? actionCodeText(AppLocalizations l10n, String? code) => switch (code) {
       'drawerInUse' => l10n.drawerInUseHint,
       'drawerNumberTaken' => l10n.drawerNumberTaken,
       'drawerNumberInvalid' => l10n.drawerNumberHelp,
+      'newExpiryRequired' => l10n.checkNewExpiryRequired,
+      'newExpiryNotLater' => l10n.checkNewExpiryNotLater,
+      'checkIncomplete' => l10n.checkIncomplete,
       _ => null,
     };
 

@@ -1,6 +1,7 @@
 import '../../common/l10n/app_localizations.dart';
 import '../../domain/entities/role.dart';
 import '../../domain/entities/usage_event.dart';
+import '../../domain/monthly_check.dart';
 
 /// A drawer's title (D20): its descriptive name, or "Gaveta N" when it has
 /// none. Used next to the number badge (A5).
@@ -10,6 +11,13 @@ String drawerTitle(AppLocalizations l10n, String? name, int number) => name ?? l
 /// number badge is shown (A6, B4, A8).
 String drawerTitleWithNumber(AppLocalizations l10n, String? name, int number) =>
     name == null ? l10n.drawerShort(number) : '${l10n.drawerShort(number)} · $name';
+
+/// A8 outcome labels, in one place: ESEL still has to confirm them (D22).
+String checkOutcomeText(AppLocalizations l10n, CheckOutcome outcome) => switch (outcome) {
+      CheckOutcome.replaced => l10n.checkOutcomeReplaced,
+      CheckOutcome.removed => l10n.checkOutcomeRemoved,
+      CheckOutcome.kept => l10n.checkOutcomeKept,
+    };
 
 String roleText(AppLocalizations l10n, Role role) => switch (role) {
       Role.platformSuperAdmin => l10n.roleSuperAdmin,

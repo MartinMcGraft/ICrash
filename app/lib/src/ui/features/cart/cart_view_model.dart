@@ -27,6 +27,7 @@ class CartViewModel extends ViewModel {
       notify();
     });
     listen(services.reports.watchReports(session.institution.id), (reports) {
+      pendingSignatures = reports.where((r) => r.cartId == cartId && !r.isSigned && r.createdByUid == session.user.uid).length;
       _lastCheck = reports
           .where((r) => r.cartId == cartId && r.kind == ReportKind.monthlyCheck)
           .fold<CartReport?>(null, (best, r) => best == null || r.createdAt.isAfter(best.createdAt) ? r : best);
@@ -37,6 +38,21 @@ class CartViewModel extends ViewModel {
       _onData();
     });
     session.addListener(notify);
+    refreshCheckDraft();
+  }
+
+  /// Reports of this cart I made and still have to sign (RV-20 badge).
+  int pendingSignatures = 0;
+
+  /// A monthly check was left half-way on this device: "Retomar verificação".
+  bool hasCheckDraft = false;
+
+  /// Re-reads the draft, e.g. after coming back from A8.
+  Future<void> refreshCheckDraft() async {
+    final draft = await services.reports.loadCheckDraft(session.institution.id, cartId);
+    if (isDisposed) return;
+    hasCheckDraft = draft != null && draft['version'] == 2;
+    notify();
   }
 
   final AppServices services;

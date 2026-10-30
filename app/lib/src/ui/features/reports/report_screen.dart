@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../../../common/l10n/app_localizations.dart';
 import '../../../domain/entities/cart_report.dart';
 import '../../../domain/inventory_health.dart';
+import '../../../domain/monthly_check.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/labels.dart';
@@ -30,7 +31,22 @@ String findingText(AppLocalizations l10n, ReportFinding f) {
     FindingIssue.lowStock => l10n.slotHealthLowStock.toLowerCase(),
     FindingIssue.other => l10n.findingOther,
   };
-  return '${f.productName} (${f.position}) — $issue${f.detail == null ? '' : ' · ${f.detail}'}';
+  if (f.outcome == null) return '${f.productName} (${f.position}) — $issue${f.detail == null ? '' : ' · ${f.detail}'}';
+  // "Gestão mensal" line (D23): drawer · position — state, lot, expiry → outcome.
+  String day(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  final where = [if (f.drawerNumber != null) drawerTitleWithNumber(l10n, f.drawerName, f.drawerNumber!), f.position].join(' · ');
+  final outcome = CheckOutcome.values.where((o) => o.name == f.outcome).firstOrNull;
+  final facts = [
+    issue,
+    f.lotNumber == null ? l10n.noLot : l10n.scanLot(f.lotNumber!),
+    if (f.expiryDate != null) l10n.expiresOn(day(f.expiryDate!)),
+  ].join(', ');
+  final result = [
+    outcome == null ? f.outcome! : checkOutcomeText(l10n, outcome),
+    if (f.units != null && outcome != CheckOutcome.kept) l10n.checkUnits(f.units!),
+    if (f.newExpiry != null) l10n.checkNewExpiryShort(day(f.newExpiry!)),
+  ].join(' · ');
+  return '${f.productName} ($where) — $facts → $result';
 }
 
 /// A9 · Relatório — assinar.
@@ -50,43 +66,70 @@ class ReportScreen extends StatelessWidget {
         if (report == null) return StateView.message(message: l10n.stateLoadError, icon: IcIcon.relatorio);
         final format = IcFormat.of(context);
         final compact = isCompactHeight(context);
-        return Padding(
-          padding: contentPadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PageHeader(
-                title: report.kind == ReportKind.monthlyCheck ? l10n.reportMonthlyTitle : l10n.reportEmergencyTitle,
-                subtitle: '${report.cartName} · ${format.monthYear(report.createdAt)}',
-                onBack: () => Navigator.of(context).maybePop(),
-                trailing: [
-                  StatusPill(
-                    text: report.isSigned ? l10n.reportSigned : l10n.reportPendingSignature,
-                    tone: report.isSigned ? PillTone.ok : PillTone.warning,
-                  ),
+        // RV-20: leaving a report I still have to sign asks first; it stays
+        // in Relatórios → Por assinar either way.
+        final mustAsk = !report.isSigned && vm.canSign;
+        Future<void> leave() async {
+          if (mustAsk) {
+            final leaveNow = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: Text(l10n.leaveUnsignedTitle),
+                content: SizedBox(width: 420, child: Text(l10n.leaveUnsignedMessage)),
+                actions: [
+                  IcButton(label: l10n.leaveUnsignedExit, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(dialogContext).pop(true)),
+                  IcButton(label: l10n.leaveUnsignedSignNow, icon: IcIcon.assinar, onPressed: () => Navigator.of(dialogContext).pop(false)),
                 ],
               ),
-              SizedBox(height: compact ? IcSpace.s12 : IcSpace.s20),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SurfaceCard(
-                        elevated: false,
-                        padding: const EdgeInsets.all(IcSpace.s20),
-                        // Phones scroll; tablets page long finding lists instead.
-                        child: allowsScroll(context)
-                            ? SingleChildScrollView(child: _ReportBody(report: report, fill: false))
-                            : _ReportBody(report: report, fill: true),
-                      ),
+            );
+            if (leaveNow != true) return;
+          }
+          if (context.mounted) Navigator.of(context).pop();
+        }
+
+        return PopScope(
+          canPop: !mustAsk,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) leave();
+          },
+          child: Padding(
+            padding: contentPadding(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PageHeader(
+                  title: report.kind == ReportKind.monthlyCheck ? l10n.reportMonthlyTitle : l10n.reportEmergencyTitle,
+                  subtitle: '${report.cartName} · ${format.monthYear(report.createdAt)}',
+                  onBack: leave,
+                  trailing: [
+                    StatusPill(
+                      text: report.isSigned ? l10n.reportSigned : l10n.reportPendingSignature,
+                      tone: report.isSigned ? PillTone.ok : PillTone.warning,
                     ),
-                    SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
-                    SidePanel(child: _SignPanel(vm: vm, report: report)),
                   ],
                 ),
-              ),
-            ],
+                SizedBox(height: compact ? IcSpace.s12 : IcSpace.s20),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: SurfaceCard(
+                          elevated: false,
+                          padding: const EdgeInsets.all(IcSpace.s20),
+                          // Phones scroll; tablets page long finding lists instead.
+                          child: allowsScroll(context)
+                              ? SingleChildScrollView(child: _ReportBody(report: report, fill: false))
+                              : _ReportBody(report: report, fill: true),
+                        ),
+                      ),
+                      SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
+                      SidePanel(child: _SignPanel(vm: vm, report: report)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -145,7 +188,9 @@ class _ReportBody extends StatelessWidget {
         const SizedBox(height: IcSpace.s12),
         Text(
           report.kind == ReportKind.monthlyCheck
-              ? l10n.reportFindings(report.findings.length)
+              ? (report.findings.any((f) => f.outcome != null)
+                  ? l10n.checkLotsTitle(report.findings.length)
+                  : l10n.reportFindings(report.findings.length))
               : l10n.emergencyConsumptions(report.lines.fold(0, (sum, l) => sum + l.amount)),
           style: IcText.labelM,
         ),
@@ -247,6 +292,8 @@ class _SignPanelState extends State<_SignPanel> {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
         ),
+        // RV-25: room between the PIN field and "Assinar" on every size.
+        const SizedBox(height: IcSpace.s16),
         const Spacer(),
         IcButton(
           label: l10n.signReport,

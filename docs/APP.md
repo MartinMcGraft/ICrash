@@ -236,25 +236,36 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
   window, default 30 days) → **low stock** (below target, not empty) → **ok**; plus
   **free** (no product).
 
-### A8 Monthly check
-`features/monthly_check/`
+### A8 Monthly check ("Gestão mensal")
+`features/monthly_check/`, rules in `domain/monthly_check.dart`
 
-**Target (30 Oct, D22): rewrite to D4 now** (REVIEW_2026-10-30.md §5.5): only expired and
-expiring batches, one explicit outcome each, **autosave** after every answer, back goes to the
-previous step, no "Marcar restantes", resume from the cart menu. The bullets below describe the
-old screen until the rewrite lands.
+Rebuilt on 30 Oct 2026 (D4, D22, D23; REVIEW_2026-10-30.md §5.5).
 
-- Decision D4 (half-confirmed): go **drawer by drawer**. Tap each position: unchecked →
-  verified, or → problem (positions that already show an issue start as problem).
-  Long-press clears. "Marcar restantes" verifies the rest of the drawer.
-- Notes per check. **"Guardar e sair"** saves a draft to continue later.
-- **Terminar** creates a monthly-check report (positions with differences are flagged)
-  and opens **A9** to sign it.
-- **To change (D4 decided, 18 Oct):** the check covers the whole cart in one go, but lists
-  only the batches that are **expired or expiring**; everything else counts as valid. The
-  nurse handles each one (replaced, discarded, kept, not found), can pause and resume, and
-  can finish only when all are handled. Database: REPORT, REPORTITEM and RESULTITEM
-  (DATABASE.md §1.4).
+- The check covers the **whole cart** but lists only the lots that are **expired** or
+  **expiring** (within the product's warning days, else the institution's); everything else
+  counts as valid (D4). A slot without batch records uses its earliest known expiry.
+- **One drawer per step** (only drawers with something to handle), with a progress bar.
+  Each row shows the state on the left (Expirado / A expirar, lot, expiry) and **"Por
+  resolver"** or the chosen outcome on the right. No "Marcar restantes" (RV-16, RV-17).
+- Tapping a row asks for its **outcome**. The outcomes per state live in one table,
+  `checkOutcomes` (to confirm with ESEL):
+  - expired → **Substituído** or **Retirado sem reposição** (an expired lot can't be kept);
+  - expiring → **Mantido** or **Substituído**.
+- **Substituído** asks for the units, a **new expiry** (later than the old one, not past) and
+  an optional lot, and **updates the stock at once**: the old lot is marked removed and the
+  new one added in its place (reconciliation + replenishment); the quantity stays the same.
+  **Retirado sem reposição** lowers the stock. Both lock the answer (a signed report never
+  changes, P15). **Mantido** changes no stock and can be cleared.
+- **Autosave:** every answer, the step and the note are saved on the device at once (the
+  draft, format `version: 2`). **Back** (header or system) goes to the previous drawer;
+  from the first one it leaves. The cart menu then offers **"Retomar verificação"**
+  (RV-18). Answered lots that left the stock are kept in the draft.
+- **Concluir** is enabled once every lot has an outcome; it creates the report, clears the
+  draft and opens **A9**. With nothing to handle, the screen says so and "Concluir" creates
+  an empty report to sign.
+- Not decided yet: whether procedure still requires a quick look at the rest (DB6), and how
+  a lot used in an emergency is known (P8 follow-up). Database: REPORT, REPORTITEM and
+  RESULTITEM (DATABASE.md §1.4) still have to be reworked for D23.
 
 ### A9 Report: view and sign
 `features/reports/report_screen.dart`, list in `reports_list_screen.dart`
@@ -263,10 +274,14 @@ old screen until the rewrite lands.
   (the one the administration set), and the report becomes **read-only**.
 - **Only the person who performed the check signs it** (DB4): anyone else sees "Só quem
   fez a verificação pode assinar" instead of the PIN field.
+- A monthly report lists **"Lotes tratados (N)"**, each as "Consumível (Gaveta 1 · Via aérea ·
+  A1) — expirado, Lote L1, expira a … → Substituído · 2 unidades · nova validade …".
+  Reports made before 30 Oct keep their "Problemas encontrados" lines.
+- An unsigned report **survives back**: it's created when the check ends and listed in
+  "Por assinar". Leaving one you still have to sign asks **"Assinar agora / Sair"** (RV-19,
+  RV-20). The **Relatórios** rail item and "Relatórios do carro (N)" show how many of your
+  reports wait for your signature. The PIN field has 16 px below it on every size (RV-25).
 - PDF export (`report_pdf.dart`). Reports and signatures are a **local stub** for now.
-- **Target (30 Oct, RV-19, RV-20, RV-25):** an unsigned report is a draft that survives back;
-  leaving it asks whether to sign now or later ("Relatórios → Por assinar"); a badge shows
-  pending signatures; more space between the PIN field and "Assinar".
 
 ### A10 Emergency mode
 `features/emergency/`

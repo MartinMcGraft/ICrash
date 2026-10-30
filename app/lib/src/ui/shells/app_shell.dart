@@ -62,6 +62,21 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
   /// Cart screens open in the Carrinhos tab (a drawer may sit on top of one).
   final List<String> _openCarts = [];
 
+  /// My reports still to sign: the badge on "Relatórios" (RV-20).
+  Stream<int>? _pendingSignatures;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_pendingSignatures == null) {
+      final services = AppServicesScope.of(context);
+      final session = SessionScope.read(context);
+      _pendingSignatures = services.reports
+          .watchReports(session.institution.id)
+          .map((reports) => reports.where((r) => !r.isSigned && r.createdByUid == session.user.uid).length);
+    }
+  }
+
   void _select(AppTab tab) {
     if (tab == _tab) {
       _keys[tab]!.currentState?.popUntil((route) => route.isFirst);
@@ -130,7 +145,15 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
       navigation: this,
       child: Scaffold(
         body: AppShellFrame(
-          rail: _AppRail(tab: _tab, emergency: emergency, onSelect: _select),
+          rail: StreamBuilder<int>(
+            stream: _pendingSignatures,
+            builder: (context, snapshot) => _AppRail(
+              tab: _tab,
+              emergency: emergency,
+              onSelect: _select,
+              pendingSignatures: snapshot.data ?? 0,
+            ),
+          ),
           child: IndexedStack(
             index: _tab.index,
             children: [
@@ -155,7 +178,9 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
 }
 
 class _AppRail extends StatelessWidget {
-  const _AppRail({required this.tab, required this.emergency, required this.onSelect});
+  const _AppRail({required this.tab, required this.emergency, required this.onSelect, this.pendingSignatures = 0});
+
+  final int pendingSignatures;
 
   final AppTab tab;
 
@@ -180,7 +205,14 @@ class _AppRail extends StatelessWidget {
               Monogram(size: phone ? 36 : 40),
               SizedBox(height: phone ? IcSpace.s4 : IcSpace.s16),
               _RailItem(icon: IcIcon.carro, label: l10n.navCarts, active: tab == AppTab.carts, compact: phone, onTap: () => onSelect(AppTab.carts)),
-              _RailItem(icon: IcIcon.relatorio, label: l10n.navReports, active: tab == AppTab.reports, compact: phone, onTap: () => onSelect(AppTab.reports)),
+              _RailItem(
+                icon: IcIcon.relatorio,
+                label: l10n.navReports,
+                active: tab == AppTab.reports,
+                compact: phone,
+                badge: pendingSignatures,
+                onTap: () => onSelect(AppTab.reports),
+              ),
               _RailItem(icon: IcIcon.ler, label: l10n.navScan, active: tab == AppTab.scan, compact: phone, onTap: () => onSelect(AppTab.scan)),
               const Spacer(),
               ListenableBuilder(
@@ -214,7 +246,17 @@ class _AppRail extends StatelessWidget {
 
 /// Figma "Item de navegação" (Rail 80×64 with label / Compacto 56×56).
 class _RailItem extends StatelessWidget {
-  const _RailItem({required this.icon, required this.label, required this.active, required this.compact, required this.onTap});
+  const _RailItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.compact,
+    required this.onTap,
+    this.badge = 0,
+  });
+
+  /// A count shown over the icon (reports to sign), hidden at 0.
+  final int badge;
 
   final IcIcon icon;
   final String label;
@@ -232,7 +274,7 @@ class _RailItem extends StatelessWidget {
         child: Semantics(
           button: true,
           selected: active,
-          label: label,
+          label: badge > 0 ? '$label ($badge)' : label,
           excludeSemantics: true,
           child: Material(
             color: active ? IcColors.bgSidebarActive : Colors.transparent,
@@ -246,7 +288,12 @@ class _RailItem extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IcIconView(icon, color: color),
+                    Badge(
+                      isLabelVisible: badge > 0,
+                      label: Text('$badge'),
+                      backgroundColor: IcColors.actionDanger,
+                      child: IcIconView(icon, color: color),
+                    ),
                     if (!compact) ...[
                       const SizedBox(height: IcSpace.s4),
                       Text(label, style: IcText.labelS.copyWith(color: color), maxLines: 1, overflow: TextOverflow.fade, softWrap: false),

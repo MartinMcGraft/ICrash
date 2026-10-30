@@ -204,10 +204,14 @@ class _CartMenu extends StatelessWidget {
               children: [
                 if (session.canMonthlyCheck) ...[
                   IcButton(
-                    label: l10n.monthlyCheckTitle,
+                    // RV-18: a check left half-way is resumed where it stopped.
+                    label: vm.hasCheckDraft ? l10n.resumeCheck : l10n.monthlyCheckTitle,
                     icon: IcIcon.calendario,
                     expand: true,
-                    onPressed: () => Navigator.of(context).push(sectionRoute((_) => MonthlyCheckScreen(cartId: vm.cartId))),
+                    onPressed: () async {
+                      await Navigator.of(context).push(sectionRoute((_) => MonthlyCheckScreen(cartId: vm.cartId)));
+                      await vm.refreshCheckDraft();
+                    },
                   ),
                   gap,
                 ],
@@ -238,7 +242,8 @@ class _CartMenu extends StatelessWidget {
                 ],
                 gap,
                 IcButton(
-                  label: l10n.cartReportsAction,
+                  // RV-20: how many of my reports for this cart wait for my signature.
+                  label: vm.pendingSignatures > 0 ? '${l10n.cartReportsAction} (${vm.pendingSignatures})' : l10n.cartReportsAction,
                   icon: IcIcon.relatorio,
                   style: IcButtonStyle.secondary,
                   expand: true,

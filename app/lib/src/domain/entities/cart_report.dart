@@ -144,9 +144,26 @@ enum ReportKind { monthlyCheck, emergencySummary }
 
 enum ReportStatus { pendingSignature, signed }
 
-/// One problem found during a monthly check.
+/// One line of a monthly check report. Since 30 Oct 2026 (D22/D23) a line is
+/// an expired or expiring lot with its drawer, lot, expiry and outcome
+/// ([outcome] is a `CheckOutcome` name, see `domain/monthly_check.dart`).
+/// Reports made before only have [productName], [position], [issue] and
+/// free-text [detail].
 class ReportFinding {
-  const ReportFinding({required this.productName, required this.position, required this.issue, this.detail});
+  const ReportFinding({
+    required this.productName,
+    required this.position,
+    required this.issue,
+    this.detail,
+    this.drawerNumber,
+    this.drawerName,
+    this.lotNumber,
+    this.expiryDate,
+    this.outcome,
+    this.units,
+    this.newExpiry,
+    this.newLot,
+  });
 
   final String productName;
 
@@ -154,16 +171,46 @@ class ReportFinding {
   final String position;
   final FindingIssue issue;
 
-  /// Free text, e.g. "expira a 28/10/2026 · reposição pedida".
+  /// Free text, e.g. "expira a 28/10/2026 · reposição pedida" (older reports).
   final String? detail;
 
-  Map<String, Object?> toJson() => {'productName': productName, 'position': position, 'issue': issue.name, 'detail': detail};
+  final int? drawerNumber;
+  final String? drawerName;
+  final String? lotNumber;
+  final DateTime? expiryDate;
+  final String? outcome;
+  final int? units;
+  final DateTime? newExpiry;
+  final String? newLot;
+
+  Map<String, Object?> toJson() => {
+        'productName': productName,
+        'position': position,
+        'issue': issue.name,
+        'detail': detail,
+        if (drawerNumber != null) 'drawerNumber': drawerNumber,
+        if (drawerName != null) 'drawerName': drawerName,
+        if (lotNumber != null) 'lotNumber': lotNumber,
+        if (expiryDate != null) 'expiryDate': expiryDate!.toIso8601String(),
+        if (outcome != null) 'outcome': outcome,
+        if (units != null) 'units': units,
+        if (newExpiry != null) 'newExpiry': newExpiry!.toIso8601String(),
+        if (newLot != null) 'newLot': newLot,
+      };
 
   factory ReportFinding.fromJson(Map<String, Object?> json) => ReportFinding(
         productName: json['productName'] as String? ?? '',
         position: json['position'] as String? ?? '',
         issue: FindingIssue.values.byName(json['issue'] as String? ?? FindingIssue.other.name),
         detail: json['detail'] as String?,
+        drawerNumber: (json['drawerNumber'] as num?)?.toInt(),
+        drawerName: json['drawerName'] as String?,
+        lotNumber: json['lotNumber'] as String?,
+        expiryDate: _date(json['expiryDate']),
+        outcome: json['outcome'] as String?,
+        units: (json['units'] as num?)?.toInt(),
+        newExpiry: _date(json['newExpiry']),
+        newLot: json['newLot'] as String?,
       );
 }
 
