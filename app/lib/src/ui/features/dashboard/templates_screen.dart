@@ -5,6 +5,7 @@ import '../../../domain/entities/cart.dart';
 import '../../../domain/entities/cart_template.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
+import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -200,7 +201,7 @@ class _Preview extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: Text(l10n.drawerShort(drawer.number), style: IcText.labelM, overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text(drawerTitleWithNumber(l10n, drawer.name, drawer.number), style: IcText.labelM, overflow: TextOverflow.ellipsis)),
                     Text(
                       l10n.templateDrawerSize(drawer.rows, drawer.columns, drawer.positionCount),
                       style: IcText.bodyS.copyWith(color: IcColors.textSecondary),

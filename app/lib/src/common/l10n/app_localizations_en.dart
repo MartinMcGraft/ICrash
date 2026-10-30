@@ -1588,6 +1588,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get columnName => 'Name';
+
+  @override
+  String get drawerNameLabel => 'Name (optional)';
+
+  @override
+  String get drawerNameHint => 'E.g. Airway';
+
+  @override
+  String get editDrawer => 'Edit drawer';
+
+  @override
+  String get drawerSaved => 'Drawer saved.';
+
+  @override
+  String get drawerNumberLocked =>
+      'This drawer already has history: its number can\'t change. Its name can.';
+
+  @override
   String get addDrawer => 'Add drawer';
 
   @override

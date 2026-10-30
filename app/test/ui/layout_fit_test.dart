@@ -136,7 +136,16 @@ AppServices _services({int carts = 1, int rows = 5, int columns = 6, int product
         Cart(id: 'c$i', institutionId: 'inst', name: 'Carro de Urgência $i', service: 'Urgência', location: 'Piso 0 · Sala $i'),
     ]),
     drawers: FakeDrawerRepository(drawers: [
-      for (var d = 0; d < drawers; d++) CartDrawer(id: 'd$d', cartId: 'c0', number: d + 1, rows: rows, columns: columns),
+      // Realistic names on some drawers, none on the others (D20).
+      for (var d = 0; d < drawers; d++)
+        CartDrawer(
+          id: 'd$d',
+          cartId: 'c0',
+          number: d + 1,
+          name: const ['Via aérea', 'Circulação', 'Medicação', null][d % 4],
+          rows: rows,
+          columns: columns,
+        ),
     ]),
     inventory: FakeInventoryRepository(assignments: assignments),
     products: FakeProductRepository(products: productList),

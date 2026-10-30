@@ -261,7 +261,7 @@ class FakeDrawerRepository extends UnimplementedFake implements DrawerRepository
   @override
   Future<CartDrawer> createDrawer(String institutionId, String cartId, CartDrawer drawer, {List<Slot>? slots}) async {
     final id = 'drawer-${_nextId++}';
-    final created = CartDrawer(id: id, cartId: cartId, number: drawer.number, rows: drawer.rows, columns: drawer.columns);
+    final created = CartDrawer(id: id, cartId: cartId, number: drawer.number, name: drawer.name, rows: drawer.rows, columns: drawer.columns);
     lastCreatedDrawer = created;
     drawers.add(created);
     slotsByDrawer[id] = [

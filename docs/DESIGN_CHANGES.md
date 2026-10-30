@@ -691,6 +691,24 @@ Frame ids read on 30 Oct 2026.
   "Clinical consumables".
 - **Copy:** 48 PT / 50 EN strings in the ARB files; CSV column "Consumível".
 
+### DC-52 · Drawers have an optional name again (D20, RV-22)
+- **Where:** component **Cartão de gaveta** `444:631` (title text); A5 p12 `451:608`, p13
+  `447:669`; A6/B4 page titles; A8 panel title; B3 drawers table and "Adicionar gaveta"
+  dialog (p21 `456:884`); B6 template drawer list (p21 `456:1801`). Reverses DC-01's
+  "Gaveta N" title where a name exists.
+- **What:**
+  - A5 row: number badge, then the **name** (e.g. "Via aérea"); "Gaveta N" only when the
+    drawer has none.
+  - A6, B4, A8 titles: **"Gaveta 2 · Via aérea"** (or "Gaveta 2").
+  - B3: new column **"Nome"** ("—" when empty); "Adicionar gaveta" has **"Nome (opcional)"**
+    (hint "Ex.: Via aérea", max 50); the row's edit button opens **"Editar gaveta"**:
+    number (only while allowed, else a locked note) and name (always).
+- **Copy:** new `columnName` "Nome"/"Name", `drawerNameLabel` "Nome (opcional)"/"Name
+  (optional)", `drawerNameHint` "Ex.: Via aérea"/"E.g. Airway", `editDrawer` "Editar
+  gaveta"/"Edit drawer", `drawerSaved` "Gaveta guardada."/"Drawer saved.",
+  `drawerNumberLocked` "Esta gaveta já tem histórico: o número não pode mudar. O nome
+  pode." / "This drawer already has history: its number can't change. Its name can."
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -730,4 +748,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology) | DC-41 … DC-51 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu, terminology, drawer name) | DC-41 … DC-52 |

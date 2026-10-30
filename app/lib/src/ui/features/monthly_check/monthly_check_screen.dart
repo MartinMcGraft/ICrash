@@ -4,6 +4,7 @@ import '../../../common/l10n/app_localizations.dart';
 import '../../../domain/inventory_health.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
+import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -77,7 +78,7 @@ class MonthlyCheckScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
-                    SidePanel(child: _Summary(vm: vm, drawerLabel: l10n.drawerShort(vm.data.numberOf(drawer)))),
+                    SidePanel(child: _Summary(vm: vm, drawerLabel: drawerTitleWithNumber(l10n, drawer.name, vm.data.numberOf(drawer)))),
                   ],
                 ),
               ),

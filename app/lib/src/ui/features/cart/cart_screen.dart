@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../common/l10n/app_localizations.dart';
 import '../../core/icons/ic_icons.dart';
+import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -130,7 +131,13 @@ class _Drawers extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(l10n.drawerShort(row.number), style: IcText.labelL, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                // D20: the drawer's name, or "Gaveta N" (the number is in the badge).
+                                Text(
+                                  drawerTitle(l10n, row.drawer.name, row.number),
+                                  style: IcText.labelL,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 if (!compact) ...[
                                   const SizedBox(height: 2),
                                   // One line only: the long form when it fits,

@@ -209,7 +209,7 @@ class _Drawers extends StatelessWidget {
                       takenNumbers: vm.data.usedNumbers,
                     );
                     if (input == null || !context.mounted) return;
-                    final result = await vm.addDrawer(number: input.number, rows: input.rows, columns: input.columns);
+                    final result = await vm.addDrawer(number: input.number, name: input.name, rows: input.rows, columns: input.columns);
                     if (!context.mounted) return;
                     showResult(context, result);
                   },
@@ -220,8 +220,9 @@ class _Drawers extends StatelessWidget {
         Expanded(
           child: FitDataTable(
             columns: [
-              // P17: drawers have a number and no name.
-              TableColumnSpec(l10n.columnNumber, flex: 3),
+              TableColumnSpec(l10n.columnNumber, flex: 2),
+              // D20: optional descriptive name.
+              TableColumnSpec(l10n.columnName, flex: 3),
               TableColumnSpec(l10n.columnSize, flex: 2),
               TableColumnSpec(l10n.columnPositions, flex: 2),
               TableColumnSpec(l10n.columnWithProduct, flex: 2),
@@ -232,6 +233,7 @@ class _Drawers extends StatelessWidget {
               for (final (number, drawer, health) in drawers)
                 [
                   CellText(l10n.drawerShort(number), primary: true),
+                  CellText(drawer.name ?? '—'),
                   CellText('${drawer.rows} × ${drawer.columns}'),
                   CellText('${health.positions}'),
                   CellText('${health.withProduct}'),
@@ -241,19 +243,21 @@ class _Drawers extends StatelessWidget {
                       if (canEdit)
                         IcIconButton(
                           icon: IcIcon.editar,
-                          tooltip: l10n.editDrawerNumber,
-                          onPressed: vm.canEditNumber(drawer)
-                              ? () async {
-                                  final picked = await showDrawerNumberDialog(
-                                    context,
-                                    currentNumber: number,
-                                    takenNumbers: vm.data.usedNumbers,
-                                  );
-                                  if (picked == null || !context.mounted) return;
-                                  final result = await vm.setDrawerNumber(drawer, picked);
-                                  if (context.mounted) showResult(context, result, success: l10n.drawerNumberSaved);
-                                }
-                              : null,
+                          tooltip: l10n.editDrawer,
+                          // The name can always change (D20); the number only
+                          // while allowed (Q8), which the dialog shows.
+                          onPressed: () async {
+                            final picked = await showDrawerEditDialog(
+                              context,
+                              currentNumber: number,
+                              currentName: drawer.name,
+                              numberEditable: vm.canEditNumber(drawer),
+                              takenNumbers: vm.data.usedNumbers,
+                            );
+                            if (picked == null || !context.mounted) return;
+                            final result = await vm.editDrawer(drawer, number: picked.number, name: picked.name);
+                            if (context.mounted) showResult(context, result, success: l10n.drawerSaved);
+                          },
                         ),
                       const SizedBox(width: IcSpace.s8),
                       IcButton(

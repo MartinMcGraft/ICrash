@@ -89,16 +89,18 @@ class CartConfigViewModel extends ViewModel {
 
   /// "Adicionar gaveta". The drawer gets its slots (one per cell) in the same
   /// write. Error code `drawerNumberTaken` (P17: number unique in the cart).
-  Future<ActionResult<void>> addDrawer({required int number, required int rows, required int columns}) {
+  Future<ActionResult<void>> addDrawer({required int number, String? name, required int rows, required int columns}) {
     final current = cart;
+    final cleanName = CartDrawer.cleanName(name);
     return run(() async {
       if (current == null) return;
       if (number < 1) throw const ActionError('drawerNumberInvalid');
+      if (cleanName != null && cleanName.length > CartDrawer.maxNameLength) throw const ActionError('drawerNameTooLong');
       if (data.usedNumbers.contains(number)) throw const ActionError('drawerNumberTaken');
       await services.drawers.createDrawer(
         session.institution.id,
         cartId,
-        CartDrawer(id: '', cartId: cartId, number: number, rows: rows, columns: columns),
+        CartDrawer(id: '', cartId: cartId, number: number, name: cleanName, rows: rows, columns: columns),
       );
       await services.carts.updateCart(session.institution.id, current.copyWith(layoutVersion: current.layoutVersion + 1));
     });
@@ -106,14 +108,30 @@ class CartConfigViewModel extends ViewModel {
 
   /// "Alterar número" on a drawer row (Q8). Error codes `drawerNumberTaken`,
   /// `drawerInUse`.
-  Future<ActionResult<void>> setDrawerNumber(CartDrawer drawer, int number) => run(() async {
-        if (!canEditNumber(drawer)) throw const ActionError('drawerInUse');
-        if (number < 1) throw const ActionError('drawerNumberInvalid');
-        if (number == data.numberOf(drawer) && drawer.number != null) return;
-        if (data.drawers.any((d) => d.id != drawer.id && data.numberOf(d) == number)) {
-          throw const ActionError('drawerNumberTaken');
+  Future<ActionResult<void>> setDrawerNumber(CartDrawer drawer, int number) =>
+      editDrawer(drawer, number: number, name: drawer.name);
+
+  /// "Editar gaveta" on a drawer row: its number (Q8: only while unused, or
+  /// if it never had one) and its optional name (D20: always, even when used;
+  /// empty removes it). Error codes `drawerNumberTaken`, `drawerInUse`,
+  /// `drawerNameTooLong`.
+  Future<ActionResult<void>> editDrawer(CartDrawer drawer, {required int number, String? name}) => run(() async {
+        final cleanName = CartDrawer.cleanName(name);
+        if (cleanName != null && cleanName.length > CartDrawer.maxNameLength) throw const ActionError('drawerNameTooLong');
+        final numberChanged = drawer.number == null || number != data.numberOf(drawer);
+        if (numberChanged) {
+          if (!canEditNumber(drawer)) throw const ActionError('drawerInUse');
+          if (number < 1) throw const ActionError('drawerNumberInvalid');
+          if (data.drawers.any((d) => d.id != drawer.id && data.numberOf(d) == number)) {
+            throw const ActionError('drawerNumberTaken');
+          }
         }
-        await services.drawers.updateDrawer(session.institution.id, cartId, drawer.copyWith(number: number));
+        if (!numberChanged && cleanName == drawer.name) return;
+        await services.drawers.updateDrawer(
+          session.institution.id,
+          cartId,
+          drawer.copyWith(number: number, name: cleanName, clearName: cleanName == null),
+        );
       });
 
   @override

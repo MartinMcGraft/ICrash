@@ -544,6 +544,27 @@ describe('a cart\'s structure is fixed once used (P1/P2, usedAt marker)', () => 
     await assertFails(updateDoc(doc(db, slotPath), { columnSpan: 2 }));
   });
 
+  test('a drawer\'s optional name: 1–50 characters; a used drawer may be renamed (D20)', async () => {
+    await seedStructure({ used: true });
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    await assertSucceeds(updateDoc(doc(db, drawerPath), { name: 'Via aérea' }));
+    await assertSucceeds(updateDoc(doc(db, drawerPath), { name: deleteField() }));
+    await assertFails(updateDoc(doc(db, drawerPath), { name: '' }));
+    await assertFails(updateDoc(doc(db, drawerPath), { name: 'x'.repeat(51) }));
+    await assertFails(updateDoc(doc(db, drawerPath), { name: 7 }));
+    const user = testEnv.authenticatedContext(USER_UID).firestore();
+    await assertFails(updateDoc(doc(user, drawerPath), { name: 'Circulação' }));
+  });
+
+  test('a new drawer may have a name, within the limit (D20)', async () => {
+    await seedBaseline();
+    const db = testEnv.authenticatedContext(MANAGER_UID).firestore();
+    const drawers = `institutions/${INST_A}/carts/${CART_ID}/drawers`;
+    await assertSucceeds(setDoc(doc(db, `${drawers}/drawer-2`), { number: 2, name: 'Circulação', rows: 1, columns: 2 }));
+    await assertSucceeds(setDoc(doc(db, `${drawers}/drawer-3`), { number: 3, rows: 1, columns: 2 }));
+    await assertFails(setDoc(doc(db, `${drawers}/drawer-4`), { number: 4, name: 'x'.repeat(51), rows: 1, columns: 2 }));
+  });
+
   test('a used drawer created before numbers were stored may get its first number (Q8)', async () => {
     await seedBaseline();
     await testEnv.withSecurityRulesDisabled(async (context) => {

@@ -2677,6 +2677,42 @@ abstract class AppLocalizations {
   /// **'Gavetas ({count})'**
   String drawersCount(int count);
 
+  /// No description provided for @columnName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get columnName;
+
+  /// No description provided for @drawerNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome (opcional)'**
+  String get drawerNameLabel;
+
+  /// No description provided for @drawerNameHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: Via aérea'**
+  String get drawerNameHint;
+
+  /// No description provided for @editDrawer.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar gaveta'**
+  String get editDrawer;
+
+  /// No description provided for @drawerSaved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gaveta guardada.'**
+  String get drawerSaved;
+
+  /// No description provided for @drawerNumberLocked.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta gaveta já tem histórico: o número não pode mudar. O nome pode.'**
+  String get drawerNumberLocked;
+
   /// No description provided for @addDrawer.
   ///
   /// In pt, this message translates to:

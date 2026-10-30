@@ -1611,6 +1611,25 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get columnName => 'Nome';
+
+  @override
+  String get drawerNameLabel => 'Nome (opcional)';
+
+  @override
+  String get drawerNameHint => 'Ex.: Via aérea';
+
+  @override
+  String get editDrawer => 'Editar gaveta';
+
+  @override
+  String get drawerSaved => 'Gaveta guardada.';
+
+  @override
+  String get drawerNumberLocked =>
+      'Esta gaveta já tem histórico: o número não pode mudar. O nome pode.';
+
+  @override
   String get addDrawer => 'Adicionar gaveta';
 
   @override

@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../common/l10n/app_localizations.dart';
+import '../../../domain/entities/cart_drawer.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/layout.dart';
 
 class DrawerFormResult {
-  const DrawerFormResult({required this.number, required this.rows, required this.columns});
+  const DrawerFormResult({required this.number, this.name, required this.rows, required this.columns});
   final int number;
+
+  /// Optional descriptive name (D20); empty when none.
+  final String? name;
   final int rows;
   final int columns;
 }
 
-/// "Adicionar gaveta": the drawer's number (P17: drawers have a number, no
-/// name) and its grid size. [initialNumber] is the lowest free number;
+/// The optional drawer name field (D20): "Nome (opcional)", up to 50 characters.
+Widget _nameField(AppLocalizations l10n, String initial, ValueChanged<String> onChanged) => LabeledField(
+      label: l10n.drawerNameLabel,
+      hint: l10n.drawerNameHint,
+      initialValue: initial,
+      onChanged: onChanged,
+      inputFormatters: [LengthLimitingTextInputFormatter(CartDrawer.maxNameLength)],
+    );
+
+/// "Adicionar gaveta": the drawer's number, its optional name (D20) and its
+/// grid size. [initialNumber] is the lowest free number;
 /// [takenNumbers] are refused here and again by the ViewModel.
 Future<DrawerFormResult?> showDrawerFormDialog(
   BuildContext context, {
@@ -22,6 +36,7 @@ Future<DrawerFormResult?> showDrawerFormDialog(
 }) {
   final l10n = AppLocalizations.of(context);
   var number = initialNumber;
+  var name = '';
   var rows = 5;
   var columns = 6;
   return showDialog<DrawerFormResult>(
@@ -49,6 +64,8 @@ Future<DrawerFormResult?> showDrawerFormDialog(
                   style: IcText.bodyS.copyWith(color: taken ? IcColors.dangerFg : IcColors.textMuted),
                 ),
                 const SizedBox(height: IcSpace.s16),
+                _nameField(l10n, name, (v) => name = v),
+                const SizedBox(height: IcSpace.s16),
                 Row(
                   children: [
                     Expanded(child: Text(l10n.createDrawerRowsLabel, style: IcText.bodyM)),
@@ -69,7 +86,9 @@ Future<DrawerFormResult?> showDrawerFormDialog(
             IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
             IcButton(
               label: l10n.actionCreate,
-              onPressed: taken ? null : () => Navigator.of(context).pop(DrawerFormResult(number: number, rows: rows, columns: columns)),
+              onPressed: taken
+                  ? null
+                  : () => Navigator.of(context).pop(DrawerFormResult(number: number, name: name, rows: rows, columns: columns)),
             ),
           ],
         );
@@ -78,21 +97,26 @@ Future<DrawerFormResult?> showDrawerFormDialog(
   );
 }
 
-/// "Alterar número" on a drawer row in B3 (Q8). Returns the new number.
-Future<int?> showDrawerNumberDialog(
+/// "Editar gaveta" on a drawer row in B3: the number, only when
+/// [numberEditable] (Q8: an unused drawer, or one that never had a number),
+/// and the optional name (D20: always; empty removes it).
+Future<({int number, String name})?> showDrawerEditDialog(
   BuildContext context, {
   required int currentNumber,
+  required String? currentName,
+  required bool numberEditable,
   required Set<int> takenNumbers,
 }) {
   final l10n = AppLocalizations.of(context);
   var number = currentNumber;
-  return showDialog<int>(
+  var name = currentName ?? '';
+  return showDialog<({int number, String name})>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {
         final taken = number != currentNumber && takenNumbers.contains(number);
         return AlertDialog(
-          title: Text(l10n.editDrawerNumber),
+          title: Text(l10n.editDrawer),
           content: SizedBox(
             width: 420,
             child: Column(
@@ -102,20 +126,25 @@ Future<int?> showDrawerNumberDialog(
                 Row(
                   children: [
                     Expanded(child: Text(l10n.drawerNumberLabel, style: IcText.bodyM)),
-                    QuantityStepper(label: l10n.drawerNumberLabel, value: number, min: 1, max: 99, onChanged: (v) => setState(() => number = v)),
+                    if (numberEditable)
+                      QuantityStepper(label: l10n.drawerNumberLabel, value: number, min: 1, max: 99, onChanged: (v) => setState(() => number = v))
+                    else
+                      Text('$number', style: IcText.titleS),
                   ],
                 ),
                 const SizedBox(height: IcSpace.s4),
                 Text(
-                  taken ? l10n.drawerNumberTaken : l10n.drawerNumberHelp,
+                  !numberEditable ? l10n.drawerNumberLocked : (taken ? l10n.drawerNumberTaken : l10n.drawerNumberHelp),
                   style: IcText.bodyS.copyWith(color: taken ? IcColors.dangerFg : IcColors.textMuted),
                 ),
+                const SizedBox(height: IcSpace.s16),
+                _nameField(l10n, name, (v) => name = v),
               ],
             ),
           ),
           actions: [
             IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
-            IcButton(label: l10n.actionSave, onPressed: taken ? null : () => Navigator.of(context).pop(number)),
+            IcButton(label: l10n.actionSave, onPressed: taken ? null : () => Navigator.of(context).pop((number: number, name: name))),
           ],
         );
       },

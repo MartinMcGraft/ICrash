@@ -1070,6 +1070,12 @@
       }
     }
   },
+  "columnName": "Name",
+  "drawerNameLabel": "Name (optional)",
+  "drawerNameHint": "E.g. Airway",
+  "editDrawer": "Edit drawer",
+  "drawerSaved": "Drawer saved.",
+  "drawerNumberLocked": "This drawer already has history: its number can't change. Its name can.",
   "addDrawer": "Add drawer",
   "columnNumber": "No.",
   "columnSize": "Size",

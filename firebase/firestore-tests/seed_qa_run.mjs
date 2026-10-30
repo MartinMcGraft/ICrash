@@ -148,9 +148,14 @@ async function main() {
     for (const uid of [uids.admin, uids.manager, uids.user]) {
       await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/responsibleUsers/${uid}`), { uid });
     }
-    // Drawers have a number and no name (P17). Every drawer has its slot
-    // documents (one per cell, rows/columns 0-based in Firestore).
-    const drawers = { 'gaveta-1': { number: 1, rows: 2, columns: 3 }, 'gaveta-2': { number: 2, rows: 1, columns: 2 } };
+    // Drawers have a number and an optional name (D20, 30 Oct; drawer 3 has
+    // none, so the app shows "Gaveta 3"). Every drawer has its slot documents
+    // (one per cell, rows/columns 0-based in Firestore).
+    const drawers = {
+      'gaveta-1': { number: 1, name: 'Via aérea', rows: 2, columns: 3 },
+      'gaveta-2': { number: 2, name: 'Circulação', rows: 1, columns: 2 },
+      'gaveta-3': { number: 3, rows: 1, columns: 2 },
+    };
     for (const [drawerId, drawer] of Object.entries(drawers)) {
       await setDoc(doc(db, `institutions/hospital-teste/carts/carro-1/drawers/${drawerId}`), drawer);
       for (let row = 0; row < drawer.rows; row++) {

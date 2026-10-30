@@ -459,6 +459,23 @@ void main() {
       expect((await vm.setDrawerNumber(d3, 4)).isOk, isTrue);
       expect(drawers.drawers.last.number, 4);
     });
+
+    test('a new drawer may have a name, trimmed; an empty one is no name (D20)', () async {
+      expect((await vm.addDrawer(number: 2, name: '  Via aérea ', rows: 1, columns: 1)).isOk, isTrue);
+      expect(drawers.lastCreatedDrawer!.name, 'Via aérea');
+      expect((await vm.addDrawer(number: 4, name: '   ', rows: 1, columns: 1)).isOk, isTrue);
+      expect(drawers.lastCreatedDrawer!.name, isNull);
+      expect((await vm.addDrawer(number: 5, name: 'x' * 51, rows: 1, columns: 1)).code, 'drawerNameTooLong');
+    });
+
+    test('"Editar gaveta" renames, and an empty name removes it (D20)', () async {
+      final d1 = drawers.drawers.first;
+      expect((await vm.editDrawer(d1, number: 1, name: 'Circulação')).isOk, isTrue);
+      expect(drawers.drawers.first.name, 'Circulação');
+      expect(drawers.drawers.first.number, 1);
+      expect((await vm.editDrawer(drawers.drawers.first, number: 1, name: '')).isOk, isTrue);
+      expect(drawers.drawers.first.name, isNull);
+    });
   });
 
   group('A6 DrawerViewModel: placement and stock bounds', () {
@@ -658,6 +675,16 @@ void main() {
       expect(vm.canEditNumber(drawers.drawers.first), isFalse);
       expect((await vm.setDrawerNumber(drawers.drawers.first, 5)).code, 'drawerInUse');
       expect((await vm.setDrawerNumber(drawers.drawers.last, 5)).isOk, isTrue);
+      vm.dispose();
+    });
+
+    test('B3: a used drawer can still be renamed, not renumbered (D20, Q8)', () async {
+      final vm = CartConfigViewModel(services, _session(services), 'c1');
+      await _settle();
+      final used = drawers.drawers.first;
+      expect((await vm.editDrawer(used, number: used.number!, name: 'Via aérea')).isOk, isTrue);
+      expect(drawers.drawers.first.name, 'Via aérea');
+      expect((await vm.editDrawer(drawers.drawers.first, number: 7, name: 'Via aérea')).code, 'drawerInUse');
       vm.dispose();
     });
   });

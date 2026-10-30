@@ -1241,6 +1241,18 @@
       }
     }
   },
+  "columnName": "Nome",
+  "@columnName": {},
+  "drawerNameLabel": "Nome (opcional)",
+  "@drawerNameLabel": {},
+  "drawerNameHint": "Ex.: Via aérea",
+  "@drawerNameHint": {},
+  "editDrawer": "Editar gaveta",
+  "@editDrawer": {},
+  "drawerSaved": "Gaveta guardada.",
+  "@drawerSaved": {},
+  "drawerNumberLocked": "Esta gaveta já tem histórico: o número não pode mudar. O nome pode.",
+  "@drawerNumberLocked": {},
   "addDrawer": "Adicionar gaveta",
   "@addDrawer": {},
   "columnNumber": "Nº",

@@ -180,8 +180,8 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 - The cart's **drawers**, shown as **"Gaveta N"** in number order, each with its own state
   (worst slot wins). Each row: number badge, "Gaveta N", the grid line on one line (long
   form when it fits, else short; none on phones), and the **state and arrow at the right
-  end** (RV-13, RV-22). **Target (30 Oct, D20):** the drawer's optional name replaces
-  "Gaveta N" when it has one.
+  end** (RV-13, RV-22). The drawer's optional **name** (D20) replaces "Gaveta N" when it
+  has one; page titles (A6, B4, A8) read "Gaveta 2 · Via aérea".
 - **Cart menu** (same on phones and tablets, D21; scrolls on phones): monthly check ·
   search product (shows "Gaveta N · posição B3") · change state (manager+) · **Relatórios do
   carro**, which switches to the **Relatórios** section filtered by this cart (the rail
@@ -310,7 +310,7 @@ old screen until the rewrite lands.
 |---|---|---|
 | **B1 Overview** | `overview_*` | Metrics: operational carts, needing replenishment, expiring within 30 days (and in how many carts), overdue checks, emergencies this month. "Carrinhos que precisam de atenção" list and recent activity (stock events + reports). PDF of the overview |
 | **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers, responsible now. Filters and search. **New cart**, from scratch or **from a template** |
-| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **"Código QR"** opens the cart code dialog to print it (RV-21). **Target (30 Oct, D20):** drawer **name** (optional) in the drawer form and table. Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
+| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **"Código QR"** opens the cart code dialog to print it (RV-21). Drawer **name** (optional, D20, up to 50 characters) in "Adicionar gaveta", in a "Nome" column and in **Editar gaveta** (number only while Q8 allows it; the name always). Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
 | **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, expiry warning ("Aplicar à posição"), "Limpar posição". A target below the current stock is refused. **Once the drawer has History** (P1/P2) the layout is locked (steppers, merge, split disabled; a warning replaces the hint), used slots keep their product and can't be cleared; targets can still change. **Orphaned assignments** (old data): reassign, or remove only when unused (Q7) |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
 | **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture; create a cart from it. Templates never carry stock, lots or history. **Archived, never deleted** (P3): tabs "Ativos / Arquivados", "Arquivar modelo" and "Restaurar"; archived templates aren't offered for new carts but can still be edited (local stub) |
@@ -330,8 +330,8 @@ In short:
 
 - **Institution → Cart → Drawer → Slot.** A slot is a rectangle of grid cells (it can
   span rows and columns).
-- **Drawer** has a **number** (unique in its cart) and a grid; its slots are created
-  with it. **Assignment** = one product in one slot (`drawerId` + `slotId`) of one cart.
+- **Drawer** has a **number** (unique in its cart), an optional **name** (D20) and a grid;
+  its slots are created with it. **Assignment** = one product in one slot (`drawerId` + `slotId`) of one cart.
   It holds `currentQuantity` (live stock, always `0 ≤ current ≤ target`),
   `targetQuantity` and `earliestKnownExpiry`. No minimum (D10).
 - **Batches** hang under the assignment: expiry, quantity, optional lot number, GTIN,

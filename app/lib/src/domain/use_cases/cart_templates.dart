@@ -43,6 +43,7 @@ class CartTemplateUseCases {
       placed.addAll(bySlot.values.map((a) => a.id));
       result.add(TemplateDrawer(
         number: drawer.number ?? index + 1,
+        name: drawer.name,
         rows: drawer.rows,
         columns: drawer.columns,
         slots: slots,
@@ -83,7 +84,7 @@ class CartTemplateUseCases {
       final drawer = await drawers.createDrawer(
         institutionId,
         cart.id,
-        CartDrawer(id: '', cartId: cart.id, number: t.number, rows: t.rows, columns: t.columns),
+        CartDrawer(id: '', cartId: cart.id, number: t.number, name: t.name, rows: t.rows, columns: t.columns),
         slots: t.slots.isEmpty
             ? null
             : [

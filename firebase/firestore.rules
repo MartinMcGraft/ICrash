@@ -93,6 +93,14 @@ service cloud.firestore {
 
     // P5 (no overfill) and DATABASE.md `0 ≤ currNumberCC ≤ maxNumberCC`,
     // `maxNumberCC > 0`. Mirrors InventoryRules.checkStock in the app.
+    // D20: a drawer's optional descriptive name is text of 1–50 characters.
+    function drawerNameValid() {
+      return !('name' in request.resource.data) ||
+        (request.resource.data.name is string &&
+          request.resource.data.name.size() >= 1 &&
+          request.resource.data.name.size() <= 50);
+    }
+
     function stockWithinTarget(data) {
       return data.targetQuantity > 0 &&
         data.currentQuantity >= 0 &&
@@ -243,8 +251,9 @@ service cloud.firestore {
         // number unless it never had one (P1/P2, Q8).
         match /drawers/{drawerId} {
           allow read: if canAccessCart(institutionId, cartId);
-          allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data);
-          allow update: if (isManagerOrAbove(institutionId) && usedAtKept() &&
+          allow create: if isManagerOrAbove(institutionId) && !('usedAt' in request.resource.data) && drawerNameValid();
+          // The optional name (D20) isn't structure: a used drawer may be renamed.
+          allow update: if (isManagerOrAbove(institutionId) && usedAtKept() && drawerNameValid() &&
               (!isUsed() || (unchanged('rows') && unchanged('columns') &&
                 (!('number' in resource.data) || unchanged('number'))))) ||
             (canAccessCart(institutionId, cartId) && onlyMarksUsed());

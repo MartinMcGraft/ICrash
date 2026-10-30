@@ -51,6 +51,8 @@ class FirestoreDrawerRepository implements DrawerRepository {
     try {
       await _firestore.collection(FirestorePaths.drawers(institutionId, cartId)).doc(drawer.id).update({
         ...drawer.toMap(),
+        // D20: a drawer without a name has no `name` field.
+        if (drawer.name == null) 'name': FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (error) {

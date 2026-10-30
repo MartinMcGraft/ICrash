@@ -5,6 +5,7 @@ import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/inventory_health.dart';
 import '../../core/icons/ic_icons.dart';
+import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -54,7 +55,7 @@ class GridEditorScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 PageHeader(
-                  title: l10n.drawerShort(vm.drawerNumber),
+                  title: drawerTitleWithNumber(l10n, vm.drawer?.name, vm.drawerNumber),
                   subtitle: l10n.gridEditorSubtitle(vm.data.cart?.name ?? ''),
                   onBack: () => Navigator.of(context).maybePop(),
                   trailing: [

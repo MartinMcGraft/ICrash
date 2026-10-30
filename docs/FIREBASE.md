@@ -235,7 +235,7 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
   carts/{cartId}                             name, status, service, location, archived,
                                              layoutVersion, templateId, responsibleUserIds[]
     responsibleUsers/{uid}                   who may access the cart (non-managers)
-    drawers/{drawerId}                       number, rows, columns, usedAt?
+    drawers/{drawerId}                       number, name?, rows, columns, usedAt?
       slots/{slotId}                         row, column, rowSpan, columnSpan, label?, usedAt?
     assignments/{assignmentId}               institutionId, cartId, drawerId, slotId, productId,
                                              currentQuantity, targetQuantity,
@@ -257,8 +257,9 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
 - **New in design v2 (Oct 2026):** cart `service`, `location` and `archived`; membership
   `displayName`, `email` and `service`; product `category` and `expiryWarningDays`.
 - **Changed 29 Oct 2026 (database decisions of 28 Oct):**
-  - Drawers have a **`number`** (unique in the cart, checked by the app) and no `name`
-    (P17). A drawer is created **together with its slot documents** (one per cell, or a
+  - Drawers have a **`number`** (unique in the cart, checked by the app) and an
+    optional **`name`** (D20, 30 Oct: 1–50 characters, checked by the rules; no field when
+    there's none; a used drawer may be renamed). A drawer is created **together with its slot documents** (one per cell, or a
     template's layout), in one batch.
   - Slot **rows and columns stay 0-based in Firestore** (`r0c0` is the top-left cell).
     DATABASE.md counts from 1; add 1 when the data moves to PostgreSQL.
@@ -479,7 +480,7 @@ version. Table names are those of DATABASE.md part 2.
 | `products/{p}` | CLINICALCONSUMABLE + CATEGORY | `unitDescription` → `weight` / `volume`. `category` is a lookup table. The per-product `expiryWarningDays` isn't modelled (DB12) |
 | `carts/{c}` | CRASHCART + CARTSTATE | `status` → CARTSTATE. `service` → DEPARTMENT (with `floor`). `templateId` → `idCrashCartTemplate`. `layoutVersion` isn't modelled (DB12). The auto-state switch (local stub) → `autoState` |
 | `carts/{c}/responsibleUsers`, `responsibleUserIds[]` | CRASHCARTUSER | One table instead of a subcollection plus a copied array. Shifts (local stub) aren't modelled yet (DB5) |
-| `drawers/{d}` | DRAWER | `number` → `number` (UNIQUE per cart there; checked by the app here). No name (P17). `usedAt` isn't a column: a used drawer is one whose slots History points to |
+| `drawers/{d}` | DRAWER | `number` → `number` (UNIQUE per cart there; checked by the app here). `name` → `name` (optional, D20). `usedAt` isn't a column: a used drawer is one whose slots History points to |
 | `slots/{s}` | SLOT | Rows and columns are **0-based here, 1-based there: add 1 at migration**. `label` isn't stored (calculated). The key includes the drawer and cart, so slot ids no longer clash between drawers. `usedAt` isn't a column |
 | `assignments/{a}` | SLOTCC + SLOTSTATE | `currentQuantity` → `currNumberCC`, `targetQuantity` → `maxNumberCC` (`0 ≤ curr ≤ max`, enforced here too). `drawerId` + `slotId` → (`idSlot`, `idDrawer`). `minimumQuantity` is gone (D10). `earliestKnownExpiry` → `earliestExpirationDate`, **derived** from the batches. Slot state is computed by the app (DB9 storage open). `usedAt` isn't a column (the FKs + §2.3 trigger do its job). The copied `institutionId`/`cartId` aren't needed |
 | `assignments/{a}/batches/{b}` | BATCH | `expiryDate` → `expirationDate` (month-only dates = last day, P11), `quantity` (> 0), `lotNumber` optional, `removedAt` (never deleted) — all as in the design. Not yet one batch per expiry date: same-date batches aren't merged (P10 open). `gtin`, `source` and `createdBy` aren't stored on the batch there; who created it is on the History row |
@@ -503,7 +504,7 @@ OK) would need:
 | What | Why | Until then |
 |---|---|---|
 | **Drawer `number`** for every drawer | P17; UNIQUE per cart | The app shows the creation-order position. A manager can set it in B3 ("Alterar número"), even on a used drawer that never had one |
-| Remove drawer `name` | P17 | Ignored |
+| Drawer `name` | D20 (30 Oct) reverses P17's "no name" | Old names stored before P17 are shown again; check and fix them in B3 ("Editar gaveta") |
 | **`drawerId`** on every assignment | Slot ids repeat across drawers | The app puts the placement in the first drawer (in number order) with that slot id |
 | **Slot documents** for drawers whose layout was never edited | Every drawer has slots | The app draws one slot per cell; saving the grid in B4 creates them |
 | **`usedAt`** on assignments, slots and drawers that already have usage events | Lets the rules block deleting/reshaping them | The app's history query blocks it in the UI; the rules don't |

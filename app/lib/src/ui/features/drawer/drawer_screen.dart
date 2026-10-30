@@ -6,6 +6,7 @@ import '../../../domain/entities/product.dart';
 import '../../../domain/inventory_health.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
+import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -45,7 +46,7 @@ class DrawerScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
-                title: l10n.drawerShort(vm.drawerNumber),
+                title: drawerTitleWithNumber(l10n, drawer.name, vm.drawerNumber),
                 subtitle: compact
                     ? l10n.drawerSubtitleShort(cart.name, drawer.rows, drawer.columns)
                     : l10n.drawerSubtitle(cart.name, drawer.rows, drawer.columns, vm.slots.length),

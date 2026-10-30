@@ -1,3 +1,4 @@
+import 'cart_drawer.dart';
 import 'slot.dart';
 
 /// A cart template (design v2 B6 "Modelos"): drawers, positions and target
@@ -70,10 +71,20 @@ class CartTemplate {
 }
 
 class TemplateDrawer {
-  const TemplateDrawer({required this.number, required this.rows, required this.columns, this.slots = const [], this.products = const []});
+  const TemplateDrawer({
+    required this.number,
+    this.name,
+    required this.rows,
+    required this.columns,
+    this.slots = const [],
+    this.products = const [],
+  });
 
-  /// The drawer's number in carts made from this template (P17: no name).
+  /// The drawer's number in carts made from this template.
   final int number;
+
+  /// Optional descriptive name (D20), copied to carts made from the template.
+  final String? name;
   final int rows;
   final int columns;
 
@@ -87,6 +98,7 @@ class TemplateDrawer {
 
   Map<String, Object?> toJson() => {
         'number': number,
+        if (name != null) 'name': name,
         'rows': rows,
         'columns': columns,
         'slots': [
@@ -96,9 +108,10 @@ class TemplateDrawer {
       };
 
   /// Templates saved before 29 Oct 2026 have a `name` and no `number`: the
-  /// name is ignored and the drawer's position is used ([fallbackNumber]).
+  /// drawer's position is used ([fallbackNumber]) and the name is kept (D20).
   factory TemplateDrawer.fromJson(Map<String, Object?> json, {int fallbackNumber = 1}) => TemplateDrawer(
         number: (json['number'] as num?)?.toInt() ?? fallbackNumber,
+        name: CartDrawer.cleanName(json['name'] as String?),
         rows: (json['rows'] as num?)?.toInt() ?? 1,
         columns: (json['columns'] as num?)?.toInt() ?? 1,
         slots: (json['slots'] as List? ?? const []).map((s) {
