@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../common/l10n/app_localizations.dart';
 import '../../../domain/entities/institution.dart';
+import '../../../domain/entities/support_access.dart';
+import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/layout.dart';
+import '../../core/widgets/status.dart';
 
-/// Institution choice, shown only when the user belongs to more than one
-/// (audit §4.4: skip automatically when there is a single institution).
-/// Stateless: the list and actions come from the app root ViewModel.
+/// Institution choice, for Super only (D16, D18): the institutions whose
+/// Admin opened a support window, each with the time it ends. Stateless: the
+/// list and actions come from the app root ViewModel.
 class InstitutionPickerScreen extends StatelessWidget {
   const InstitutionPickerScreen({
     super.key,
@@ -18,7 +21,17 @@ class InstitutionPickerScreen extends StatelessWidget {
     required this.onSignOut,
     this.loadFailed = false,
     this.onRetry,
+    this.supportWindows,
+    this.supportEnded = false,
+    this.onRefresh,
   });
+
+  /// D18: Super's open windows by institution id (`null` for other users).
+  final Map<String, SupportWindow>? supportWindows;
+
+  /// D18: Super's previous window ended or was closed.
+  final bool supportEnded;
+  final VoidCallback? onRefresh;
 
   final List<Institution> institutions;
   final ValueChanged<Institution> onSelect;
@@ -40,11 +53,23 @@ class InstitutionPickerScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  PageHeader(title: l10n.institutionSelectionTitle),
+                  PageHeader(
+                    title: supportWindows == null ? l10n.institutionSelectionTitle : l10n.supportPickerTitle,
+                    subtitle: supportWindows == null ? null : l10n.supportPickerSubtitle,
+                    trailing: [
+                      if (onRefresh != null) IcIconButton(icon: IcIcon.sincronizar, tooltip: l10n.actionRefresh, onPressed: onRefresh),
+                    ],
+                  ),
                   const SizedBox(height: IcSpace.s20),
+                  if (supportEnded) ...[
+                    Notice(kind: NoticeKind.warning, title: l10n.supportEnded),
+                    const SizedBox(height: IcSpace.s12),
+                  ],
                   if (institutions.isEmpty)
                     StateView.message(
-                      message: loadFailed ? l10n.stateLoadError : l10n.institutionSelectionEmpty,
+                      message: loadFailed
+                          ? l10n.stateLoadError
+                          : (supportWindows == null ? l10n.institutionSelectionEmpty : l10n.supportPickerEmpty),
                       onRetry: loadFailed ? onRetry : null,
                     )
                   else
@@ -68,7 +93,21 @@ class InstitutionPickerScreen extends StatelessWidget {
                                   child: const IcIconView(IcIcon.escudo, color: IcColors.textLink),
                                 ),
                                 const SizedBox(width: 14),
-                                Expanded(child: Text(institution.name, style: IcText.labelL)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(institution.name, style: IcText.labelL),
+                                      if (supportWindows?[institution.id] case final window?)
+                                        Text(
+                                          l10n.supportPickerUntil(IcFormat.of(context).dateTime(window.endsAt), window.reason),
+                                          style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
+                                ),
                                 const IcIconView(IcIcon.seguinte, color: IcColors.textSecondary),
                               ],
                             ),

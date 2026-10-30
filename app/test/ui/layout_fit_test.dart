@@ -42,6 +42,7 @@ import 'package:icrash_app/src/ui/features/dashboard/cart_config_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/catalog_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/grid_editor_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/shifts_screen.dart';
+import 'package:icrash_app/src/ui/features/dashboard/support_access_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/templates_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/users_screen.dart';
 import 'package:icrash_app/src/ui/features/drawer/drawer_screen.dart';
@@ -476,6 +477,11 @@ void main() {
 
       testWidgets('B6 templates ($name): active/archived tabs', (tester) async {
         await _pump(tester, size, _services(), const TemplatesScreen());
+        _expectNoScroll(tester);
+      });
+
+      testWidgets('Acesso do suporte ($name): form and access log (D18)', (tester) async {
+        await _pump(tester, size, _services(), const SupportAccessScreen());
         _expectNoScroll(tester);
       });
 

@@ -10,6 +10,7 @@ import '../data/firebase/firestore_drawer_repository.dart';
 import '../data/firebase/firestore_institution_repository.dart';
 import '../data/firebase/firestore_inventory_repository.dart';
 import '../data/firebase/firestore_product_repository.dart';
+import '../data/firebase/firestore_support_repository.dart';
 import '../data/firebase/firestore_usage_repository.dart';
 import '../domain/repositories/audit_repository.dart';
 import '../domain/repositories/auth_repository.dart';
@@ -19,6 +20,7 @@ import '../domain/repositories/drawer_repository.dart';
 import '../domain/repositories/institution_repository.dart';
 import '../domain/repositories/inventory_repository.dart';
 import '../domain/repositories/product_repository.dart';
+import '../domain/repositories/support_repository.dart';
 import '../domain/repositories/usage_repository.dart';
 import '../data/local/local_repositories.dart';
 import '../data/local/local_store.dart';
@@ -58,6 +60,7 @@ class AppServices {
           usage: FirestoreUsageRepository(firestore),
           audit: FirestoreAuditRepository(firestore),
           credentials: FirestoreCredentialRepository(firestore, auth),
+          support: FirestoreSupportRepository(firestore, auth),
           createGs1Scanner: isCameraScanningSupported ? MobileScannerGs1Service.new : HidGs1ScannerService.new,
           createInternalQrScanner: MobileScannerInternalQrService.new,
           localStore: SharedPreferencesLocalStore(),
@@ -78,6 +81,7 @@ class AppServices {
     required this.createGs1Scanner,
     required this.createInternalQrScanner,
     PinHasher? pinHasher,
+    SupportRepository? support,
     LocalStore? localStore,
     DeviceSessionRepository? deviceSession,
     ReportRepository? reports,
@@ -91,6 +95,7 @@ class AppServices {
   })  : createCodeScanner = createCodeScanner ??
             (isCameraScanningSupported ? CameraCodeScannerService.new : KeyboardCodeScannerService.new),
         pinHasher = pinHasher ?? PinHasher(),
+        support = support ?? const NoSupportRepository(),
         deviceSession = deviceSession ?? LocalDeviceSessionRepository(localStore ?? _testStore, hasher: pinHasher),
         reports = reports ?? LocalReportRepository(localStore ?? _testStore),
         emergency = emergency ?? LocalEmergencyRepository(localStore ?? _testStore),
@@ -114,6 +119,9 @@ class AppServices {
 
   /// Administrator-set PIN hashes (DB3; interim, under Firebase).
   final CredentialRepository credentials;
+
+  /// D18: Super's support access windows.
+  final SupportRepository support;
 
   /// Salted, slow PIN hashing (PBKDF2), shared by B7 and the device check.
   final PinHasher pinHasher;

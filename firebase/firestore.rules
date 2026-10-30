@@ -16,6 +16,10 @@ rules_version = '2';
 //   they're registered to (responsibleUsers) and has every cart action there
 //   (stock, batches, cart state), but no structure, catalogue, users or
 //   shifts.
+// - Support access (D18): Super acts as an Admin of an institution only
+//   while that institution's Admin keeps `support/current` open (a reason,
+//   up to 7 days). Super never reads PIN hashes and never grants itself
+//   access; its entries in `supportLog` are append-only.
 // - Immutable audit trail: usageEvents/auditEvents are create-only, never
 //   updated or deleted by clients (spec sections 18, 45, 60).
 service cloud.firestore {
@@ -48,9 +52,37 @@ service cloud.firestore {
       return isMember(institutionId) && role(institutionId) in roles;
     }
 
-    // D16: Admin or Super — everything in the institution.
+    // D18: the institution's support window, opened by its Admin.
+    function supportDoc(institutionId) {
+      return /databases/$(database)/documents/institutions/$(institutionId)/support/current;
+    }
+
+    function supportOpen(institutionId) {
+      return exists(supportDoc(institutionId)) &&
+        !('closedAt' in get(supportDoc(institutionId)).data) &&
+        get(supportDoc(institutionId)).data.endsAt > request.time;
+    }
+
+    // D18: Super, while the institution's support window is open.
+    function isSupportInside(institutionId) {
+      return isPlatformSuperAdmin() && supportOpen(institutionId);
+    }
+
+    // The institution's own Admin (never Super): grants support access and
+    // sets credentials.
+    function isOwnAdmin(institutionId) {
+      return hasRole(institutionId, ['institutionAdmin']);
+    }
+
+    // D16 + D18: the Admin, or Super inside an open support window.
     function isInstitutionAdmin(institutionId) {
-      return hasRole(institutionId, ['institutionAdmin']) || isPlatformSuperAdmin();
+      return isOwnAdmin(institutionId) || isSupportInside(institutionId);
+    }
+
+    // Members, or Super inside an open support window, may read the
+    // institution's shared data.
+    function canReadInstitution(institutionId) {
+      return isMember(institutionId) || isSupportInside(institutionId);
     }
 
     function isAssignedToCart(institutionId, cartId) {
@@ -179,7 +211,10 @@ service cloud.firestore {
     }
 
     match /institutions/{institutionId} {
-      allow read: if isMember(institutionId);
+      // D18: Super reads every institution's name to list the ones that
+      // opened support access (a `list` rule can't use the path variable).
+      allow get: if canReadInstitution(institutionId) || isPlatformSuperAdmin();
+      allow list: if isPlatformSuperAdmin();
       // Only a platform super admin creates institutions (spec section 16).
       allow create: if isPlatformSuperAdmin();
       allow update: if isInstitutionAdmin(institutionId) &&
@@ -187,7 +222,7 @@ service cloud.firestore {
       allow delete: if false;
 
       match /memberships/{uid} {
-        allow read: if isMember(institutionId);
+        allow read: if canReadInstitution(institutionId);
         allow create: if isInstitutionAdmin(institutionId) && request.resource.data.uid == uid;
         // No one may change or remove their own membership: prevents
         // self-escalation and self-reactivation after being disabled
@@ -202,9 +237,9 @@ service cloud.firestore {
         // institution's server). Nobody writes their own, not even an admin.
         match /private/{docId} {
           allow read: if docId == 'credentials' &&
-            ((isMember(institutionId) && request.auth.uid == uid) || isInstitutionAdmin(institutionId));
+            ((isMember(institutionId) && request.auth.uid == uid) || isOwnAdmin(institutionId));
           allow create, update: if docId == 'credentials' &&
-            isInstitutionAdmin(institutionId) &&
+            isOwnAdmin(institutionId) &&
             request.auth.uid != uid &&
             request.resource.data.pinHash is string &&
             request.resource.data.pinHash.matches('^pbkdf2-sha256[$][0-9]+[$][A-Za-z0-9+/=]+[$][A-Za-z0-9+/=]+$');
@@ -214,7 +249,7 @@ service cloud.firestore {
 
       // D16: the catalogue is the Admin's.
       match /products/{productId} {
-        allow read: if isMember(institutionId);
+        allow read: if canReadInstitution(institutionId);
         allow write: if isInstitutionAdmin(institutionId);
       }
 
@@ -331,8 +366,8 @@ service cloud.firestore {
 
       // Immutable operational stock history (spec sections 24, 43-45, 60).
       match /usageEvents/{eventId} {
-        allow read: if isMember(institutionId);
-        allow create: if isMember(institutionId) &&
+        allow read: if canReadInstitution(institutionId);
+        allow create: if canReadInstitution(institutionId) &&
           request.resource.data.actorUid == request.auth.uid &&
           canAccessCart(institutionId, request.resource.data.cartId) &&
           // DATABASE.md HISTORY `reason` VARCHAR(500), optional.
@@ -343,7 +378,50 @@ service cloud.firestore {
       // Immutable administrative/audit trail (spec sections 18, 45, 60).
       match /auditEvents/{eventId} {
         allow read: if isInstitutionAdmin(institutionId);
-        allow create: if isMember(institutionId) && request.resource.data.actorUid == request.auth.uid;
+        allow create: if canReadInstitution(institutionId) && request.resource.data.actorUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // D18: the support window. Only the institution's own Admin opens it
+      // (with a reason, for at most 7 days) or closes it; Super reads it to
+      // know whether it may enter.
+      match /support/{docId} {
+        allow read: if isOwnAdmin(institutionId) || isPlatformSuperAdmin();
+        allow create, update: if docId == 'current' && isOwnAdmin(institutionId) && (
+          // Open: a new window from now, with a reason.
+          (request.resource.data.reason is string &&
+            request.resource.data.reason.size() >= 1 &&
+            request.resource.data.reason.size() <= 500 &&
+            request.resource.data.grantedBy == request.auth.uid &&
+            request.resource.data.endsAt is timestamp &&
+            request.resource.data.endsAt > request.time &&
+            request.resource.data.endsAt <= request.time + duration.value(7, 'd') + duration.value(5, 'm') &&
+            !('closedAt' in request.resource.data)) ||
+          // Close: only `closedAt` (+ `closedBy`) is added.
+          (resource != null &&
+            !('closedAt' in resource.data) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closedAt', 'closedBy']) &&
+            request.resource.data.closedAt == request.time));
+        allow delete: if false;
+      }
+
+      // D18: every window ever opened, as history.
+      match /supportGrants/{grantId} {
+        allow read: if isOwnAdmin(institutionId) || isPlatformSuperAdmin();
+        allow create: if isOwnAdmin(institutionId) && request.resource.data.grantedBy == request.auth.uid;
+        allow update: if isOwnAdmin(institutionId) &&
+          !('closedAt' in resource.data) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closedAt', 'closedBy']);
+        allow delete: if false;
+      }
+
+      // D18: what Super did, written by Super's app while inside; the Admin
+      // reads it. Append-only.
+      match /supportLog/{entryId} {
+        allow read: if isOwnAdmin(institutionId) || isPlatformSuperAdmin();
+        allow create: if isSupportInside(institutionId) &&
+          request.resource.data.superUid == request.auth.uid &&
+          request.resource.data.action in ['enter', 'leave'];
         allow update, delete: if false;
       }
     }

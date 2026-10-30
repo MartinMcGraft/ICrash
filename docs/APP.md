@@ -47,6 +47,7 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 | | Turnos (shifts): Admin |
 | | Relatórios (reports) |
 | | Histórico (history) |
+| | Acesso do suporte: the institution's own Admin (D18) |
 
 Sections the user can't use are **hidden**, not shown disabled. Each section keeps its
 own navigation stack (`SectionNavigator`), so switching sections doesn't lose your place.
@@ -139,8 +140,12 @@ isn't one (no Cloud Functions on Spark). New flow:
 4. Personal devices (laptop, a Manager's phone) keep e-mail + password.
 5. Admins list and revoke devices in the Dashboard.
 
-The **institution picker** is shown **only to Super** (RV-1, done 30 Oct); listing the
-institutions with an open support grant is part of D18 (RV-2). Rules changes and the prototype's security limits:
+The **institution picker** is shown **only to Super** (RV-1, RV-2, done 30 Oct): it lists the
+institutions whose Admin opened a **support window** (D18), with the reason and end time.
+Entering writes "Entrou" to the institution's access log, and an amber **banner** stays on
+every screen ("Acesso do suporte · Hospital X · termina às 18:00", `SupportBannerFrame`).
+When the time is up or the Admin closes the window, Super goes back to the list with a
+message. Inside, Super works as an Admin but never reads or sets PIN hashes. Rules changes and the prototype's security limits:
 REVIEW_2026-10-30.md §3.2.
 
 **Credentials (DB3, done 29 Oct):** only the administration sets or resets a user's
@@ -322,6 +327,7 @@ Rebuilt on 30 Oct 2026 (D4, D22, D23; REVIEW_2026-10-30.md §5.5).
 | **B7 Users & permissions** | `users_*` | Members with name, e-mail, role, status. **Criar utilizador** (DB3): name, e-mail, role, **password** (min. 8) and **PIN** (4 digits), each typed twice; the administrator hands them over. Per member: change role, enable/disable, **Definir novo PIN**, **Redefinir palavra-passe** (shows "peça ao suporte técnico": the app can't change another user's Firebase password; IT uses `firebase/tools/set_password.mjs`). Never on yourself. Permission toggles per role (§2) |
 | **B8 Shifts** | `shifts_*` | Decision D8: **one responsible health professional per cart per shift**. Week view by cart or by person. Shifts: morning 08–16, afternoon 16–24, night 00–08. "Copiar semana anterior" fills empty slots |
 | **B9 Reports & history** | `reports_history_*` | Tabs for reports and events. Filter by cart and month. Totals (consumed, replenished, checks, emergencies, pending signatures), most consumed products, per-cart summary. Event rows show when, where (cart › drawer › position), what and who. CSV export (currently a copy dialog). Reads the latest N events and says when it hits the cap |
+| **Acesso do suporte** (D18) | `support_access_*` | The institution's **own Admin** only (not Super). Closed: reason (required, ≤ 500), duration **4 h / 24 h / 7 dias**, "Abrir acesso". Open: until when, reason, who opened it, "Fechar acesso agora". Right: the **access log** (when, who, Entrou/Saiu). Rules: DESIGN_D17_D18.md §2 |
 
 The App screens (A5, A6, A8…) also open inside the Dashboard when a manager drills into
 a cart.

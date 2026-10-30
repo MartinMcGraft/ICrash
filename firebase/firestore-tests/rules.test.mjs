@@ -665,6 +665,95 @@ describe('user types: Super, Admin, Manager (D16)', () => {
   });
 });
 
+describe('support access: Super only inside a window the Admin opens (D18)', () => {
+  const cartPath = `institutions/${INST_A}/carts/${CART_ID}`;
+  const supportPath = `institutions/${INST_A}/support/current`;
+  const HOUR = 60 * 60 * 1000;
+
+  async function seedSuper({ window } = {}) {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, `platformAdmins/${SUPER_ADMIN_UID}`), { uid: SUPER_ADMIN_UID });
+      await setDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}/private/credentials`), {
+        pinHash: 'pbkdf2-sha256$60000$c2FsdA==$aGFzaA==',
+      });
+      if (window) await setDoc(doc(db, supportPath), { reason: 'Erro ao sincronizar', grantedBy: ADMIN_UID, ...window });
+    });
+  }
+
+  test('without a window Super reads only institution names and the window itself', async () => {
+    await seedSuper();
+    const db = testEnv.authenticatedContext(SUPER_ADMIN_UID).firestore();
+    await assertSucceeds(getDoc(doc(db, 'institutions', INST_A)));
+    await assertSucceeds(getDocs(collection(db, 'institutions')));
+    await assertSucceeds(getDoc(doc(db, supportPath)));
+    await assertFails(getDoc(doc(db, cartPath)));
+    await assertFails(getDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}`)));
+    await assertFails(setDoc(doc(db, `${cartPath}/drawers/d-s`), { number: 9, rows: 1, columns: 1 }));
+  });
+
+  test('inside an open window Super works as an Admin, but never reads PIN hashes', async () => {
+    await seedSuper({ window: { endsAt: new Date(Date.now() + 4 * HOUR) } });
+    const db = testEnv.authenticatedContext(SUPER_ADMIN_UID).firestore();
+    await assertSucceeds(getDoc(doc(db, cartPath)));
+    await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}`)));
+    await assertSucceeds(setDoc(doc(db, `${cartPath}/drawers/d-s`), { number: 9, rows: 1, columns: 1 }));
+    await assertFails(getDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}/private/credentials`)));
+    await assertFails(setDoc(doc(db, `institutions/${INST_A}/memberships/${USER2_UID}/private/credentials`), {
+      pinHash: 'pbkdf2-sha256$60000$c2FsdA==$aGFzaA==',
+    }));
+    // Not in institution B, which opened nothing.
+    await assertFails(getDoc(doc(db, `institutions/${INST_B}/memberships/${OTHER_INST_UID}`)));
+  });
+
+  test('an expired or closed window lets nothing through', async () => {
+    await seedSuper({ window: { endsAt: new Date(Date.now() - HOUR) } });
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(SUPER_ADMIN_UID).firestore(), cartPath)));
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), supportPath), {
+        reason: 'x', grantedBy: ADMIN_UID, endsAt: new Date(Date.now() + HOUR), closedAt: new Date(),
+      });
+    });
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(SUPER_ADMIN_UID).firestore(), cartPath)));
+  });
+
+  test('only the institution\'s own Admin opens a window: with a reason, for at most 7 days', async () => {
+    await seedSuper();
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(setDoc(doc(admin, supportPath), { reason: '', grantedBy: ADMIN_UID, endsAt: new Date(Date.now() + 4 * HOUR) }));
+    await assertFails(setDoc(doc(admin, supportPath), { reason: 'Ajuda', grantedBy: ADMIN_UID, endsAt: new Date(Date.now() + 8 * 24 * HOUR) }));
+    await assertSucceeds(setDoc(doc(admin, supportPath), { reason: 'Ajuda', grantedBy: ADMIN_UID, endsAt: new Date(Date.now() + 24 * HOUR) }));
+    for (const uid of [REG_MANAGER_UID, SUPER_ADMIN_UID]) {
+      await assertFails(setDoc(doc(testEnv.authenticatedContext(uid).firestore(), supportPath), {
+        reason: 'Ajuda', grantedBy: uid, endsAt: new Date(Date.now() + HOUR),
+      }));
+    }
+  });
+
+  test('the Admin closes the window; it can\'t be stretched once open', async () => {
+    await seedSuper({ window: { endsAt: new Date(Date.now() + 4 * HOUR) } });
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertFails(updateDoc(doc(admin, supportPath), { endsAt: new Date(Date.now() + 6 * 24 * HOUR), closedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(admin, supportPath), { closedAt: serverTimestamp(), closedBy: ADMIN_UID }));
+    await assertFails(deleteDoc(doc(admin, supportPath)));
+  });
+
+  test('Super logs its entries while inside; the log is append-only and the Admin reads it', async () => {
+    await seedSuper({ window: { endsAt: new Date(Date.now() + 4 * HOUR) } });
+    const sup = testEnv.authenticatedContext(SUPER_ADMIN_UID).firestore();
+    const log = `institutions/${INST_A}/supportLog`;
+    await assertSucceeds(setDoc(doc(sup, `${log}/e1`), { superUid: SUPER_ADMIN_UID, action: 'enter', at: serverTimestamp() }));
+    await assertFails(setDoc(doc(sup, `${log}/e2`), { superUid: ADMIN_UID, action: 'enter', at: serverTimestamp() }));
+    await assertFails(updateDoc(doc(sup, `${log}/e1`), { action: 'leave' }));
+    await assertFails(deleteDoc(doc(sup, `${log}/e1`)));
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext(ADMIN_UID).firestore(), `${log}/e1`)));
+    await assertFails(getDoc(doc(testEnv.authenticatedContext(REG_MANAGER_UID).firestore(), `${log}/e1`)));
+    // Outside a window nothing is logged.
+    await assertFails(setDoc(doc(sup, `institutions/${INST_B}/supportLog/e3`), { superUid: SUPER_ADMIN_UID, action: 'enter' }));
+  });
+});
+
 describe('credentials are set by the administration only (DB3)', () => {
   const credPath = (uid) => `institutions/${INST_A}/memberships/${uid}/private/credentials`;
   const HASH = 'pbkdf2-sha256$60000$c2FsdC1mb3ItdGVzdHMtMQ==$yGloleHkdAyoaW/Eb0SMpPM7gAhWmYdCkJvDYomXLK0=';

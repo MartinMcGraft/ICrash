@@ -760,6 +760,21 @@ Frame ids read on 30 Oct 2026.
 - **Copy:** `roleSuperAdmin`, `roleInstitutionAdmin`, `roleManager` changed; new
   `usersFilterAdmins` "Admins ({count})".
 
+### DC-56 · Support access: Admin section, Super's picker and banner (D18, RV-2)
+- **Where:** new Dashboard section (no frame; next to B9 on p20/p21); institution picker
+  (no frame); a banner above both shells.
+- **What:**
+  - Sidebar item **"Acesso do suporte"** (icon escudo), the institution's own Admin only.
+  - Screen: left card — closed: "Acesso fechado", help, **Motivo**, **Duração** tabs
+    "4 h / 24 h / 7 dias", **Abrir acesso**; open: warning "Acesso aberto até {data}",
+    Motivo, Aberto por, Desde, **Fechar acesso agora** (danger, confirm). Right: "Registo de
+    acessos" table (Quando, Quem, Ação: Entrou/Saiu).
+  - Super's picker: title "Acesso do suporte", subtitle "Instituições que abriram acesso à
+    equipa I-Crash", each row "Até {data} · {motivo}", refresh button, empty "Nenhum
+    pedido de acesso aberto.", warning when a window ended.
+  - Banner (amber, full width, top): "Acesso do suporte · {instituição} · termina às {hora}".
+- **Copy:** the `support*` keys, `navSupport`, `actionRefresh`.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -799,4 +814,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles) | DC-41 … DC-55 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles, support access) | DC-41 … DC-56 |

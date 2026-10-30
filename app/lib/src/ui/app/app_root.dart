@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../common/l10n/app_localizations.dart';
 import '../core/mvvm/view_model.dart';
-import '../../domain/entities/role.dart';
 import '../core/session/session.dart';
 import '../core/widgets/layout.dart';
+import '../core/widgets/support_banner.dart';
 import '../features/auth/cart_login_screen.dart';
 import '../features/auth/institution_picker_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -73,6 +73,9 @@ class _AppRootState extends State<AppRoot> {
           case RootStage.noInstitution:
             return InstitutionPickerScreen(
               institutions: vm.institutions,
+              supportWindows: vm.isSuper ? vm.supportWindows : null,
+              supportEnded: vm.supportEnded,
+              onRefresh: vm.isSuper ? vm.loadInstitutions : null,
               onSelect: vm.selectInstitution,
               onSignOut: vm.signOut,
               loadFailed: vm.loadError != null,
@@ -90,10 +93,8 @@ class _AppRootState extends State<AppRoot> {
                 signOut: vm.signOut,
                 lock: vm.lock,
                 // A user belongs to one institution; only Super moves between
-                // them (D16, D18).
-                switchInstitution: vm.institutions.length > 1 && session.role == Role.platformSuperAdmin
-                    ? vm.switchInstitution
-                    : null,
+                // them, back through the list of open windows (D16, D18).
+                switchInstitution: vm.isSuper ? vm.switchInstitution : null,
                 hasPin: vm.hasPin,
                 showingDashboard: shell == ShellKind.dashboard,
                 switchShell: kDebugMode
@@ -103,7 +104,15 @@ class _AppRootState extends State<AppRoot> {
               child: SessionScope(
                 key: ObjectKey(session),
                 session: session,
-                child: shell == ShellKind.app ? const AppShell() : const DashboardShell(),
+                // D18: while Super works through a support window, a banner
+                // stays on every screen.
+                child: session.supportWindow == null
+                    ? (shell == ShellKind.app ? const AppShell() : const DashboardShell())
+                    : SupportBannerFrame(
+                        institutionName: session.institution.name,
+                        window: session.supportWindow!,
+                        child: shell == ShellKind.app ? const AppShell() : const DashboardShell(),
+                      ),
               ),
             );
         }

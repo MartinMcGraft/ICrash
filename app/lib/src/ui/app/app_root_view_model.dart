@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import '../../common/app_services.dart';
 import '../../common/repository_failure.dart';
 import '../../domain/entities/institution.dart';
 import '../../domain/entities/membership.dart';
 import '../../domain/entities/role.dart';
+import '../../domain/entities/support_access.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/device_session_repository.dart';
 import '../../services/internal_qr_payload.dart';
@@ -43,6 +46,16 @@ class AppRootViewModel extends ViewModel {
   bool hasPin = false;
   List<Institution> institutions = const [];
   SessionController? session;
+
+  /// D18: the signed-in account is Super; [institutions] are then the ones
+  /// with an open support window ([supportWindows]).
+  bool isSuper = false;
+  Map<String, SupportWindow> supportWindows = const {};
+
+  /// D18: Super's window ended or was closed while inside (the picker says so).
+  bool supportEnded = false;
+  Timer? _supportTimer;
+  StreamSubscription<SupportWindow?>? _supportSub;
   Object? loadError;
   bool _firstAuthEvent = true;
 
@@ -116,12 +129,25 @@ class AppRootViewModel extends ViewModel {
     loadError = null;
     notify();
     try {
-      institutions = await services.institutions.watchMyInstitutions().first;
+      isSuper = await services.support.isPlatformAdmin();
+      if (isSuper) {
+        // D18: Super sees only the institutions whose Admin opened a window.
+        final open = await services.support.openInstitutions();
+        institutions = [for (final (institution, _) in open) institution];
+        supportWindows = {for (final (institution, window) in open) institution.id: window};
+      } else {
+        institutions = await services.institutions.watchMyInstitutions().first;
+      }
     } on RepositoryFailure catch (failure) {
       loadError = failure;
       institutions = const [];
     }
     if (isDisposed) return;
+    if (isSuper) {
+      stage = RootStage.pickingInstitution;
+      notify();
+      return;
+    }
     // D16: a user belongs to one institution, so there's no picker for them;
     // an old account with several memberships opens the first by name. Only
     // Super moves between institutions (support access, D18).
@@ -139,11 +165,39 @@ class AppRootViewModel extends ViewModel {
   Future<void> _open(Institution institution, {String? scopedCartId}) async {
     final current = user;
     if (current == null) return;
+    final window = isSuper ? supportWindows[institution.id] : null;
     Membership? membership;
-    try {
-      membership = await services.institutions.getMyMembership(institution.id);
-    } on RepositoryFailure {
-      membership = null;
+    if (isSuper) {
+      // D18: Super has no membership; inside a window it works as an Admin.
+      // Entering is logged for the institution's Admin.
+      if (window == null || !window.isOpenAt(DateTime.now())) {
+        supportEnded = true;
+        await loadInstitutions();
+        return;
+      }
+      membership = Membership(
+        uid: current.uid,
+        institutionId: institution.id,
+        role: Role.platformSuperAdmin,
+        status: MembershipStatus.active,
+        displayName: current.email ?? current.uid,
+        email: current.email,
+      );
+      try {
+        await services.support.log(institution.id, grantId: window.grantId, action: 'enter', superUid: current.uid, superEmail: current.email);
+      } on RepositoryFailure {
+        supportEnded = true;
+        await loadInstitutions();
+        return;
+      }
+      supportEnded = false;
+      _watchSupport(institution, window);
+    } else {
+      try {
+        membership = await services.institutions.getMyMembership(institution.id);
+      } on RepositoryFailure {
+        membership = null;
+      }
     }
     await services.deviceSession.remember(RememberedUser(
       uid: current.uid,
@@ -162,15 +216,58 @@ class AppRootViewModel extends ViewModel {
       membership: membership,
       institutionCount: institutions.length,
       scopedCartId: scopedCartId,
+      supportWindow: window,
     );
     stage = RootStage.ready;
     notify();
   }
 
-  void switchInstitution() {
+  /// Super goes back to the list of institutions with an open window.
+  Future<void> switchInstitution() async {
+    await _leaveSupport();
     _closeSession();
-    stage = RootStage.pickingInstitution;
-    notify();
+    await loadInstitutions();
+  }
+
+  /// D18: ends Super's session when the window's time is up or the Admin
+  /// closes it.
+  void _watchSupport(Institution institution, SupportWindow window) {
+    _stopSupportWatch();
+    final remaining = window.endsAt.difference(DateTime.now());
+    _supportTimer = Timer(remaining.isNegative ? Duration.zero : remaining, _supportOver);
+    _supportSub = services.support.watchWindow(institution.id).listen((current) {
+      if (current == null || current.grantId != window.grantId || !current.isOpenAt(DateTime.now())) _supportOver();
+    }, onError: (_) {});
+  }
+
+  void _stopSupportWatch() {
+    _supportTimer?.cancel();
+    _supportTimer = null;
+    unawaited(_supportSub?.cancel());
+    _supportSub = null;
+  }
+
+  void _supportOver() {
+    if (isDisposed || session?.supportWindow == null) return;
+    _stopSupportWatch();
+    _closeSession();
+    supportEnded = true;
+    unawaited(loadInstitutions());
+  }
+
+  /// Logs Super leaving the institution it's in (best effort: once the window
+  /// ended the rules refuse it).
+  Future<void> _leaveSupport() async {
+    final current = session;
+    final window = current?.supportWindow;
+    _stopSupportWatch();
+    if (current == null || window == null) return;
+    try {
+      await services.support.log(current.institution.id,
+          grantId: window.grantId, action: 'leave', superUid: current.user.uid, superEmail: current.user.email);
+    } on RepositoryFailure {
+      // The window already ended.
+    }
   }
 
   /// DB3: the PIN is set by the administration. After each sign-in the
@@ -197,6 +294,7 @@ class AppRootViewModel extends ViewModel {
 
   /// Signs out and forgets the device session ("Não é a Ana?").
   Future<void> signOut() async {
+    await _leaveSupport();
     await services.deviceSession.forget();
     await services.auth.signOut();
   }
@@ -208,6 +306,7 @@ class AppRootViewModel extends ViewModel {
 
   @override
   void dispose() {
+    _stopSupportWatch();
     _closeSession();
     super.dispose();
   }

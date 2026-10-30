@@ -2483,4 +2483,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String usersFilterAdmins(int count) {
     return 'Admins ($count)';
   }
+
+  @override
+  String get actionRefresh => 'Refresh';
+
+  @override
+  String get navSupport => 'Support access';
+
+  @override
+  String supportBanner(String institution, String until) {
+    return 'Support access · $institution · ends at $until';
+  }
+
+  @override
+  String get supportPickerTitle => 'Support access';
+
+  @override
+  String get supportPickerSubtitle =>
+      'Institutions that opened access to the I-Crash team';
+
+  @override
+  String get supportPickerEmpty => 'No open access requests.';
+
+  @override
+  String supportPickerUntil(String reason, String until) {
+    return 'Until $until · $reason';
+  }
+
+  @override
+  String get supportEnded =>
+      'Support access ended or was closed by the institution.';
+
+  @override
+  String get supportTitle => 'Support access';
+
+  @override
+  String get supportSubtitle =>
+      'The I-Crash team can enter this institution only while access is open.';
+
+  @override
+  String get supportLogTitle => 'Access log';
+
+  @override
+  String get supportLogWhen => 'When';
+
+  @override
+  String get supportLogWho => 'Who';
+
+  @override
+  String get supportLogAction => 'Action';
+
+  @override
+  String get supportLogEmpty => 'The I-Crash team hasn\'t entered yet.';
+
+  @override
+  String get supportLogEnter => 'Entered';
+
+  @override
+  String get supportLogLeave => 'Left';
+
+  @override
+  String get supportClosedTitle => 'Access closed';
+
+  @override
+  String get supportClosedHelp =>
+      'Open access only when you ask the I-Crash team for help. Every entry is logged, and access closes by itself at the end.';
+
+  @override
+  String get supportReasonLabel => 'Reason';
+
+  @override
+  String get supportReasonHint => 'E.g. cart 3 doesn\'t sync';
+
+  @override
+  String get supportDurationLabel => 'Duration';
+
+  @override
+  String supportDurationHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String supportDurationDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get supportOpenAction => 'Open access';
+
+  @override
+  String get supportOpened => 'Support access opened.';
+
+  @override
+  String get supportReasonRequired => 'Enter the reason.';
+
+  @override
+  String supportOpenTitle(String until) {
+    return 'Access open until $until';
+  }
+
+  @override
+  String get supportGrantedBy => 'Opened by';
+
+  @override
+  String get supportSince => 'Since';
+
+  @override
+  String get supportCloseAction => 'Close access now';
+
+  @override
+  String get supportCloseConfirm =>
+      'The I-Crash team loses access to this institution at once.';
+
+  @override
+  String get supportClosed => 'Support access closed.';
 }

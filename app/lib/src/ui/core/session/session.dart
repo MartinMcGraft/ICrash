@@ -6,6 +6,7 @@ import '../../../domain/entities/emergency_session.dart';
 import '../../../domain/entities/institution.dart';
 import '../../../domain/entities/membership.dart';
 import '../../../domain/entities/role.dart';
+import '../../../domain/entities/support_access.dart';
 import '../../../domain/repositories/auth_repository.dart';
 import '../mvvm/view_model.dart';
 
@@ -22,6 +23,7 @@ class SessionController extends ViewModel {
     required this.membership,
     required this.institutionCount,
     this.scopedCartId,
+    this.supportWindow,
   }) {
     listen(services.institutions.watchMembers(institution.id), (members) {
       _members = {for (final m in members) m.uid: m};
@@ -47,6 +49,10 @@ class SessionController extends ViewModel {
   /// cart is reachable.
   final String? scopedCartId;
 
+  /// D18: set when Super works in this institution through a support
+  /// window; the shells show a banner until it ends.
+  final SupportWindow? supportWindow;
+
   Map<String, Membership> _members = {};
   Map<String, EmergencySession> _emergencies = {};
   Map<Role, Set<AppPermission>> _permissions = {};
@@ -58,6 +64,10 @@ class SessionController extends ViewModel {
   /// cart, the structure (drawers, grid, catalogue, templates), users and
   /// shifts. Firestore Rules enforce the same split.
   bool get isInstitutionAdmin => _active && (role == Role.institutionAdmin || role == Role.platformSuperAdmin);
+
+  /// The institution's own Admin, never Super: opens support access (D18)
+  /// and sets credentials.
+  bool get isOwnAdmin => _active && role == Role.institutionAdmin;
 
   /// UI permission toggles (stub, B7) on top of the role.
   bool can(AppPermission permission) =>

@@ -283,8 +283,11 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
 - **Values:**
   - Roles (D16, done 30 Oct): `institutionAdmin` (**Admin**) and `manager` (**Manager**);
     **Super** is a `platformAdmins/{uid}` marker. A stored `user` membership reads as
-    `manager` (app and rules). Still to come: a `device` role for registered tablets (D17)
-    and Super's support grants (D18).
+    `manager` (app and rules). Still to come: a `device` role for registered tablets (D17).
+  - **Support access (D18, done 30 Oct):** `institutions/{i}/support/current` (`grantId`,
+    `reason`, `grantedBy`, `grantedByName`, `startsAt`, `endsAt`, `closedAt?`, `closedBy?`)
+    is the window in force; `supportGrants/{grantId}` keeps every window; `supportLog/{id}`
+    (`superUid`, `superEmail`, `grantId`, `action` enter/leave, `at`) is what Super did.
   - Membership status: `active`, `invited`, `disabled`.
   - Cart status: `operational`, `replenishmentRequired`, `auditRequired`,
     `outOfService`.
@@ -336,9 +339,9 @@ it.
 | Collection | Read | Write |
 |---|---|---|
 | `platformAdmins/{uid}` | Only your own document | **Nobody** (Admin SDK only) |
-| `institutions/{i}` | Members | Create: platform admin. Update: institution admin (name, expiry warning only). Delete: nobody |
+| `institutions/{i}` | Members; Super gets and lists every institution (name only matters: to find open windows) | Create: platform admin. Update: institution admin (name, expiry warning only). Delete: nobody |
 | `memberships/{uid}` | Members | Institution admin, **never your own document** (no self-escalation or self-reactivation) |
-| `memberships/{uid}/private/credentials` | That user (active) and institution admins | Institution admin, **never for yourself**, only a `pbkdf2-sha256$…` hash. Delete: nobody |
+| `memberships/{uid}/private/credentials` | That user (active) and the institution's own Admin (**never Super**, D18) | The institution's own Admin, **never for yourself**, only a `pbkdf2-sha256$…` hash. Delete: nobody |
 | `memberIndex/{uid}` | Only your own entry | Institution admin |
 | `products` | Members | Admin (D16) |
 | `carts/{c}` | Get: `canAccessCart` (Admin, or a Manager registered to the cart). List: Admin/Super unfiltered; a Manager must filter `responsibleUserIds array-contains <uid>` | Create: Admin. Update: Admin; a registered Manager **only `status`** (`updateCartStatus`). **Delete: nobody** (archive instead) |
@@ -348,6 +351,9 @@ it.
 | `assignments` | `canAccessCart` | Admin. A registered Manager may change **only** `currentQuantity`, `earliestKnownExpiry`, `updatedAt`, `updatedBy` and `usedAt` (consumption, replenishment, monthly check). Always `0 ≤ currentQuantity ≤ targetQuantity` and `targetQuantity > 0` (P5); an old overfilled placement may still be lowered. A used placement keeps `slotId`, `drawerId` and `productId`. **Delete: Admin, only while unused.** `institutionId`/`cartId` must match the path and never change |
 | `batches` | `canAccessCart` | Create: whoever may access the cart, with `quantity > 0`, `expiryDate` and no `removedAt`. Update: **only** setting `removedAt` (+ `updatedAt`), once; it can't be cleared, not even by an Admin (P21). **Delete: nobody** (DB1) |
 | `usedAt` (drawers, slots, assignments) | — | May only go from absent to the request time; never changes or disappears afterwards |
+| `support/current` (D18) | The institution's own Admin; any Super (to list open windows) | The institution's own Admin only (never Super): open with a reason (1–500) and `endsAt` ≤ now + 7 days; close by adding only `closedAt` (= request time) and `closedBy`. **Delete: nobody** |
+| `supportGrants` (D18) | Own Admin; Super | Create: own Admin; update: only `closedAt`/`closedBy`, once. **Delete: nobody** |
+| `supportLog` (D18) | Own Admin; Super | Create: Super, as itself, **only inside an open window**, action `enter`/`leave`. **Update and delete: nobody** |
 | `usageEvents` | Members | Create only, as yourself, for a cart you can access; `reason` optional, ≤ 500 characters. **Update and delete: nobody, not even admins** |
 | `auditEvents` | Manager+ | Create only, as yourself. **Update and delete: nobody** |
 | Collection group `assignments` | Manager+ only (cross-cart alerts) | — |

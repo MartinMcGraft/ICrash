@@ -4080,6 +4080,204 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Admins ({count})'**
   String usersFilterAdmins(int count);
+
+  /// No description provided for @actionRefresh.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar'**
+  String get actionRefresh;
+
+  /// No description provided for @navSupport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte'**
+  String get navSupport;
+
+  /// No description provided for @supportBanner.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte · {institution} · termina às {until}'**
+  String supportBanner(String institution, String until);
+
+  /// No description provided for @supportPickerTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte'**
+  String get supportPickerTitle;
+
+  /// No description provided for @supportPickerSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituições que abriram acesso à equipa I-Crash'**
+  String get supportPickerSubtitle;
+
+  /// No description provided for @supportPickerEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum pedido de acesso aberto.'**
+  String get supportPickerEmpty;
+
+  /// No description provided for @supportPickerUntil.
+  ///
+  /// In pt, this message translates to:
+  /// **'Até {until} · {reason}'**
+  String supportPickerUntil(String reason, String until);
+
+  /// No description provided for @supportEnded.
+  ///
+  /// In pt, this message translates to:
+  /// **'O acesso do suporte terminou ou foi fechado pela instituição.'**
+  String get supportEnded;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte'**
+  String get supportTitle;
+
+  /// No description provided for @supportSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'A equipa I-Crash só entra nesta instituição enquanto o acesso estiver aberto.'**
+  String get supportSubtitle;
+
+  /// No description provided for @supportLogTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registo de acessos'**
+  String get supportLogTitle;
+
+  /// No description provided for @supportLogWhen.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando'**
+  String get supportLogWhen;
+
+  /// No description provided for @supportLogWho.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quem'**
+  String get supportLogWho;
+
+  /// No description provided for @supportLogAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ação'**
+  String get supportLogAction;
+
+  /// No description provided for @supportLogEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'A equipa I-Crash ainda não entrou.'**
+  String get supportLogEmpty;
+
+  /// No description provided for @supportLogEnter.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entrou'**
+  String get supportLogEnter;
+
+  /// No description provided for @supportLogLeave.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saiu'**
+  String get supportLogLeave;
+
+  /// No description provided for @supportClosedTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso fechado'**
+  String get supportClosedTitle;
+
+  /// No description provided for @supportClosedHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abra o acesso só quando pedir ajuda à equipa I-Crash. Cada entrada fica registada e o acesso fecha sozinho no fim do prazo.'**
+  String get supportClosedHelp;
+
+  /// No description provided for @supportReasonLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Motivo'**
+  String get supportReasonLabel;
+
+  /// No description provided for @supportReasonHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: erro ao sincronizar o carro 3'**
+  String get supportReasonHint;
+
+  /// No description provided for @supportDurationLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Duração'**
+  String get supportDurationLabel;
+
+  /// No description provided for @supportDurationHours.
+  ///
+  /// In pt, this message translates to:
+  /// **'{hours} h'**
+  String supportDurationHours(int hours);
+
+  /// No description provided for @supportDurationDays.
+  ///
+  /// In pt, this message translates to:
+  /// **'{days, plural, =1{1 dia} other{{days} dias}}'**
+  String supportDurationDays(int days);
+
+  /// No description provided for @supportOpenAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir acesso'**
+  String get supportOpenAction;
+
+  /// No description provided for @supportOpened.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte aberto.'**
+  String get supportOpened;
+
+  /// No description provided for @supportReasonRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Indique o motivo.'**
+  String get supportReasonRequired;
+
+  /// No description provided for @supportOpenTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso aberto até {until}'**
+  String supportOpenTitle(String until);
+
+  /// No description provided for @supportGrantedBy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aberto por'**
+  String get supportGrantedBy;
+
+  /// No description provided for @supportSince.
+  ///
+  /// In pt, this message translates to:
+  /// **'Desde'**
+  String get supportSince;
+
+  /// No description provided for @supportCloseAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fechar acesso agora'**
+  String get supportCloseAction;
+
+  /// No description provided for @supportCloseConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'A equipa I-Crash deixa de ter acesso a esta instituição imediatamente.'**
+  String get supportCloseConfirm;
+
+  /// No description provided for @supportClosed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acesso do suporte fechado.'**
+  String get supportClosed;
 }
 
 class _AppLocalizationsDelegate

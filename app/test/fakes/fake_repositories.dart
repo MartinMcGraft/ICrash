@@ -14,6 +14,7 @@ import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
+import 'package:icrash_app/src/domain/entities/support_access.dart';
 import 'package:icrash_app/src/domain/entities/usage_event.dart';
 import 'package:icrash_app/src/domain/gtin.dart';
 import 'package:icrash_app/src/domain/inventory_rules.dart';
@@ -25,6 +26,7 @@ import 'package:icrash_app/src/domain/repositories/drawer_repository.dart';
 import 'package:icrash_app/src/domain/repositories/institution_repository.dart';
 import 'package:icrash_app/src/domain/repositories/inventory_repository.dart';
 import 'package:icrash_app/src/domain/repositories/product_repository.dart';
+import 'package:icrash_app/src/domain/repositories/support_repository.dart';
 import 'package:icrash_app/src/domain/repositories/usage_repository.dart';
 import 'package:icrash_app/src/services/pin_hasher.dart';
 import 'package:icrash_app/src/services/scanner_service.dart';
@@ -639,6 +641,92 @@ class FakeInternalQrScannerService implements InternalQrScannerService {
 /// Builds an [AppServices] for widget tests: pass fakes for whatever the
 /// screen under test actually uses, everything else defaults to a filler
 /// fake that throws if it is ever called.
+/// In-memory D18 support access: [isSuper] says whether the signed-in
+/// account is Super; [windows] are by institution id.
+class FakeSupportRepository implements SupportRepository {
+  FakeSupportRepository({this.isSuper = false, this.institutions = const [], Map<String, SupportWindow>? windows})
+      : windows = windows ?? {};
+
+  bool isSuper;
+  final List<Institution> institutions;
+  final Map<String, SupportWindow> windows;
+  final List<(String institutionId, String action)> logged = [];
+  final _controllers = <String, StreamController<SupportWindow?>>{};
+  final _logControllers = <String, StreamController<List<SupportLogEntry>>>{};
+  final Map<String, List<SupportLogEntry>> _logs = {};
+
+  StreamController<SupportWindow?> _c(String id) => _controllers.putIfAbsent(id, () => StreamController<SupportWindow?>.broadcast());
+
+  void _emit(String id) => _c(id).add(windows[id]);
+
+  @override
+  Future<bool> isPlatformAdmin() async => isSuper;
+
+  @override
+  Stream<SupportWindow?> watchWindow(String institutionId) {
+    scheduleMicrotask(() => _emit(institutionId));
+    return _c(institutionId).stream;
+  }
+
+  @override
+  Future<SupportWindow> openWindow(String institutionId,
+      {required String reason, required Duration duration, required String byUid, String? byName}) async {
+    final window = SupportWindow(
+      grantId: 'grant-${windows.length + 1}',
+      institutionId: institutionId,
+      reason: reason,
+      grantedBy: byUid,
+      grantedByName: byName,
+      startsAt: DateTime.now(),
+      endsAt: DateTime.now().add(duration),
+    );
+    windows[institutionId] = window;
+    _emit(institutionId);
+    return window;
+  }
+
+  @override
+  Future<void> closeWindow(String institutionId, {required String byUid}) async {
+    final w = windows[institutionId];
+    if (w == null) return;
+    windows[institutionId] = SupportWindow(
+      grantId: w.grantId,
+      institutionId: institutionId,
+      reason: w.reason,
+      grantedBy: w.grantedBy,
+      endsAt: w.endsAt,
+      closedAt: DateTime.now(),
+    );
+    _emit(institutionId);
+  }
+
+  @override
+  Stream<List<SupportLogEntry>> watchLog(String institutionId) {
+    final c = _logControllers.putIfAbsent(institutionId, () => StreamController<List<SupportLogEntry>>.broadcast());
+    scheduleMicrotask(() => c.add(_logs[institutionId] ?? const []));
+    return c.stream;
+  }
+
+  @override
+  Future<void> log(String institutionId,
+      {required String grantId, required String action, required String superUid, String? superEmail}) async {
+    final w = windows[institutionId];
+    if (w == null || !w.isOpenAt(DateTime.now())) {
+      throw const RepositoryFailure(RepositoryFailureReason.permissionDenied);
+    }
+    logged.add((institutionId, action));
+    final entries = _logs.putIfAbsent(institutionId, () => []);
+    entries.insert(0, SupportLogEntry(id: 'l${entries.length}', superUid: superUid, superEmail: superEmail, grantId: grantId, action: action, at: DateTime.now()));
+    _logControllers[institutionId]?.add(List.of(entries));
+  }
+
+  @override
+  Future<List<(Institution, SupportWindow)>> openInstitutions() async => [
+        for (final i in institutions)
+          if (windows[i.id] case final w? when w.isOpenAt(DateTime.now())) (i, w),
+      ];
+}
+
 AppServices buildTestServices({
   AuthRepository? auth,
   InstitutionRepository? institutions,
@@ -650,6 +738,7 @@ AppServices buildTestServices({
   AuditRepository? audit,
   CredentialRepository? credentials,
   PinHasher? pinHasher,
+  SupportRepository? support,
   Gs1DataMatrixScannerService Function()? createGs1Scanner,
   InternalQrScannerService Function()? createInternalQrScanner,
   LocalStore? localStore,
@@ -666,6 +755,7 @@ AppServices buildTestServices({
     credentials: credentials ?? FakeCredentialRepository(),
     // Few PBKDF2 iterations keep tests fast; the count travels with each hash.
     pinHasher: pinHasher ?? PinHasher(iterations: 1000),
+    support: support ?? FakeSupportRepository(),
     createGs1Scanner: createGs1Scanner ?? FakeGs1DataMatrixScannerService.new,
     createInternalQrScanner: createInternalQrScanner ?? FakeInternalQrScannerService.new,
     // A fresh store per test, so local stubs (templates, shifts, PIN…) never
