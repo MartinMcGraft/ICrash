@@ -1,15 +1,23 @@
 # I-Crash: database design
 
-The relational database design for I-Crash, to be implemented and tested in PostgreSQL.
+The relational database design for I-Crash, to be implemented in PostgreSQL (testing the scenarios in PostgreSQL was dropped on 30 Oct).
 
 | Part | Content | Status |
 |---|---|---|
 | **1. Conceptual model** | Entity–relationship (ER) diagram: entities, attributes, relationships and cardinalities | **Finished** (18 Oct 2026, updated 28 and 30 Oct), being validated |
-| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026, updated 28 and 30 Oct). The PostgreSQL script with realistic data comes next |
+| **2. Logical model** | Relational schema: tables, columns, types and sizes, NULL / NOT NULL, primary and foreign keys, constraints | **Defined** (18 Oct 2026, updated 28 and 30 Oct). The PostgreSQL script comes later |
 
 **30 Oct 2026 (app review, `docs/REVIEW_2026-10-30.md`):** drawers get an optional `name` (D20);
 the user types are Super, Admin and Manager (D16); support access (D18) and registered devices
 (D17) are new open points DB13 and DB14. **The ERD PNGs don't show these yet.**
+
+**30 Oct 2026, later (Martim's answers, `docs/OPEN_DECISIONS.md` D23 and §2b):** two report
+types, **usage** and **monthly management**; **History** becomes the chronological view of what the
+reports contain; a signed report never changes, so there are **no corrections** and **no "Not
+found"**; a batch is **one lot** in a slot; a cart is set up full (`currNumberCC` = `maxNumberCC`);
+users can be deactivated and, after a retention period, removed. **Parts 1 and 2 don't reflect
+these yet:** Report, ReportItem, ResultItem, History, HistoryType, Batch and User need reworking.
+§1.6 lists what changes.
 
 **Diagrams:**
 - Conceptual: [`ICrash_ERD_Conceptual.png`](ICrash_ERD_Conceptual.png). Part 1 explains it; if the two
@@ -176,7 +184,7 @@ is the link between a slot and the consumable it holds, and it's where the quant
 |---|---|---|
 | `idSlotCC` | Unique | Identifies the placement |
 | `maxNumberCC` | | The full quantity: how many units the slot should hold. Below this, the slot needs replenishing. There's no minimum stock (decision D10) |
-| `currNumberCC` | | How many units are in the slot now. **Stored**, not derived: it's updated with every stock change recorded in History. It starts as the stock the cart already holds when it's configured in I-Crash; there's no separate first-stock event (P6). How that stock and its expiry dates are entered is open (P19) |
+| `currNumberCC` | | How many units are in the slot now. **Stored**, not derived: it's updated with every stock change recorded in History. It's set when the cart is first set up in I-Crash, with the cart full, so it starts equal to `maxNumberCC`; there's no separate first-stock event (P6, P19) |
 | `earliestExpirationDate` | **Derived** | The earliest expiry date among the slot's batches that haven't been removed. It drives the expiry warnings and the slot's colour in the grid |
 
 #### Batch (weak, under SlotCC)
@@ -520,12 +528,12 @@ Also tracked in `docs/OPEN_DECISIONS.md` §2b. Open points found while building 
 
 | # | Item | Status and notes |
 |---|---|---|
-| DB1 | Batch | **Decided (18 Oct, confirmed 28 Oct):** a batch is the units of one slot that share the same expiry date. Still to test the scenarios in PostgreSQL (part 2). Clinical question 6 (lots after an emergency) waits with emergency mode (P12) |
+| DB1 | Batch | **Decided (18 Oct, confirmed 28 Oct):** a batch is the units of one slot that share the same expiry date. Clinical question 6 (lots after an emergency) waits with emergency mode (P12). **Changed (30 Oct, P10):** a batch is one lot in a slot (a lot has one expiry date); items without a lot are grouped by date |
 | DB2 | Catalogue per institution or shared (ClinicalConsumable and Category) | **Decided (28 Oct): per institution**, on its own server, because institutions differ (not all have the same departments or items). It can be pre-loaded at setup from an outside catalogue (a template catalogue, INFARMED, or, most likely, the hospital's own catalogue database). That's a one-way copy; afterwards the institution maintains its own |
 | DB3 | Login method | **Decided (28 Oct):** the administration generates each user's `userNumber`, password and PIN and hands them to the employee. Only the administration can change or reset them; users can't change their own (a safety rule). How each institution logs in (e.g. its own Active Directory) is defined last, per institution: I-Crash offers options, some optional, some suggested. `mustChangeCredentials` removed. Use a slow, salted hash and an attempt limit |
 | DB4 | Separate signer (decision D6) | **Decided (28 Oct): no separate signer.** The person who performs the check signs it; one relationship (R19) covers both |
-| DB5 | Shifts on CrashCartUser (decision D8) | **Open.** Would add the day and the shift to the assignment |
-| DB6 | Checking only flagged items | **Open.** Relies on recorded quantities being right. Ask ESEL whether procedure still requires a quick look at the rest |
+| DB5 | Shifts on CrashCartUser (decision D8) | **Decided for now (30 Oct):** the Admin sets up shifts and responsible people on a Dashboard screen; later they're imported from the hospital's own system, and the screen still shows them. Open: how the hospital plans shifts and whether that person needs a user type. Not modelled yet: a day and a shift on the assignment, or a separate shift table |
+| DB6 | Checking only flagged items | **Open.** Relies on recorded quantities being right. Ask ESEL whether procedure still requires a quick look at the rest. Martim (30 Oct): keep the question; the app is only useful if professionals trust it, and the time saved comes from checking only what's expired or expiring |
 
 Also decided on 28 Oct, from the comparison of this design with the code (questions P1–P18 in
 `claude/db-design-vs-code-gap-report-2026-10-19.md`, claude.ai project):
@@ -547,6 +555,26 @@ Also decided on 28 Oct, from the comparison of this design with the code (questi
   now **Admin**, and **Super** is the I-Crash team, with support access (D18).
 - **P17:** users have no department, and drawers have no name. **Changed on 30 Oct (D20):** drawers
   have an optional `name`; users still have no department.
+
+Decided on 30 Oct (Martim's answers; details in `docs/OPEN_DECISIONS.md` D23 and §2b):
+- **Reports (D23):** two types. **Usage**: written every time a cart is used; the consumables used
+  and replenished, by drawer, with a note on what the use was. **Monthly management**: by drawer,
+  what was expired and replenished, and what is expiring. Both carry the cart, date and time, the
+  signer and a note. `isEmergency` becomes a report type.
+- **History (D23):** the chronological list of what the reports contain, for one type, several or
+  all. Whether it stays a table or becomes a view over the reports is decided when the model is
+  reworked.
+- **P8, P15:** no "Not found" and no corrections; a report never changes once signed. To remove:
+  ResultItem "Not found", HistoryType Correction and Count, R29 and `reason`. Follow-up: without
+  "Not found", the usage report must say which lot or date was used, or the app assumes the
+  earliest-expiring one (FEFO).
+- **P7:** answered by D23 (no Count, no Correction). Follow-up: units broken outside a check.
+- **P10:** a batch is one lot in a slot (DB1).
+- **P19:** each cart is set up once with the I-Crash team (Super access), full:
+  `currNumberCC` = `maxNumberCC`. Follow-up: are lots and expiry dates recorded at setup too?
+- **P18:** the Admin assigns responsible people, together with shifts (DB5).
+- **DB11:** see §2.6.
+- **P4, P13:** kept open.
 
 ---
 
@@ -904,9 +932,9 @@ To settle before the PostgreSQL script. Also tracked in `docs/OPEN_DECISIONS.md`
 |---|---|---|
 | DB7 | Templates and mandatory columns | **Decided (28 Oct):** templates have no `qr_code` or `location`. Both columns allow NULL, and CHECKs tie them to `isTemplate` (§2.2, CRASHCART) |
 | DB8 | Uniqueness of `qr_code` and `permission` | **Decided (28 Oct):** both UNIQUE. `qr_code` may be NULL (templates). `gtin` is UNIQUE and nullable too (P16) |
-| DB9 | Slot state stored or calculated | **Meaning decided (28 Oct):** the state the slot is in now; the highest `priority` wins (§1.2 SlotState). **Still open:** stored or calculated. SLOTCC stores `idSlotState`, so it must be recalculated whenever stock changes and once a day (§2.3). The alternative is to calculate it in a view, like `earliestExpirationDate`, which removes R11's FK |
+| DB9 | Slot state stored or calculated | **Meaning decided (28 Oct):** the state the slot is in now; the highest `priority` wins (§1.2 SlotState). **Still open:** stored or calculated. SLOTCC stores `idSlotState`, so it must be recalculated whenever stock changes and once a day (§2.3). The alternative is to calculate it in a view, like `earliestExpirationDate`, which removes R11's FK. **Recommended (30 Oct):** the view, since it can't go out of date and needs no daily job; store it only if it proves slow |
 | DB10 | `weight` and `volume` as text | **Decided (28 Oct):** descriptive text with the unit ("30 mg", "3 ml"). The list of units is an app configuration setting, not a table, so countries that don't use the metric system can be supported |
-| DB11 | Deactivating users | USER has no active/disabled status (the Firebase version has one), and a user can't be deleted once History or a Report points to them. Something like an `active` boolean is needed to block people who leave |
+| DB11 | Deactivating users | USER has no active/disabled status (the Firebase version has one), and a user can't be deleted once History or a Report points to them. Something like an `active` boolean is needed to block people who leave. **Direction decided (30 Oct):** users are managed independently of the rest (add, deactivate, reactivate, remove); a deactivated user can't log in and their history stays. For privacy, personal data must be removable after a retention period; if that breaks History or signed reports, rethink the model (History as a view built on request, or keep the row and erase its personal fields). Open: the retention period, and how a removed signer shows on reports |
 | DB12 | Not modelled yet | A per-product expiry warning (the app has one; the model only has the institution's `expiryWarningDays`); drawer layout versions (`DOMAIN.md` §38); the administrative audit log of roles, permissions and layout changes (`DOMAIN.md` §45), left to the security phase |
 | DB13 | Support access (D18, 30 Oct) | Not modelled. A grant (institution, granted by an Admin, reason, start, end, closed at) and an append-only access log (who, when, which grant). Also open: is a Super a USER of each institution's server, or an account on the I-Crash side reached over the hospital's remote-access window? |
 | DB14 | Registered devices (D17, 30 Oct) | Not modelled. A device (institution, name, registered by, registered at, revoked at) and the carts it's bound to; History rows made on it could reference it |

@@ -212,8 +212,9 @@ a bug, and the rule must not be changed to match the code:
    it earlier; a later expiry never moves it later. Only a physical audit
    (reconciliation) may recompute it from confirmed lots.
 3. **Lot state is reconciled only during a physical audit.**
-4. **Usage and audit events are immutable.** Mistakes are fixed with a compensating
-   correction event, never by editing or deleting.
+4. **History is append-only and signed reports never change** (D23, P15, 30 Oct). A
+   report can be edited until it's signed; mistakes are fixed then. There are no
+   correction events and nothing is edited or deleted afterwards.
 5. **One product per cart, many carts per product.** A product occupies at most one slot
    in a given cart.
 6. **Medicines are scanned as GS1 Data Matrix; internal identification uses QR**

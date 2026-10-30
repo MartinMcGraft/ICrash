@@ -146,7 +146,8 @@ assign one responsible person per cart per shift.
 
 **Database model:** CrashCartUser links carts and users many-to-many, so several
 responsible people per cart are already possible without a redesign. Shifts aren't
-modelled yet (DATABASE.md DB5).
+modelled yet (DATABASE.md DB5). **30 Oct:** the Admin manages shifts for now; later they're
+imported from the hospital's own system.
 
 ### 18. Security at database level
 Security lives in the **Firestore rules**, not in hidden buttons. The rules must
@@ -274,6 +275,9 @@ gone → the expiry becomes December).
 **Database model:** with D4, the check covers only expired and expiring batches (one
 ReportItem each). A batch confirmed gone gets `removedAt`, and the stock changes made during
 the check are History rows linked to the report.
+
+**Changed 30 Oct (D23, P8):** there's no "Not found" and no correction during a check. Expired
+units are replaced and expiring ones noted, by drawer, in the monthly management report.
 
 ### 28. Consequence for the data
 Don't write code that assumes `currentQuantity == sum(batch quantities)` at every
@@ -464,6 +468,9 @@ no emergency mode for now.
 consumption History rows recorded during it point to it ("Lists"). Ordinary daily
 consumption has no report.
 
+**Changed 30 Oct (D23):** every use of a cart produces a signed **usage report** (consumables used
+and replenished, by drawer, with a note), so no consumption is left without a report.
+
 ### 43. Recording a daily quantity
 Must be extremely fast, e.g. `Adrenalina [-] 2 [+]  Registar utilização`. Saving must:
 1. lower `currentQuantity`, never below valid bounds without an explicit correction;
@@ -480,6 +487,9 @@ correction `+1 Adrenaline, correcting event XYZ`.
 
 **Database model:** History's recursive "Corrects" relationship (DATABASE.md R29); History
 rows are never updated or deleted.
+
+**Changed 30 Oct (P15):** there are **no corrections**. A report can be edited until it's signed
+and never changes afterwards; mistakes are fixed before signing.
 
 ### 45. Audit log
 - **What to log**, wherever it matters operationally:
