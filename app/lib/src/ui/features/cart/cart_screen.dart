@@ -15,7 +15,6 @@ import '../carts/cart_card.dart' show drawerSummaryLine;
 import '../drawer/drawer_screen.dart';
 import '../emergency/emergency_screen.dart';
 import '../monthly_check/monthly_check_screen.dart';
-import '../reports/reports_list_screen.dart';
 import 'cart_dialogs.dart';
 import 'cart_view_model.dart';
 import 'product_search_dialog.dart';
@@ -49,29 +48,32 @@ class CartScreen extends StatelessWidget {
           if (cart.placeLabel != null) cart.placeLabel!,
           if (responsible != null && !compact) l10n.responsibleOnShift(responsible),
         ].join(' · ');
-        return Padding(
-          padding: contentPadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PageHeader(
-                title: cart.name,
-                subtitle: subtitle.isEmpty ? null : subtitle,
-                onBack: isRoot ? null : () => Navigator.of(context).maybePop(),
-                trailing: [CartStateChip(status: cart.status, emergencyActive: vm.emergencyActive)],
-              ),
-              SizedBox(height: compact ? IcSpace.s12 : IcSpace.s20),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: _Drawers(vm: vm)),
-                    SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
-                    SidePanel(width: 340, child: _CartMenu(vm: vm)),
-                  ],
+        return CartPresence(
+          cartId: cartId,
+          child: Padding(
+            padding: contentPadding(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PageHeader(
+                  title: cart.name,
+                  subtitle: subtitle.isEmpty ? null : subtitle,
+                  onBack: isRoot ? null : () => Navigator.of(context).maybePop(),
+                  trailing: [CartStateChip(status: cart.status, emergencyActive: vm.emergencyActive)],
                 ),
-              ),
-            ],
+                SizedBox(height: compact ? IcSpace.s12 : IcSpace.s20),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: _Drawers(vm: vm)),
+                      SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
+                      SidePanel(width: 340, child: _CartMenu(vm: vm)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -209,15 +211,9 @@ class _CartMenu extends StatelessWidget {
                   expand: true,
                   onPressed: () => showProductSearch(context, vm.data),
                 ),
-                gap,
-                IcButton(
-                  label: compact ? l10n.qrCodeShort : l10n.actionShowQrCode,
-                  icon: IcIcon.qr,
-                  style: IcButtonStyle.secondary,
-                  expand: true,
-                  onPressed: () => showCartQrDialog(context, cart),
-                ),
-                if (!compact && session.canChangeCartState) ...[
+                // RV-21: the cart's QR is printed from the Dashboard (B3), not
+                // shown here. D21: phones show the same actions as tablets.
+                if (session.canChangeCartState) ...[
                   gap,
                   IcButton(
                     label: l10n.changeStateAction,
@@ -233,14 +229,20 @@ class _CartMenu extends StatelessWidget {
                     },
                   ),
                 ],
-                if (!compact) ...[
+                gap,
+                IcButton(
+                  label: l10n.cartReportsAction,
+                  icon: IcIcon.relatorio,
+                  style: IcButtonStyle.secondary,
+                  expand: true,
+                  // RV-12: opens the Relatórios section for this cart.
+                  onPressed: () => ShellNavigationScope.of(context).showReports(cartId: vm.cartId),
+                ),
+                if (compact && vm.responsibleOnShift != null) ...[
                   gap,
-                  IcButton(
-                    label: l10n.cartReportsAction,
-                    icon: IcIcon.relatorio,
-                    style: IcButtonStyle.secondary,
-                    expand: true,
-                    onPressed: () => Navigator.of(context).push(sectionRoute((_) => ReportsListScreen(cartId: vm.cartId))),
+                  Text(
+                    l10n.responsibleOnShift(vm.responsibleOnShift!),
+                    style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
                   ),
                 ],
               ],

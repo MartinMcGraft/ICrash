@@ -6,7 +6,9 @@ import '../../../services/gs1_data_matrix_parser.dart';
 import '../../../services/scanned_product_code.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/icons/ic_icons.dart';
 import '../../core/widgets/ic_button.dart';
+import '../../core/widgets/layout.dart';
 import '../../core/widgets/scanner_viewport.dart';
 import '../../core/widgets/status.dart';
 
@@ -27,6 +29,32 @@ class ProductScanViewModel extends ViewModel {
   final CodeScannerService scanner;
   final ValueChanged<Gs1ParsedData> onResult;
   bool unreadable = false;
+
+  /// Typing the code instead of scanning it (RV-24).
+  bool manual = false;
+  String manualText = '';
+
+  void showManual() {
+    manual = true;
+    unreadable = false;
+    notify();
+  }
+
+  void setManualText(String value) => manualText = value;
+
+  /// A GTIN (8–14 digits) or a GS1 string typed by hand.
+  void submitManual() {
+    final raw = manualText.trim();
+    if (raw.isEmpty) return;
+    final format = RegExp(r'^\d{8,14}$').hasMatch(raw) ? CodeFormat.barcode : CodeFormat.dataMatrix;
+    final data = productDataFromScan(ScannedCode(raw, format));
+    if (data == null) {
+      unreadable = true;
+      notify();
+    } else {
+      onResult(data);
+    }
+  }
 
   @override
   void dispose() {
@@ -60,15 +88,38 @@ Future<Gs1ParsedData?> showProductScanSheet(BuildContext context) {
                     Notice(kind: NoticeKind.warning, title: l10n.gs1ScanError),
                     const SizedBox(height: IcSpace.s12),
                   ],
-                  Expanded(child: ScannerViewport(scanner: vm.scanner, caption: l10n.gs1ScanInstructionCamera)),
-                  const SizedBox(height: IcSpace.s12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IcButton(
-                      label: l10n.actionCancelManualEntry,
-                      style: IcButtonStyle.ghost,
-                      onPressed: () => Navigator.of(dialogContext).pop(),
+                  if (vm.manual) ...[
+                    // RV-24: "Inserir manualmente" opens a field to type the
+                    // GTIN or the GS1 text printed on the package.
+                    LabeledField(
+                      label: l10n.scanManualProductLabel,
+                      autofocus: true,
+                      onChanged: vm.setManualText,
+                      onSubmitted: (_) => vm.submitManual(),
                     ),
+                    const Spacer(),
+                  ] else
+                    Expanded(child: ScannerViewport(scanner: vm.scanner, caption: l10n.gs1ScanInstructionCamera)),
+                  const SizedBox(height: IcSpace.s12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IcButton(
+                        label: l10n.actionCancel,
+                        style: IcButtonStyle.ghost,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                      const SizedBox(width: IcSpace.s12),
+                      if (vm.manual)
+                        IcButton(label: l10n.actionConfirm, icon: IcIcon.confirmar, onPressed: vm.submitManual)
+                      else
+                        IcButton(
+                          label: l10n.scanEnterManually,
+                          icon: IcIcon.teclado,
+                          style: IcButtonStyle.secondary,
+                          onPressed: vm.showManual,
+                        ),
+                    ],
                   ),
                 ],
               ),

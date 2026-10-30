@@ -16,6 +16,7 @@ import '../features/dashboard/shifts_screen.dart';
 import '../features/dashboard/templates_screen.dart';
 import '../features/dashboard/users_screen.dart';
 import '../features/reports/report_screen.dart';
+import '../features/reports/reports_list_screen.dart';
 import 'profile_menu.dart';
 import 'shell_navigation.dart';
 
@@ -79,7 +80,26 @@ class _DashboardShellState extends State<DashboardShell> implements ShellNavigat
   }
 
   @override
-  void showReports() => _select(DashboardSection.reports);
+  void showReports({String? cartId}) {
+    if (cartId == null) return _select(DashboardSection.reports);
+    setState(() => _section = DashboardSection.reports);
+    final nav = _keys[DashboardSection.reports]!.currentState;
+    nav?.popUntil((route) => route.isFirst);
+    nav?.push(sectionRoute((_) => ReportsListScreen(
+          cartId: cartId,
+          onBack: () {
+            _keys[DashboardSection.reports]!.currentState?.popUntil((route) => route.isFirst);
+            setState(() => _section = DashboardSection.carts);
+          },
+        )));
+  }
+
+  // The Dashboard has no scanner.
+  @override
+  void cartOpened(String cartId) {}
+
+  @override
+  void cartClosed(String cartId) {}
 
   Widget _root(DashboardSection section) => switch (section) {
         DashboardSection.overview => const OverviewScreen(),

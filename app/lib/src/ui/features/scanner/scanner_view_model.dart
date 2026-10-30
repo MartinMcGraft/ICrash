@@ -10,7 +10,7 @@ import '../../core/session/session.dart';
 
 enum ScanMode { product, cart }
 
-enum ScanError { unreadable, unknownProduct, notACart, otherInstitution, notInAnyCart }
+enum ScanError { unreadable, unknownProduct, notACart, otherInstitution, notInAnyCart, onlyConsumables }
 
 /// Where a product sits, so "Repor este produto" can open the right drawer.
 class ProductLocation {
@@ -23,7 +23,8 @@ class ProductLocation {
 /// A11 · Ler código — QR (carts), GS1 Data Matrix and barcodes (products),
 /// camera or USB reader, with manual entry.
 class ScannerViewModel extends ViewModel {
-  ScannerViewModel(this.services, this.session, {required this.onCart}) : scanner = services.createCodeScanner() {
+  ScannerViewModel(this.services, this.session, {required this.onCart, this.consumablesOnly = false})
+      : scanner = services.createCodeScanner() {
     listen(scanner.scans(), (code) => handle(code));
   }
 
@@ -34,6 +35,10 @@ class ScannerViewModel extends ViewModel {
   /// Opens a cart (shell navigation), called for a valid cart QR.
   final void Function(String cartId) onCart;
 
+  /// Inside a cart only consumables can be read; a cart code is refused
+  /// (RV-26).
+  final bool consumablesOnly;
+
   ScanMode mode = ScanMode.product;
   Product? lastProduct;
   Gs1ParsedData? lastData;
@@ -41,6 +46,7 @@ class ScannerViewModel extends ViewModel {
   bool torchOn = false;
 
   void setMode(ScanMode value) {
+    if (consumablesOnly) return;
     mode = value;
     error = null;
     notify();
@@ -66,6 +72,11 @@ class ScannerViewModel extends ViewModel {
   Future<void> handle(ScannedCode code) async {
     error = null;
     if (code.format == CodeFormat.qr || mode == ScanMode.cart) {
+      if (consumablesOnly) {
+        error = ScanError.onlyConsumables;
+        notify();
+        return;
+      }
       final target = decodeCartQrPayload(code.raw) ?? _manualCart(code.raw);
       if (target == null) {
         error = mode == ScanMode.cart ? ScanError.notACart : ScanError.unreadable;

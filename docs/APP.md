@@ -51,15 +51,12 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 Sections the user can't use are **hidden**, not shown disabled. Each section keeps its
 own navigation stack (`SectionNavigator`), so switching sections doesn't lose your place.
 
-**Profile menu** (both shells): language (Português / English), lock now (only with a
-PIN), switch institution (only with more than one), the debug-only shell switch, and sign
-out. There is no "set/change PIN" any more (DB3): a line says "Para alterar as suas
-credenciais, contacte a administração." 
-
-**Target (30 Oct, RV-15):** in release builds the profile menu shows only **Bloquear
-agora** and **Terminar sessão** (plus the credentials line). The shell switch stays behind
-`kDebugMode`; the language switch moves to A1 and the Dashboard settings; "Mudar de
-instituição" is for Super only (D18).
+**Profile menu** (RV-15, 30 Oct): who is signed in, the line "Para alterar as suas
+credenciais, contacte a administração." (DB3: there's no "set/change PIN"), **Bloquear
+agora** (only with a PIN) and **Terminar sessão**. Also:
+- the **language** switch only in the **Dashboard** (in the App it's on A1);
+- "Mudar de instituição" only for **Super** (D16, D18) with more than one institution;
+- "Ver como App / Dashboard" only in debug builds.
 
 ---
 
@@ -180,20 +177,21 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 ### A5 Cart
 `features/cart/cart_screen.dart`
 
-- The cart's **drawers**, shown as **"Gaveta N"** in number order (P17: drawers have a
-  number and no name), each with its own state (worst slot wins) and counts.
-- **Cart menu:** monthly check · search product (shows "Gaveta N · posição B3") · show
-  the cart QR code · change state (manager+) · the cart's reports.
-- **Target (30 Oct):**
-  - Drawer rows: number badge on the left, then the drawer's **optional name** (D20;
-    "Gaveta N" only when it has none), then the grid line; state and arrow at the **right
-    end** of the row (RV-22).
-  - "Mostrar código QR" leaves the App; the QR is printed or downloaded from **B3** (RV-21).
-  - "Relatórios" switches to the **Relatórios** section filtered by this cart, so the rail
-    highlights Relatórios (RV-12).
-  - Phones show **every** action (change state, reports); the menu may scroll vertically (D21). The **Modo de
-  emergência** button is **hidden** for now (P12; `kEmergencyModeEnabled` in
+- The cart's **drawers**, shown as **"Gaveta N"** in number order, each with its own state
+  (worst slot wins). Each row: number badge, "Gaveta N", the grid line on one line (long
+  form when it fits, else short; none on phones), and the **state and arrow at the right
+  end** (RV-13, RV-22). **Target (30 Oct, D20):** the drawer's optional name replaces
+  "Gaveta N" when it has one.
+- **Cart menu** (same on phones and tablets, D21; scrolls on phones): monthly check ·
+  search product (shows "Gaveta N · posição B3") · change state (manager+) · **Relatórios do
+  carro**, which switches to the **Relatórios** section filtered by this cart (the rail
+  highlights it; back returns to the cart, RV-12). On phones the shift's responsible person
+  is shown here instead of the header.
+- The cart's QR isn't shown in the App any more (RV-21): it's printed from **B3**.
+- The **Modo de emergência** button is **hidden** for now (P12; `kEmergencyModeEnabled` in
   `cart_screen.dart`); A10's code is kept.
+- While a cart screen is open (`CartPresence`), the App's scanner reads only consumables
+  (RV-26).
 - **Automatic state (D7)**, when switched on for the cart in B3:
   - expired or missing product → **Reposição necessária**;
   - last monthly check older than **31 days** → **Verificação em atraso**
@@ -211,15 +209,15 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
   quantity, and a status badge when it isn't OK. Free slots look different from
   "assigned, 0 units".
 - There's **no minimum quantity** (D10). Stock always stays within **0 … target** (P5:
-  no overfill): Repor stock is offered only up to the target, and a correction or
-  reconciliation can't go above it or below 0 (PT/EN messages; the rules enforce it too).
+  no overfill): Repor stock is offered only up to the target (PT/EN messages; the rules
+  enforce it too).
 - **Database model:** the panel's data is a SlotCC with its batches. "Earliest known
   expiry" is calculated from the batches not yet removed.
 - **Tapping a slot** opens the side panel **over** the grid (it never shrinks the grid).
   The panel shows the product, quantity vs target, earliest known expiry, lots, and
   actions:
-  - **Registar consumo:** lower the quantity (anyone with `recordConsumption`).
-    **Target (30 Oct, RV-23):** the panel closes after a successful consumption.
+  - **Registar consumo:** lower the quantity (anyone with `recordConsumption`). The panel
+    closes after a successful consumption (RV-23).
   - **Repor stock (A7):** add units with an **expiry date** (required), a quantity > 0
     and an **optional lot** (P9). Can be pre-filled by a GS1 scan; month-only GS1 dates
     become the **last day of the month** (P11). The event records the batch it created.
@@ -227,11 +225,11 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
   - **Atribuir / trocar produto:** a product can be in only **one slot per cart**, and a
     slot holds one product. The initial quantity can't exceed the target. Once the slot
     has History, **"Trocar produto" is refused** (P1: a used slot keeps its product).
-  - **Reconciliar:** after a physical audit, confirm the real quantity and which batches
-    are present; the others are **marked removed** (`removedAt`), never deleted (DB1).
-    Quantity, batches and event are written together.
-  - **Corrigir:** fix a past event with a compensating event, with an **optional
-    reason** (shown in B9 and the CSV).
+  - **No "Corrigir" and no "Reconciliar"** (removed 30 Oct, D23/P15): a report is edited
+    until it's signed and never changes afterwards. Old correction events still show in
+    B9. The repository methods stay for A10's "Desfazer último" (hidden with emergency
+    mode).
+  - Phones show the same actions as tablets (D21); the panel scrolls if needed.
 - Slot states (`SlotHealth`), one per slot, the highest priority wins (DB9). The order
   lives in one table, `slotStatePriority` in `domain/inventory_health.dart` (values to be
   fixed with P4): **expired** → **missing** (0 units) → **expiring** (within the warning
@@ -296,9 +294,11 @@ old screen until the rewrite lands.
   (lot and expiry from the GS1 code). An unknown GTIN is never linked silently.
 - **Cart mode:** the cart's internal QR (`icrash://v1/...`) opens that cart. A code from
   another institution is rejected.
-- **Target (30 Oct, RV-26):** inside a cart (a cart-limited session, or opened from a cart)
-  only consumables can be read; the mode tabs are hidden. In the drawer's scan sheet,
-  "Cancelar e inserir manualmente" opens the manual-entry field (RV-24).
+- **Inside a cart** (a cart-limited session, or a cart open in Carrinhos) only consumables
+  can be read: the mode tabs are hidden and a cart code shows "Dentro de um carro só pode
+  ler consumíveis." (RV-26).
+- The **scan sheet** used by A6/A7 and B5 has "Cancelar" and **"Inserir manualmente"**,
+  which swaps the camera for a field to type the GTIN or GS1 text (RV-24).
 - Error messages: unreadable, unknown product, not a cart, other institution, not in any
   cart.
 
@@ -310,7 +310,7 @@ old screen until the rewrite lands.
 |---|---|---|
 | **B1 Overview** | `overview_*` | Metrics: operational carts, needing replenishment, expiring within 30 days (and in how many carts), overdue checks, emergencies this month. "Carrinhos que precisam de atenção" list and recent activity (stock events + reports). PDF of the overview |
 | **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers, responsible now. Filters and search. **New cart**, from scratch or **from a template** |
-| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **Target (30 Oct):** print/download the cart QR (RV-21); drawer **name** (optional, D20) in the drawer form and table. Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
+| **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **"Código QR"** opens the cart code dialog to print it (RV-21). **Target (30 Oct, D20):** drawer **name** (optional) in the drawer form and table. Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
 | **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, expiry warning ("Aplicar à posição"), "Limpar posição". A target below the current stock is refused. **Once the drawer has History** (P1/P2) the layout is locked (steppers, merge, split disabled; a warning replaces the hint), used slots keep their product and can't be cleared; targets can still change. **Orphaned assignments** (old data): reassign, or remove only when unused (Q7) |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
 | **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture; create a cart from it. Templates never carry stock, lots or history. **Archived, never deleted** (P3): tabs "Ativos / Arquivados", "Arquivar modelo" and "Restaurar"; archived templates aren't offered for new carts but can still be edited (local stub) |
@@ -432,9 +432,9 @@ app/lib/
 
 A phone may change **how** things are shown (shorter labels, smaller buttons, vertical
 scrolling, a "Mais ações" menu), never **what** the user can do. Today some actions are hidden
-on phones behind `if (!compact)` (A5 change state and reports, A6 Trocar produto / Limpar
-posição / Corrigir / Reconciliar); those are bugs to fix. The full list of differences and the
-reason for each is in REVIEW_2026-10-30.md §4.
+on phones behind `if (!compact)` (A5 change state and reports, A6 Trocar produto); phase 2
+(30 Oct) showed them again. Only information may be hidden on phones (e.g. the A5 grid line,
+the A6 lot line). The full list and the reason for each is in REVIEW_2026-10-30.md §4.
 
 ### Layout rule (no sideways scrolling, ever)
 

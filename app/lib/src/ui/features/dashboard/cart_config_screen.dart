@@ -68,6 +68,14 @@ class _CartConfigScreenState extends State<CartConfigScreen> {
                 subtitle: l10n.cartConfigSubtitle,
                 onBack: () => Navigator.of(context).maybePop(),
                 trailing: [
+                  // RV-21: the cart's QR is printed or saved here, to stick
+                  // on the cart; the App no longer shows it.
+                  IcButton(
+                    label: l10n.qrCodeShort,
+                    icon: IcIcon.qr,
+                    style: IcButtonStyle.secondary,
+                    onPressed: () => showCartQrDialog(context, cart),
+                  ),
                   if (canEdit) ...[
                     IcButton(
                       label: l10n.archiveCart,

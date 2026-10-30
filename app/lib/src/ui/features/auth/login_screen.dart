@@ -102,9 +102,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Semantics(
-                                  header: true,
-                                  child: Text(l10n.loginTitle, style: compact ? IcText.titleM : IcText.titleL),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Semantics(
+                                        header: true,
+                                        child: Text(l10n.loginTitle, style: compact ? IcText.titleM : IcText.titleL),
+                                      ),
+                                    ),
+                                    // RV-15: the language is chosen here (not in the profile menu).
+                                    const LanguageTabs(),
+                                  ],
                                 ),
                                 gap,
                                 // Figma A1 mobile: e-mail and password side by

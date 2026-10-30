@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/common/l10n/app_localizations.dart';
+import 'package:icrash_app/src/common/locale_scope.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_report.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
@@ -76,7 +77,11 @@ class _NoNavigation implements ShellNavigation {
   @override
   void openReport(String reportId) {}
   @override
-  void showReports() {}
+  void showReports({String? cartId}) {}
+  @override
+  void cartOpened(String cartId) {}
+  @override
+  void cartClosed(String cartId) {}
 }
 
 Future<void> _loadFonts() async {
@@ -174,21 +179,25 @@ Future<void> _pump(
   );
   addTearDown(session.dispose);
   await tester.pumpWidget(
-    MaterialApp(
-      theme: buildAppTheme(),
+    LocaleScope(
       locale: const Locale('pt'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: AppServicesScope(
-        services: services,
-        child: SessionScope(
-          session: session,
-          child: ShellNavigationScope(
-            navigation: _NoNavigation(),
-            child: Scaffold(
-              body: appShell
-                  ? AppShellFrame(rail: const ColoredBox(color: IcColors.bgSidebar), child: screen)
-                  : screen,
+      setLocale: (_) {},
+      child: MaterialApp(
+        theme: buildAppTheme(),
+        locale: const Locale('pt'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppServicesScope(
+          services: services,
+          child: SessionScope(
+            session: session,
+            child: ShellNavigationScope(
+              navigation: _NoNavigation(),
+              child: Scaffold(
+                body: appShell
+                    ? AppShellFrame(rail: const ColoredBox(color: IcColors.bgSidebar), child: screen)
+                    : screen,
+              ),
             ),
           ),
         ),

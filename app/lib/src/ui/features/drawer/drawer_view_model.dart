@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import '../../../common/app_services.dart';
-import '../../../common/repository_failure.dart';
 import '../../../domain/entities/batch.dart';
 import '../../../domain/entities/cart_drawer.dart';
 import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/product.dart';
 import '../../../domain/entities/slot.dart';
-import '../../../domain/entities/usage_event.dart';
 import '../../../domain/gtin.dart';
 import '../../../domain/inventory_health.dart';
 import '../../../domain/inventory_rules.dart';
@@ -18,7 +16,9 @@ import '../../core/session/session.dart';
 import '../../core/widgets/slot_grid.dart';
 
 /// What the right-hand panel shows (design v2: A6 detail, A7 replenish).
-enum DrawerPanel { detail, consume, replenish, correct, assign, reconcile }
+/// No "Corrigir" or "Reconciliar" panels: a signed report never changes and
+/// there are no correction events (D23, P15).
+enum DrawerPanel { detail, consume, replenish, assign }
 
 /// A6 · Gaveta + A7 · Repor stock.
 class DrawerViewModel extends ViewModel {
@@ -41,9 +41,6 @@ class DrawerViewModel extends ViewModel {
   List<Batch> batches = const [];
   StreamSubscription<List<Batch>>? _batchSub;
   String? _batchesFor;
-
-  /// Events of the selected assignment (for "Corrigir").
-  List<UsageEvent> events = const [];
 
   /// Replenish form values (A7), prefilled by a GS1 scan.
   String lot = '';
@@ -98,11 +95,6 @@ class DrawerViewModel extends ViewModel {
     return (a.targetQuantity - a.currentQuantity).clamp(0, 9999);
   }
 
-  /// Bounds for a correction's signed amount, so the slot stays within
-  /// `0 … target` (P5).
-  int get correctionMin => -(selectedAssignment?.currentQuantity ?? 0);
-  int get correctionMax => replenishMax;
-
   /// Products not yet in this cart (a product may only sit in one slot).
   List<Product> get assignableProducts {
     final used = data.assignments.map((a) => a.productId).toSet();
@@ -139,8 +131,6 @@ class DrawerViewModel extends ViewModel {
       }
     } else if (next == DrawerPanel.consume) {
       amount = 1;
-    } else if (next == DrawerPanel.correct) {
-      unawaited(_loadEvents());
     } else if (next == DrawerPanel.assign) {
       amount = 1;
     }
@@ -178,17 +168,6 @@ class DrawerViewModel extends ViewModel {
     }, onError: (_) {});
   }
 
-  Future<void> _loadEvents() async {
-    final a = selectedAssignment;
-    if (a == null) return;
-    try {
-      events = await services.usage.watchEventsForAssignment(session.institution.id, a.id).first;
-    } on RepositoryFailure {
-      events = const [];
-    }
-    notify();
-  }
-
   Future<ActionResult<void>> consume(int units) {
     final a = selectedAssignment;
     return run(() async {
@@ -201,6 +180,8 @@ class DrawerViewModel extends ViewModel {
         amount: units,
         actorUid: session.user.uid,
       ));
+      // RV-23: confirming a consumption closes the panel.
+      selectedSlotId = null;
       panel = DrawerPanel.detail;
     });
   }
@@ -237,28 +218,6 @@ class DrawerViewModel extends ViewModel {
     });
   }
 
-  /// A compensating correction of [event] (spec section 44) with an
-  /// optional [reason] (DATABASE.md HISTORY `reason`; P15 is open on whether
-  /// it becomes mandatory).
-  Future<ActionResult<void>> correct(UsageEvent event, int adjustment, {String? reason}) {
-    final a = selectedAssignment;
-    return run(() async {
-      if (a == null) return;
-      if (adjustment == 0) throw const ActionError('zero');
-      InventoryRules.applyCorrection(a.currentQuantity, adjustment, target: a.targetQuantity);
-      await services.sync.track(services.inventory.recordCorrection(
-        institutionId: session.institution.id,
-        cartId: cartId,
-        assignmentId: a.id,
-        amount: adjustment,
-        correctsEventId: event.id,
-        actorUid: session.user.uid,
-        reason: reason,
-      ));
-      panel = DrawerPanel.detail;
-    });
-  }
-
   /// Assigns a product to the selected free slot, or swaps the product of an
   /// assigned slot (the old assignment and its batches go; history stays).
   Future<ActionResult<void>> assign(Product product, {required int target, required int initial}) {
@@ -288,24 +247,6 @@ class DrawerViewModel extends ViewModel {
           targetQuantity: target,
         ),
       );
-      panel = DrawerPanel.detail;
-    });
-  }
-
-  Future<ActionResult<void>> reconcile({required int confirmedQuantity, required Set<String> confirmedBatchIds}) {
-    final a = selectedAssignment;
-    final confirmed = batches.where((b) => confirmedBatchIds.contains(b.id)).toList();
-    return run(() async {
-      if (a == null) return;
-      InventoryRules.checkStock(confirmedQuantity, a.targetQuantity);
-      await services.sync.track(services.inventory.reconcileAfterAudit(
-        institutionId: session.institution.id,
-        cartId: cartId,
-        assignmentId: a.id,
-        confirmedQuantity: confirmedQuantity,
-        confirmedBatches: confirmed,
-        actorUid: session.user.uid,
-      ));
       panel = DrawerPanel.detail;
     });
   }

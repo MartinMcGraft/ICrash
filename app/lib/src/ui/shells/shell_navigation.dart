@@ -13,8 +13,46 @@ abstract class ShellNavigation {
   /// Opens a report for viewing/signing.
   void openReport(String reportId);
 
-  /// Goes to the reports section.
-  void showReports();
+  /// Goes to the reports section. With [cartId], opens that cart's reports
+  /// there, so the rail/sidebar shows "Relatórios", and back returns to the
+  /// cart (RV-12).
+  void showReports({String? cartId});
+
+  /// A cart screen (A5) was opened or closed. While one is open the App's
+  /// scanner reads only consumables (RV-26).
+  void cartOpened(String cartId);
+  void cartClosed(String cartId);
+}
+
+/// Tells the shell which cart screen is open while [child] is shown.
+class CartPresence extends StatefulWidget {
+  const CartPresence({super.key, required this.cartId, required this.child});
+
+  final String cartId;
+  final Widget child;
+
+  @override
+  State<CartPresence> createState() => _CartPresenceState();
+}
+
+class _CartPresenceState extends State<CartPresence> {
+  ShellNavigation? _navigation;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigation = context.getInheritedWidgetOfExactType<ShellNavigationScope>()?.navigation;
+    _navigation?.cartOpened(widget.cartId);
+  }
+
+  @override
+  void dispose() {
+    _navigation?.cartClosed(widget.cartId);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class ShellNavigationScope extends InheritedWidget {

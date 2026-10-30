@@ -2401,6 +2401,18 @@ abstract class AppLocalizations {
   /// **'Repor este produto'**
   String get scanReplenishThis;
 
+  /// No description provided for @scanEnterManually.
+  ///
+  /// In pt, this message translates to:
+  /// **'Inserir manualmente'**
+  String get scanEnterManually;
+
+  /// No description provided for @scanOnlyConsumables.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dentro de um carro só pode ler consumíveis.'**
+  String get scanOnlyConsumables;
+
   /// No description provided for @scanManual.
   ///
   /// In pt, this message translates to:

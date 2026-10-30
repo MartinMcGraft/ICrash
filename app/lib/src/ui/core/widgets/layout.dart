@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../common/l10n/app_localizations.dart';
+import '../../../common/locale_scope.dart';
 import '../check_state.dart';
 import '../icons/ic_icons.dart';
 import '../theme/tokens.dart';
@@ -152,6 +153,31 @@ class PanelColumn extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [for (final child in children) child is Spacer ? const SizedBox(height: IcSpace.s16) : child],
+      ),
+    );
+  }
+}
+
+/// Português / English switch (A1 and the Dashboard profile menu; RV-15).
+class LanguageTabs extends StatelessWidget {
+  const LanguageTabs({super.key, this.onChanged});
+
+  /// Called after the language changed (e.g. to close a menu).
+  final VoidCallback? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scope = LocaleScope.of(context);
+    return Semantics(
+      label: l10n.languageSwitcherTooltip,
+      child: SegmentedTabs<String>(
+        items: [TabItem('pt', l10n.languagePortuguese), TabItem('en', l10n.languageEnglish)],
+        selected: scope.locale.languageCode,
+        onChanged: (code) {
+          scope.setLocale(Locale(code));
+          onChanged?.call();
+        },
       ),
     );
   }

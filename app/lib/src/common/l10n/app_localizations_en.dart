@@ -1401,6 +1401,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanReplenishThis => 'Replenish this product';
 
   @override
+  String get scanEnterManually => 'Enter manually';
+
+  @override
+  String get scanOnlyConsumables =>
+      'Inside a cart you can only scan consumables.';
+
+  @override
   String get scanManual => 'Manual';
 
   @override

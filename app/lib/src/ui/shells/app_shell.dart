@@ -59,6 +59,9 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
   final _keys = {for (final tab in AppTab.values) tab: GlobalKey<NavigatorState>()};
   AppTab _tab = AppTab.carts;
 
+  /// Cart screens open in the Carrinhos tab (a drawer may sit on top of one).
+  final List<String> _openCarts = [];
+
   void _select(AppTab tab) {
     if (tab == _tab) {
       _keys[tab]!.currentState?.popUntil((route) => route.isFirst);
@@ -94,7 +97,30 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
   }
 
   @override
-  void showReports() => _select(AppTab.reports);
+  void showReports({String? cartId}) {
+    if (cartId == null) return _select(AppTab.reports);
+    setState(() => _tab = AppTab.reports);
+    final nav = _keys[AppTab.reports]!.currentState;
+    nav?.popUntil((route) => route.isFirst);
+    nav?.push(sectionRoute((_) => ReportsListScreen(
+          cartId: cartId,
+          // Back returns to the cart in the Carrinhos tab.
+          onBack: () {
+            _keys[AppTab.reports]!.currentState?.popUntil((route) => route.isFirst);
+            setState(() => _tab = AppTab.carts);
+          },
+        )));
+  }
+
+  @override
+  void cartOpened(String cartId) => _openCarts.add(cartId);
+
+  @override
+  void cartClosed(String cartId) => _openCarts.remove(cartId);
+
+  /// The cart the person is in: the cart-limited session (A3) or the cart
+  /// screen open in the Carrinhos tab.
+  String? get _currentCartId => SessionScope.read(context).scopedCartId ?? _openCarts.lastOrNull;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +143,7 @@ class _AppShellState extends State<AppShell> implements ShellNavigation {
               SectionNavigator(navigatorKey: _keys[AppTab.reports]!, root: (_) => const ReportsListScreen()),
               // Built only while visible: the scanner owns the camera.
               if (_tab == AppTab.scan)
-                SectionNavigator(navigatorKey: _keys[AppTab.scan]!, root: (_) => const ScannerScreen())
+                SectionNavigator(navigatorKey: _keys[AppTab.scan]!, root: (_) => ScannerScreen(cartId: _currentCartId))
               else
                 const SizedBox.shrink(),
             ],

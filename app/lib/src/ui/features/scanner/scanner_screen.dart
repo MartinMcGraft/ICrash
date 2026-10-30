@@ -16,7 +16,11 @@ import 'scanner_view_model.dart';
 
 /// A11 · Ler código.
 class ScannerScreen extends StatelessWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({super.key, this.cartId});
+
+  /// The cart the person is in, if any: then only consumables can be read
+  /// and the Consumível / Carro tabs are hidden (RV-26).
+  final String? cartId;
 
   String _error(AppLocalizations l10n, ScanError error) => switch (error) {
         ScanError.unreadable => l10n.gs1ScanError,
@@ -24,6 +28,7 @@ class ScannerScreen extends StatelessWidget {
         ScanError.notACart => l10n.cartQrScanError,
         ScanError.otherInstitution => l10n.scanOtherInstitution,
         ScanError.notInAnyCart => l10n.scanNotInAnyCart,
+        ScanError.onlyConsumables => l10n.scanOnlyConsumables,
       };
 
   @override
@@ -32,7 +37,7 @@ class ScannerScreen extends StatelessWidget {
     final session = SessionScope.read(context);
     final navigation = ShellNavigationScope.of(context);
     return ViewModelBuilder<ScannerViewModel>(
-      create: (services) => ScannerViewModel(services, session, onCart: navigation.openCart),
+      create: (services) => ScannerViewModel(services, session, onCart: navigation.openCart, consumablesOnly: cartId != null),
       builder: (context, vm) {
         final compact = isCompactHeight(context);
         final format = IcFormat.of(context);
@@ -57,14 +62,15 @@ class ScannerScreen extends StatelessWidget {
                   children: [
                     Semantics(header: true, child: Text(l10n.navScan, style: compact ? IcText.titleM : IcText.titleL)),
                     const SizedBox(height: IcSpace.s12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: SegmentedTabs<ScanMode>(
-                        selected: vm.mode,
-                        onChanged: vm.setMode,
-                        items: [TabItem(ScanMode.product, l10n.scanModeProduct), TabItem(ScanMode.cart, l10n.scanModeCart)],
+                    if (!vm.consumablesOnly)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SegmentedTabs<ScanMode>(
+                          selected: vm.mode,
+                          onChanged: vm.setMode,
+                          items: [TabItem(ScanMode.product, l10n.scanModeProduct), TabItem(ScanMode.cart, l10n.scanModeCart)],
+                        ),
                       ),
-                    ),
                     const SizedBox(height: IcSpace.s12),
                     if (!compact) Text(l10n.scanHelp, style: IcText.bodyS.copyWith(color: IcColors.textSecondary)),
                     const SizedBox(height: IcSpace.s12),

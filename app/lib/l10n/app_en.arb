@@ -965,6 +965,8 @@
     }
   },
   "scanReplenishThis": "Replenish this product",
+  "scanEnterManually": "Enter manually",
+  "scanOnlyConsumables": "Inside a cart you can only scan consumables.",
   "scanManual": "Manual",
   "scanManualProductLabel": "GTIN or GS1 code",
   "scanOtherInstitution": "This cart belongs to another institution.",

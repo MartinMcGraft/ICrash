@@ -45,10 +45,13 @@ class ReportsListViewModel extends ViewModel {
 }
 
 class ReportsListScreen extends StatelessWidget {
-  const ReportsListScreen({super.key, this.cartId});
+  const ReportsListScreen({super.key, this.cartId, this.onBack});
 
   /// Limits the list to one cart ("Relatórios do carro").
   final String? cartId;
+
+  /// Back for a cart's reports: the shell returns to the cart (RV-12).
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +70,7 @@ class ReportsListScreen extends StatelessWidget {
               PageHeader(
                 title: l10n.navReports,
                 subtitle: session.institution.name,
-                onBack: cartId == null ? null : () => Navigator.of(context).maybePop(),
+                onBack: onBack ?? (cartId == null ? null : () => Navigator.of(context).maybePop()),
               ),
               const SizedBox(height: IcSpace.s20),
               SegmentedTabs<ReportsFilter>(

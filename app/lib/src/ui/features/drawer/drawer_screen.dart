@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../common/l10n/app_localizations.dart';
 import '../../../common/repository_failure.dart';
 import '../../../domain/entities/product.dart';
-import '../../../domain/entities/usage_event.dart';
 import '../../../domain/inventory_health.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
-import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../../core/theme/tokens.dart';
@@ -112,9 +109,7 @@ class _Panel extends StatelessWidget {
       DrawerPanel.detail => _DetailPanel(vm: vm),
       DrawerPanel.consume => _ConsumePanel(vm: vm),
       DrawerPanel.replenish => _ReplenishPanel(vm: vm),
-      DrawerPanel.correct => _CorrectPanel(vm: vm),
       DrawerPanel.assign => _AssignPanel(vm: vm),
-      DrawerPanel.reconcile => _ReconcilePanel(vm: vm),
     };
   }
 }
@@ -135,8 +130,7 @@ class _DetailPanel extends StatelessWidget {
     final position = l10n.slotPositionInDrawer(slotPositionLabel(slot), vm.drawerNumber);
 
     if (assignment == null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return PanelColumn(
         children: [
           const Align(alignment: Alignment.centerLeft, child: SlotHealthBadge(health: SlotHealth.free)),
           const SizedBox(height: IcSpace.s12),
@@ -173,8 +167,7 @@ class _DetailPanel extends StatelessWidget {
       SlotHealth.expiring => IcColors.warningFg,
       _ => IcColors.textPrimary,
     };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return PanelColumn(
       children: [
         if (health != SlotHealth.ok) Align(alignment: Alignment.centerLeft, child: SlotHealthBadge(health: health)),
         if (health != SlotHealth.ok) const SizedBox(height: IcSpace.s12),
@@ -223,40 +216,17 @@ class _DetailPanel extends StatelessWidget {
             onPressed: vm.replenishMax > 0 ? () => vm.showPanel(DrawerPanel.replenish) : null,
           ),
         ],
-        if (!compact) ...[
+        // D21: the same actions on phones. D23/P15: no "Corrigir" and no
+        // "Reconciliar" (a signed report never changes).
+        if (session.canEditStructure) ...[
           const SizedBox(height: IcSpace.s12),
-          Row(
-            children: [
-              if (session.canEditStructure) ...[
-                Expanded(
-                  child: IcButton(
-                    label: l10n.changeProductAction,
-                    style: IcButtonStyle.ghost,
-                    expand: true,
-                    // P1: a slot with History keeps its product.
-                    onPressed: vm.selectedInUse
-                        ? () => showMessage(context, l10n.slotInUseHint)
-                        : () => vm.showPanel(DrawerPanel.assign),
-                  ),
-                ),
-                const SizedBox(width: IcSpace.s8),
-              ],
-              Expanded(
-                child: IcButton(
-                  label: l10n.actionCorrect,
-                  icon: IcIcon.editar,
-                  style: IcButtonStyle.ghost,
-                  expand: true,
-                  onPressed: () => vm.showPanel(DrawerPanel.correct),
-                ),
-              ),
-            ],
+          IcButton(
+            label: l10n.changeProductAction,
+            style: IcButtonStyle.ghost,
+            expand: true,
+            // P1: a slot with History keeps its product.
+            onPressed: vm.selectedInUse ? () => showMessage(context, l10n.slotInUseHint) : () => vm.showPanel(DrawerPanel.assign),
           ),
-          if (session.canReplenish)
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(onPressed: () => vm.showPanel(DrawerPanel.reconcile), child: Text(l10n.actionReconcile)),
-            ),
         ],
       ],
     );
@@ -451,96 +421,6 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
   }
 }
 
-class _CorrectPanel extends StatefulWidget {
-  const _CorrectPanel({required this.vm});
-  final DrawerViewModel vm;
-
-  @override
-  State<_CorrectPanel> createState() => _CorrectPanelState();
-}
-
-class _CorrectPanelState extends State<_CorrectPanel> {
-  UsageEvent? _event;
-  int _adjust = 0;
-  final _reason = TextEditingController();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final format = IcFormat.of(context);
-    final vm = widget.vm;
-    final events = vm.events;
-    _event ??= events.isEmpty ? null : events.first;
-    return _FormPanel(
-      vm: vm,
-      title: l10n.correctEventDialogTitle,
-      subtitle: _subtitle(l10n, vm),
-      confirmLabel: l10n.actionCorrect,
-      onConfirm: _event == null || _adjust == 0
-          ? null
-          : () async {
-              final result = await vm.correct(_event!, _adjust, reason: _reason.text);
-              if (!context.mounted) return;
-              showResult(context, result, success: l10n.correctionRecorded);
-            },
-      children: [
-        if (events.isEmpty)
-          Text(l10n.noEventsToCorrect, style: IcText.bodyM.copyWith(color: IcColors.textSecondary))
-        else ...[
-          Text(l10n.eventToCorrectLabel, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
-          const SizedBox(height: 6),
-          for (final event in events.take(6))
-            InkWell(
-              borderRadius: BorderRadius.circular(IcRadius.sm),
-              onTap: () => setState(() {
-                _event = event;
-                _adjust = (-event.amount).clamp(vm.correctionMin, vm.correctionMax);
-              }),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(event == _event ? Icons.radio_button_checked : Icons.radio_button_off, size: 20,
-                        color: event == _event ? IcColors.actionPrimary : IcColors.borderStrong),
-                    const SizedBox(width: IcSpace.s8),
-                    Expanded(child: Text('${usageEventText(l10n, event.type)} ${IcFormat.signed(event.amount)}', style: IcText.bodyM)),
-                    if (event.serverTimestamp != null)
-                      Text(format.relative(event.serverTimestamp!), style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(height: IcSpace.s12),
-          _labeledRow(
-            l10n.adjustmentLabel,
-            // P5: a correction keeps the slot within 0 … target.
-            QuantityStepper(
-              label: l10n.adjustmentLabel,
-              value: _adjust.clamp(vm.correctionMin, vm.correctionMax),
-              min: vm.correctionMin,
-              max: vm.correctionMax,
-              onChanged: (v) => setState(() => _adjust = v),
-            ),
-          ),
-          const SizedBox(height: IcSpace.s12),
-          LabeledField(
-            label: l10n.correctionReasonLabel,
-            controller: _reason,
-            hint: l10n.correctionReasonHint,
-            inputFormatters: [LengthLimitingTextInputFormatter(500)],
-          ),
-        ],
-      ],
-    );
-  }
-}
-
 /// "Trocar produto" / "Atribuir produto".
 class _AssignPanel extends StatefulWidget {
   const _AssignPanel({required this.vm});
@@ -628,61 +508,6 @@ class _AssignPanelState extends State<_AssignPanel> {
           l10n.initialQuantityLabel,
           QuantityStepper(label: l10n.initialQuantityLabel, value: _initial, max: _target, onChanged: (v) => setState(() => _initial = v)),
         ),
-      ],
-    );
-  }
-}
-
-/// Physical audit reconciliation (kept from the previous app: confirms
-/// quantity and which lots are really present).
-class _ReconcilePanel extends StatefulWidget {
-  const _ReconcilePanel({required this.vm});
-  final DrawerViewModel vm;
-
-  @override
-  State<_ReconcilePanel> createState() => _ReconcilePanelState();
-}
-
-class _ReconcilePanelState extends State<_ReconcilePanel> {
-  late int _quantity = widget.vm.selectedAssignment?.currentQuantity ?? 0;
-  late final Set<String> _batchIds = widget.vm.batches.map((b) => b.id).toSet();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final format = IcFormat.of(context);
-    final vm = widget.vm;
-    return _FormPanel(
-      vm: vm,
-      title: l10n.reconcileDialogTitle,
-      subtitle: _subtitle(l10n, vm),
-      confirmLabel: l10n.actionConfirm,
-      onConfirm: () async {
-        final result = await vm.reconcile(confirmedQuantity: _quantity, confirmedBatchIds: _batchIds);
-        if (!context.mounted) return;
-        showResult(context, result, success: l10n.reconcileRecorded);
-      },
-      children: [
-        _labeledRow(
-          l10n.confirmedQuantityLabel,
-          QuantityStepper(
-            label: l10n.confirmedQuantityLabel,
-            value: _quantity,
-            max: vm.selectedAssignment?.targetQuantity ?? 9999,
-            onChanged: (v) => setState(() => _quantity = v),
-          ),
-        ),
-        if (vm.batches.isEmpty)
-          Text(l10n.noBatchesMessage, style: IcText.bodyS.copyWith(color: IcColors.textSecondary))
-        else ...[
-          Text(l10n.confirmedBatchesLabel, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
-          for (final batch in vm.batches)
-            CheckRow(
-              label: '${batch.lotNumber == null ? l10n.noLot : l10n.batchLotLabel(batch.lotNumber!)} · ${format.numeric(batch.expiryDate)}',
-              value: _batchIds.contains(batch.id),
-              onChanged: (checked) => setState(() => checked ? _batchIds.add(batch.id) : _batchIds.remove(batch.id)),
-            ),
-        ],
       ],
     );
   }

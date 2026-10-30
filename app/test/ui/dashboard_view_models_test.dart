@@ -536,24 +536,13 @@ void main() {
       expect((await vm.replenish()).code, 'exceedsTarget');
     });
 
-    test('reconciliation marks unconfirmed batches removed instead of deleting them', () async {
-      final result = await vm.reconcile(confirmedQuantity: 2, confirmedBatchIds: {'b1'});
+    test('confirming a consumption closes the panel (RV-23)', () async {
+      vm.showPanel(DrawerPanel.consume);
+      final result = await vm.consume(1);
       expect(result.isOk, isTrue);
-      final all = inventory.batchesByAssignment['a1']!;
-      expect(all, hasLength(2));
-      expect(all.singleWhere((b) => b.id == 'b2').removedAt, isNotNull);
-      expect(all.singleWhere((b) => b.id == 'b1').isActive, isTrue);
-    });
-
-    test('a correction passes its optional reason', () async {
-      const event = UsageEvent(
-        id: 'e1', institutionId: 'inst', actorUid: 'me', cartId: 'c1', assignmentId: 'a1', productId: 'p1',
-        type: UsageEventType.consumption, amount: -1,
-      );
-      final result = await vm.correct(event, 1, reason: 'registado na posição errada');
-      expect(result.isOk, isTrue);
-      expect(inventory.lastCorrectedEventId, 'e1');
-      expect(inventory.lastCorrectionReason, 'registado na posição errada');
+      expect(inventory.assignments.single.currentQuantity, 2);
+      expect(vm.selectedSlotId, isNull);
+      expect(vm.panel, DrawerPanel.detail);
     });
   });
 

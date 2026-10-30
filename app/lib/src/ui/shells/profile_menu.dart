@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../common/l10n/app_localizations.dart';
-import '../../common/locale_scope.dart';
 import '../core/icons/ic_icons.dart';
 import '../core/labels.dart';
 import '../core/session/session.dart';
@@ -13,7 +12,6 @@ Future<void> showProfileMenu(BuildContext context) {
   final session = SessionScope.read(context);
   final actions = AppActionsScope.of(context);
   final l10n = AppLocalizations.of(context);
-  final localeScope = LocaleScope.of(context);
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -50,17 +48,15 @@ Future<void> showProfileMenu(BuildContext context) {
                       Text(session.myName, style: IcText.titleM),
                       const SizedBox(height: 2),
                       Text(subtitle, style: IcText.bodyS.copyWith(color: IcColors.textSecondary)),
-                      const SizedBox(height: IcSpace.s16),
-                      Text(l10n.languageSwitcherTooltip, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
-                      const SizedBox(height: 6),
-                      SegmentedTabs<String>(
-                        items: [TabItem('pt', l10n.languagePortuguese), TabItem('en', l10n.languageEnglish)],
-                        selected: localeScope.locale.languageCode,
-                        onChanged: (code) {
-                          localeScope.setLocale(Locale(code));
-                          Navigator.of(dialogContext).pop();
-                        },
-                      ),
+                      // RV-15: the App menu shows only "Bloquear agora" and
+                      // "Terminar sessão"; the language is chosen on A1. The
+                      // Dashboard keeps it here.
+                      if (actions.showingDashboard) ...[
+                        const SizedBox(height: IcSpace.s16),
+                        Text(l10n.languageSwitcherTooltip, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
+                        const SizedBox(height: 6),
+                        LanguageTabs(onChanged: () => Navigator.of(dialogContext).pop()),
+                      ],
                     ],
                   ),
                 ),

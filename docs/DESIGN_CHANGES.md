@@ -626,6 +626,60 @@ Frame ids read on 30 Oct 2026.
 - **Copy:** new `finishCheckShort` "Concluir" / "Finish".
 - **Note:** A8 is rewritten in phase 5 (D22), which replaces this frame.
 
+### DC-45 · A5 cart menu: no QR; same actions on phones; reports open the Relatórios section (RV-10, RV-12, RV-21)
+- **Where:** A5 "Menu do carro": p12 `451:608` → `451:730`; p13 `447:669` (menu frame);
+  p10/p11 wireframes.
+- **What:**
+  - **"Mostrar código QR" is removed** from the App. The cart's QR is printed or saved
+    from **B3** (DC-46).
+  - Phones show **"Alterar estado"** and **"Relatórios do carro"** like tablets; the menu
+    scrolls if needed. On phones the "Responsável no turno: {name}" line moves from the
+    header into the menu.
+  - "Relatórios do carro" switches the rail to **Relatórios** (highlighted) and lists that
+    cart's reports; back returns to the cart.
+- **Copy:** unchanged (`cartReportsAction`, `changeStateAction`, `responsibleOnShift`).
+
+### DC-46 · B3: "Código QR" button (RV-21)
+- **Where:** B3 header: p21 `456:884`, p20 B3 wireframe.
+- **What:** a secondary button **"Código QR"** (icon qr) before "Arquivar carro" opens the
+  cart code dialog (QR, readable code, **Imprimir**), to stick the code on the cart.
+- **Copy:** `qrCodeShort` "Código QR" / "QR code".
+
+### DC-47 · A6 panel: no "Corrigir" / "Reconciliar"; "Trocar produto" on phones; closes after a consumption (RV-11, RV-23, D23)
+- **Where:** A6 "Painel · Posição": p12 `451:775` → `451:1017`; p13 `447:857` (panel).
+- **What:**
+  - **"Corrigir" and "Reconciliar" are removed** (D23, P15: a signed report never
+    changes, no correction events). Their panels are gone.
+  - "Trocar produto" is a full-width ghost button under "Repor stock", on phones too.
+  - After **"Confirmar consumo"** the panel closes (with the success message).
+- **Copy:** unchanged.
+
+### DC-48 · Scan sheet: "Cancelar" + "Inserir manualmente" (RV-24)
+- **Where:** the "Ler GTIN da embalagem" dialog opened from A6/A7 and B5 (no frame yet;
+  p04 scanner pattern if any).
+- **What:** two buttons, **"Cancelar"** and **"Inserir manualmente"**. The second replaces
+  the camera with a field "GTIN ou código GS1" and a **"Confirmar"** button.
+- **Copy:** new `scanEnterManually` "Inserir manualmente" / "Enter manually";
+  `scanManualProductLabel`, `actionConfirm`, `actionCancel`.
+
+### DC-49 · A11 inside a cart: consumables only (RV-26)
+- **Where:** A11 p12 `451:1711` → `451:1769` (tabs "Tipo"); p13 A11.
+- **What:** when the person is inside a cart (cart login, or a cart open in Carrinhos), the
+  **Consumível / Carro tabs are hidden** and reading a cart code shows "Dentro de um carro só
+  pode ler consumíveis."
+- **Copy:** new `scanOnlyConsumables` / "Inside a cart you can only scan consumables."
+
+### DC-50 · Profile menu: App shows only lock and sign out; language on A1 (RV-15)
+- **Where:** Profile menu (no frame; p04 if drawn); A1 p12 `451:263` → `451:272`, p13
+  `447:263` → `447:273`.
+- **What:**
+  - App: the menu shows the user, the credentials note, **Bloquear agora** and **Terminar
+    sessão**. "Mudar de instituição" only for Super (D16, D18); the shell switch only in
+    debug builds.
+  - Dashboard: the **language** switch stays in the menu.
+  - A1: a **PT / EN** switch sits on the right of "Iniciar sessão".
+- **Copy:** `languagePortuguese`, `languageEnglish` (unchanged).
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -665,4 +719,4 @@ Frame ids read on 30 Oct 2026.
 | B2/B6 | 1 (DC-35) |
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
-| 30 Oct review (A1, rail, A5, A8, A9) | DC-41 … DC-44 |
+| 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, menu) | DC-41 … DC-50 |
