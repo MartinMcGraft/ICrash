@@ -2626,4 +2626,165 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get supportClosed => 'Acesso do suporte fechado.';
+
+  @override
+  String get roleDevice => 'Dispositivo';
+
+  @override
+  String get actionContinue => 'Continuar';
+
+  @override
+  String get deviceSetUp => 'Configurar dispositivo';
+
+  @override
+  String get deviceSetupAdminNote =>
+      'Um Administrador inicia sessão uma vez para registar este tablet. Depois, quem trabalha nos carros entra só com o PIN.';
+
+  @override
+  String get deviceSetupNotAdmin =>
+      'Só um Administrador da instituição pode registar um tablet.';
+
+  @override
+  String get deviceSetupPickCart => 'Escolha pelo menos um carro.';
+
+  @override
+  String deviceSetupInstitution(String institution) {
+    return 'Instituição: $institution';
+  }
+
+  @override
+  String get deviceSetupNoCarts =>
+      'Esta instituição ainda não tem carros. Crie-os no Dashboard primeiro.';
+
+  @override
+  String get deviceNameLabel => 'Nome do tablet';
+
+  @override
+  String get deviceNameHint => 'Ex.: Tablet Carro 3 · UCI';
+
+  @override
+  String get deviceCartsLabel => 'Carros deste tablet';
+
+  @override
+  String get deviceRegister => 'Registar tablet';
+
+  @override
+  String deviceRegisteredTo(String institution) {
+    return 'Tablet registado em $institution';
+  }
+
+  @override
+  String get deviceRevokedTitle => 'Este dispositivo foi desativado';
+
+  @override
+  String get deviceRevokedMessage =>
+      'Um Administrador revogou este tablet no Dashboard. Para o voltar a usar, configure-o de novo.';
+
+  @override
+  String get deviceNoPasswordNote =>
+      'Neste tablet não é preciso palavra-passe: identifique-se com o nº mecanográfico ou o e-mail e o seu PIN.';
+
+  @override
+  String get deviceRemoveRegistration => 'Remover registo deste tablet';
+
+  @override
+  String get deviceRemoveNote =>
+      'Só um Administrador. O registo continua no Dashboard até ser revogado.';
+
+  @override
+  String get deviceIdentifyTitle => 'Identificação';
+
+  @override
+  String get deviceIdentifierLabel => 'Nº mecanográfico ou e-mail';
+
+  @override
+  String get deviceSignInHint =>
+      'Escreva o nº mecanográfico ou o e-mail e marque o PIN.';
+
+  @override
+  String get deviceEnterIdentifierFirst =>
+      'Escreva primeiro o nº mecanográfico ou o e-mail.';
+
+  @override
+  String deviceWrongCredentials(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Nº/e-mail ou PIN errado. Restam $count tentativas.',
+      one: 'Nº/e-mail ou PIN errado. Resta 1 tentativa.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deviceNoPin => 'A administração ainda não definiu o seu PIN.';
+
+  @override
+  String get deviceRemoveNotAdmin =>
+      'Só um Administrador pode remover o registo.';
+
+  @override
+  String get deviceNoCartsForPerson =>
+      'Não está registado em nenhum carro deste tablet.';
+
+  @override
+  String get deviceNotOnCart => 'Não está registado neste carro.';
+
+  @override
+  String get deviceNoticeIdle => 'Sessão terminada por inatividade.';
+
+  @override
+  String get deviceNoticeTooManyAttempts =>
+      'Demasiadas tentativas erradas. Tente de novo.';
+
+  @override
+  String get deviceNoticeSignInFailed =>
+      'O tablet não conseguiu ligar-se. Verifique a rede e tente de novo.';
+
+  @override
+  String usersFilterDevices(int count) {
+    return 'Dispositivos ($count)';
+  }
+
+  @override
+  String get devicesEmpty =>
+      'Nenhum tablet registado. Um tablet regista-se nele próprio, em \"Configurar dispositivo\".';
+
+  @override
+  String get deviceCartsColumn => 'Carros';
+
+  @override
+  String get deviceRegisteredByColumn => 'Registado por';
+
+  @override
+  String get deviceStateActive => 'Ativo';
+
+  @override
+  String get deviceStateRevoked => 'Revogado';
+
+  @override
+  String get deviceEdit => 'Alterar nome e carros';
+
+  @override
+  String get deviceRevoke => 'Revogar';
+
+  @override
+  String deviceRevokeConfirm(String name) {
+    return '\"$name\" deixa de funcionar no próximo acesso. Para o voltar a usar é preciso configurá-lo de novo.';
+  }
+
+  @override
+  String deviceRevoked(String name) {
+    return '\"$name\" revogado.';
+  }
+
+  @override
+  String get deviceUpdated => 'Tablet atualizado.';
+
+  @override
+  String get userNumberLabel => 'Nº mecanográfico';
+
+  @override
+  String get userNumberTaken =>
+      'Já existe um utilizador com este nº mecanográfico.';
 }

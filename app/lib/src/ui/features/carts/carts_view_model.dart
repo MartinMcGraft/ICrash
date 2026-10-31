@@ -96,7 +96,8 @@ class CartsViewModel extends ViewModel {
   CartsViewModel(this.services, this.session) {
     final id = session.institution.id;
     listen(services.carts.watchAccessibleCarts(id), (carts) {
-      _carts = carts;
+      // D17: on a tablet only this person's carts there.
+      _carts = [for (final c in carts) if (session.mayOpenCart(c.id)) c];
       state = LoadState.ready;
       _rebuild();
     }, onError: (_) {

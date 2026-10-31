@@ -283,7 +283,22 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
 - **Values:**
   - Roles (D16, done 30 Oct): `institutionAdmin` (**Admin**) and `manager` (**Manager**);
     **Super** is a `platformAdmins/{uid}` marker. A stored `user` membership reads as
-    `manager` (app and rules). Still to come: a `device` role for registered tablets (D17).
+    `manager` (app and rules). **`device`** (D17, done 31 Oct): a registered tablet's own
+    account.
+  - **Registered tablets (D17):** `institutions/{i}/devices/{deviceId}` (`name`, `cartIds[]`,
+    `authUid`, `registeredBy`, `registeredByName`, `registeredAt`, `revokedAt?`); the tablet's
+    membership (`role: 'device'`, `deviceId`, `displayName` = name) and its entries in each
+    bound cart's `responsibleUsers` + `responsibleUserIds`, written in one batch by the Admin.
+    The account is created like a B7 user (isolated Auth), e-mail
+    `device-{id}@{institutionId}.devices.icrash.invalid`, 32-character random password.
+    Rules: `isDevice(i)`; a tablet may read the PIN hashes of its institution; a usage event
+    from a tablet carries the person as `actorUid`, who must be an active non-device member who
+    is the Admin or registered to the cart (`actorMayUseCart`); `devices/*` is written by the
+    Admin only and read by the Admin or the tablet itself; revoking sets `revokedAt`, disables
+    the membership and unregisters it from its carts. A client can't delete the Auth account
+    (Spark); IT can with the Admin SDK. Security limits: `DESIGN_D17_D18.md` §4.
+  - Memberships may carry **`userNumber`** (nº mecanográfico, D17), unique per institution
+    (checked by the app).
   - **Support access (D18, done 30 Oct):** `institutions/{i}/support/current` (`grantId`,
     `reason`, `grantedBy`, `grantedByName`, `startsAt`, `endsAt`, `closedAt?`, `closedBy?`)
     is the window in force; `supportGrants/{grantId}` keeps every window; `supportLog/{id}`

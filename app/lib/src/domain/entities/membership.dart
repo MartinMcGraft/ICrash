@@ -11,6 +11,7 @@ class Membership {
     this.displayName,
     this.email,
     this.service,
+    this.userNumber,
     this.createdAt,
     this.updatedAt,
   });
@@ -27,6 +28,11 @@ class Membership {
 
   /// Hospital service the person works in (e.g. "Urgência"), when known.
   final String? service;
+
+  /// D17: the employee number (nº mecanográfico) people type on a registered
+  /// tablet before their PIN. Optional; unique in the institution (checked by
+  /// the app).
+  final String? userNumber;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -48,6 +54,7 @@ class Membership {
       displayName: map['displayName'] as String?,
       email: map['email'] as String?,
       service: map['service'] as String?,
+      userNumber: map['userNumber'] as String?,
       createdAt: map['createdAt'] as DateTime?,
       updatedAt: map['updatedAt'] as DateTime?,
     );
@@ -60,5 +67,13 @@ class Membership {
         if (displayName != null) 'displayName': displayName,
         if (email != null) 'email': email,
         if (service != null) 'service': service,
+        if (userNumber != null) 'userNumber': userNumber,
       };
+
+  /// Whether [identifier] is this person's e-mail (any case) or number.
+  bool matches(String identifier) {
+    final id = identifier.trim();
+    if (id.isEmpty) return false;
+    return (email != null && email!.toLowerCase() == id.toLowerCase()) || (userNumber != null && userNumber == id);
+  }
 }

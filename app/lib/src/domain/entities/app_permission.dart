@@ -35,4 +35,6 @@ const managerPermissions = [
 Set<AppPermission> defaultPermissionsFor(Role role) => switch (role) {
       Role.manager => managerPermissions.toSet(),
       Role.institutionAdmin || Role.platformSuperAdmin => AppPermission.values.toSet(),
+      // A tablet acts only through the person signed in on it.
+      Role.device => const {},
     };

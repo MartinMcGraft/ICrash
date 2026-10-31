@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../../../common/l10n/app_localizations.dart';
 import '../../../domain/entities/app_permission.dart';
 import '../../../domain/entities/membership.dart';
+import '../../../domain/entities/registered_device.dart';
 import '../../../domain/entities/role.dart';
+import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
@@ -70,6 +72,8 @@ class UsersScreen extends StatelessWidget {
                         // DB3: users are created active; only members invited
                         // before 29 Oct 2026 can still be "invited".
                         if (vm.invitedCount > 0) TabItem(UsersFilter.invited, l10n.usersFilterInvited(vm.invitedCount)),
+                        // D17: tablets registered on the tablet itself (A0).
+                        TabItem(UsersFilter.devices, l10n.usersFilterDevices(vm.deviceCount)),
                       ],
                     ),
                   ),
@@ -84,6 +88,7 @@ class UsersScreen extends StatelessWidget {
                       child: switch (vm.state) {
                         LoadState.loading => const StateView.loading(),
                         LoadState.error => StateView.message(message: l10n.stateLoadError),
+                        LoadState.ready when vm.effectiveFilter == UsersFilter.devices => _DevicesTable(vm: vm),
                         LoadState.ready => FitDataTable(
                             columns: [
                               TableColumnSpec(l10n.fieldName, flex: 4),
@@ -98,7 +103,7 @@ class UsersScreen extends StatelessWidget {
                               for (final m in rows)
                                 [
                                   CellText(m.label, primary: true),
-                                  CellText(m.email ?? '—'),
+                                  CellText([?m.email, ?m.userNumber].join(' · ').ifEmpty('—')),
                                   CellText(roleText(l10n, m.role)),
                                   CellText(m.service ?? (m.role == Role.manager ? '—' : l10n.allServices)),
                                   _MemberStatus(status: m.status),
@@ -132,6 +137,7 @@ class UsersScreen extends StatelessWidget {
       role: input.role,
       password: input.password,
       pin: input.pin,
+      userNumber: input.userNumber,
     );
     if (!context.mounted) return;
     showResult(
@@ -142,6 +148,7 @@ class UsersScreen extends StatelessWidget {
         'emailTaken' => l10n.emailTaken,
         'passwordTooShort' => l10n.passwordTooShort(UsersViewModel.minPasswordLength),
         'pinInvalid' => l10n.pinFourDigits,
+        'numberTaken' => l10n.userNumberTaken,
         _ => null,
       },
     );
@@ -310,7 +317,15 @@ Future<Role?> _showRoleDialog(BuildContext context, Role current) {
 }
 
 class _NewUser {
-  const _NewUser({required this.name, required this.email, required this.role, required this.password, required this.pin});
+  const _NewUser({
+    required this.name,
+    required this.email,
+    required this.role,
+    required this.password,
+    required this.pin,
+    this.userNumber,
+  });
+  final String? userNumber;
   final String name;
   final String email;
   final Role role;
@@ -325,6 +340,7 @@ Future<_NewUser?> _showCreateUserDialog(BuildContext context) {
   final formKey = GlobalKey<FormState>();
   final name = TextEditingController();
   final email = TextEditingController();
+  final number = TextEditingController();
   final password = TextEditingController();
   final password2 = TextEditingController();
   final pin = TextEditingController();
@@ -352,12 +368,31 @@ Future<_NewUser?> _showCreateUserDialog(BuildContext context) {
                     validator: (v) => (v == null || v.trim().isEmpty) ? l10n.validationEnterName : null,
                   ),
                   const SizedBox(height: IcSpace.s12),
-                  LabeledField(
-                    label: l10n.fieldEmail,
-                    controller: email,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) ? l10n.emailInvalid : null,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: LabeledField(
+                          label: l10n.fieldEmail,
+                          controller: email,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) => (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim()))
+                              ? l10n.emailInvalid
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: IcSpace.s12),
+                      // D17: optional; identifies the person on a tablet.
+                      Expanded(
+                        flex: 2,
+                        child: LabeledField(
+                          label: l10n.userNumberLabel,
+                          controller: number,
+                          inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: IcSpace.s12),
                   Text(l10n.columnUserType, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
@@ -439,6 +474,7 @@ Future<_NewUser?> _showCreateUserDialog(BuildContext context) {
                 role: role,
                 password: password.text,
                 pin: pin.text,
+                userNumber: number.text.trim().isEmpty ? null : number.text.trim(),
               ));
             },
           ),
@@ -500,6 +536,160 @@ Future<String?> _showPinDialog(BuildContext context, {required String title}) {
           },
         ),
       ],
+    ),
+  );
+}
+
+extension on String {
+  String ifEmpty(String fallback) => isEmpty ? fallback : this;
+}
+
+/// B7 › "Dispositivos" (D17): the registered tablets.
+class _DevicesTable extends StatelessWidget {
+  const _DevicesTable({required this.vm});
+  final UsersViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final format = IcFormat.of(context);
+    String registered(RegisteredDevice d) => [
+          ?d.registeredByName,
+          if (d.registeredAt != null) format.date(d.registeredAt!),
+        ].join(' · ').ifEmpty('—');
+    return FitDataTable(
+      columns: [
+        TableColumnSpec(l10n.fieldName, flex: 4),
+        TableColumnSpec(l10n.deviceCartsColumn, flex: 5),
+        TableColumnSpec(l10n.deviceRegisteredByColumn, flex: 4),
+        TableColumnSpec(l10n.columnState, flex: 3),
+        if (vm.canManage) const TableColumnSpec('', width: 56, alignEnd: true),
+      ],
+      emptyText: l10n.devicesEmpty,
+      rows: [
+        for (final d in vm.visibleDevices)
+          [
+            CellText(d.name, primary: true),
+            CellText(vm.cartNames(d)),
+            CellText(registered(d)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: StatusPill(
+                text: d.revoked ? l10n.deviceStateRevoked : l10n.deviceStateActive,
+                tone: d.revoked ? PillTone.neutral : PillTone.ok,
+              ),
+            ),
+            if (vm.canManage) d.revoked ? const SizedBox.shrink() : _DeviceMenu(vm: vm, device: d),
+          ],
+      ],
+    );
+  }
+}
+
+enum _DeviceAction { edit, revoke }
+
+class _DeviceMenu extends StatelessWidget {
+  const _DeviceMenu({required this.vm, required this.device});
+  final UsersViewModel vm;
+  final RegisteredDevice device;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return PopupMenuButton<_DeviceAction>(
+      tooltip: l10n.moreActions,
+      icon: const IcIconView(IcIcon.opcoes, size: 20, color: IcColors.textSecondary),
+      onSelected: (action) => _run(context, action),
+      itemBuilder: (_) => [
+        PopupMenuItem(value: _DeviceAction.edit, child: Text(l10n.deviceEdit)),
+        PopupMenuItem(value: _DeviceAction.revoke, child: Text(l10n.deviceRevoke)),
+      ],
+    );
+  }
+
+  Future<void> _run(BuildContext context, _DeviceAction action) async {
+    final l10n = AppLocalizations.of(context);
+    switch (action) {
+      case _DeviceAction.edit:
+        final input = await _showDeviceDialog(context, vm, device);
+        if (input == null || !context.mounted) return;
+        final result = await vm.updateDevice(device, name: input.$1, cartIds: input.$2);
+        if (!context.mounted) return;
+        showResult(context, result, success: l10n.deviceUpdated, failure: switch (result.code) {
+          'nameRequired' => l10n.validationEnterName,
+          'noCarts' => l10n.deviceSetupPickCart,
+          _ => null,
+        });
+      case _DeviceAction.revoke:
+        final ok = await confirmAction(
+          context,
+          title: l10n.deviceRevoke,
+          message: l10n.deviceRevokeConfirm(device.name),
+          confirmLabel: l10n.deviceRevoke,
+          destructive: true,
+        );
+        if (!ok || !context.mounted) return;
+        final result = await vm.revokeDevice(device);
+        if (!context.mounted) return;
+        showResult(context, result, success: l10n.deviceRevoked(device.name));
+    }
+  }
+}
+
+/// "Alterar" a tablet: its name and carts.
+Future<(String, List<String>)?> _showDeviceDialog(BuildContext context, UsersViewModel vm, RegisteredDevice device) {
+  final l10n = AppLocalizations.of(context);
+  final name = TextEditingController(text: device.name);
+  final selected = device.cartIds.toSet();
+  return showDialog<(String, List<String>)>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: Text(l10n.deviceEdit),
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LabeledField(
+                  label: l10n.deviceNameLabel,
+                  controller: name,
+                  autofocus: true,
+                  inputFormatters: [LengthLimitingTextInputFormatter(60)],
+                ),
+                const SizedBox(height: IcSpace.s12),
+                Text(l10n.deviceCartsLabel, style: IcText.labelS.copyWith(color: IcColors.textSecondary)),
+                for (final cart in vm.carts)
+                  InkWell(
+                    onTap: () => setState(() => selected.contains(cart.id) ? selected.remove(cart.id) : selected.add(cart.id)),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: selected.contains(cart.id),
+                          onChanged: (_) =>
+                              setState(() => selected.contains(cart.id) ? selected.remove(cart.id) : selected.add(cart.id)),
+                        ),
+                        Expanded(child: Text(cart.name, style: IcText.bodyM, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
+          IcButton(
+            label: l10n.actionSave,
+            onPressed: () => Navigator.of(context).pop((
+              name.text,
+              [for (final c in vm.carts) if (selected.contains(c.id)) c.id],
+            )),
+          ),
+        ],
+      ),
     ),
   );
 }

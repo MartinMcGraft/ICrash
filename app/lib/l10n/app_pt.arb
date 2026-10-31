@@ -1909,15 +1909,42 @@
   "checkPendingLabel": "Por resolver",
   "@checkPendingLabel": {},
   "checkToHandle": "{count, plural, =1{1 por resolver} other{{count} por resolver}}",
-  "@checkToHandle": {"placeholders": {"count": {"type": "int"}}},
+  "@checkToHandle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "checkHandled": "{count, plural, =1{1 resolvido} other{{count} resolvidos}}",
-  "@checkHandled": {"placeholders": {"count": {"type": "int"}}},
+  "@checkHandled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "checkOnlyFlaggedHelp": "Só aparecem os lotes expirados ou a expirar; o resto conta como válido. Cada resposta fica guardada logo.",
   "@checkOnlyFlaggedHelp": {},
   "checkNothingToHandle": "Nada expirado nem a expirar neste carro.",
   "@checkNothingToHandle": {},
   "checkStepSubtitle": "{cart} · {drawer} ({index} de {total})",
-  "@checkStepSubtitle": {"placeholders": {"cart": {"type": "String"}, "drawer": {"type": "String"}, "index": {"type": "int"}, "total": {"type": "int"}}},
+  "@checkStepSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "drawer": {
+        "type": "String"
+      },
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "checkStockWarning": "Ao confirmar, o stock do carro é atualizado. Esta resposta já não pode ser alterada.",
   "@checkStockWarning": {},
   "checkKeptHelp": "Fica no carro e volta a aparecer na próxima verificação.",
@@ -1927,9 +1954,21 @@
   "checkNewExpiryLabel": "Nova validade",
   "@checkNewExpiryLabel": {},
   "checkNewExpiryShort": "nova validade {date}",
-  "@checkNewExpiryShort": {"placeholders": {"date": {"type": "String"}}},
+  "@checkNewExpiryShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "checkUnits": "{count, plural, =1{1 unidade} other{{count} unidades}}",
-  "@checkUnits": {"placeholders": {"count": {"type": "int"}}},
+  "@checkUnits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "checkClearAnswer": "Limpar resposta",
   "@checkClearAnswer": {},
   "checkNewExpiryRequired": "Indique a nova validade.",
@@ -1941,7 +1980,13 @@
   "resumeCheck": "Retomar verificação",
   "@resumeCheck": {},
   "checkLotsTitle": "Lotes tratados ({count})",
-  "@checkLotsTitle": {"placeholders": {"count": {"type": "int"}}},
+  "@checkLotsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "leaveUnsignedTitle": "Relatório por assinar",
   "@leaveUnsignedTitle": {},
   "leaveUnsignedMessage": "Este relatório ainda não está assinado. Pode assiná-lo mais tarde em Relatórios → Por assinar.",
@@ -1951,13 +1996,28 @@
   "leaveUnsignedSignNow": "Assinar agora",
   "@leaveUnsignedSignNow": {},
   "usersFilterAdmins": "Admins ({count})",
-  "@usersFilterAdmins": {"placeholders": {"count": {"type": "int"}}},
+  "@usersFilterAdmins": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "actionRefresh": "Atualizar",
   "@actionRefresh": {},
   "navSupport": "Acesso do suporte",
   "@navSupport": {},
   "supportBanner": "Acesso do suporte · {institution} · termina às {until}",
-  "@supportBanner": {"placeholders": {"institution": {"type": "String"}, "until": {"type": "String"}}},
+  "@supportBanner": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
   "supportPickerTitle": "Acesso do suporte",
   "@supportPickerTitle": {},
   "supportPickerSubtitle": "Instituições que abriram acesso à equipa I-Crash",
@@ -1965,7 +2025,16 @@
   "supportPickerEmpty": "Nenhum pedido de acesso aberto.",
   "@supportPickerEmpty": {},
   "supportPickerUntil": "Até {until} · {reason}",
-  "@supportPickerUntil": {"placeholders": {"reason": {"type": "String"}, "until": {"type": "String"}}},
+  "@supportPickerUntil": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "until": {
+        "type": "String"
+      }
+    }
+  },
   "supportEnded": "O acesso do suporte terminou ou foi fechado pela instituição.",
   "@supportEnded": {},
   "supportTitle": "Acesso do suporte",
@@ -1997,9 +2066,21 @@
   "supportDurationLabel": "Duração",
   "@supportDurationLabel": {},
   "supportDurationHours": "{hours} h",
-  "@supportDurationHours": {"placeholders": {"hours": {"type": "int"}}},
+  "@supportDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "supportDurationDays": "{days, plural, =1{1 dia} other{{days} dias}}",
-  "@supportDurationDays": {"placeholders": {"days": {"type": "int"}}},
+  "@supportDurationDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "supportOpenAction": "Abrir acesso",
   "@supportOpenAction": {},
   "supportOpened": "Acesso do suporte aberto.",
@@ -2007,7 +2088,13 @@
   "supportReasonRequired": "Indique o motivo.",
   "@supportReasonRequired": {},
   "supportOpenTitle": "Acesso aberto até {until}",
-  "@supportOpenTitle": {"placeholders": {"until": {"type": "String"}}},
+  "@supportOpenTitle": {
+    "placeholders": {
+      "until": {
+        "type": "String"
+      }
+    }
+  },
   "supportGrantedBy": "Aberto por",
   "@supportGrantedBy": {},
   "supportSince": "Desde",
@@ -2017,5 +2104,127 @@
   "supportCloseConfirm": "A equipa I-Crash deixa de ter acesso a esta instituição imediatamente.",
   "@supportCloseConfirm": {},
   "supportClosed": "Acesso do suporte fechado.",
-  "@supportClosed": {}
+  "@supportClosed": {},
+  "roleDevice": "Dispositivo",
+  "@roleDevice": {},
+  "actionContinue": "Continuar",
+  "@actionContinue": {},
+  "deviceSetUp": "Configurar dispositivo",
+  "@deviceSetUp": {},
+  "deviceSetupAdminNote": "Um Administrador inicia sessão uma vez para registar este tablet. Depois, quem trabalha nos carros entra só com o PIN.",
+  "@deviceSetupAdminNote": {},
+  "deviceSetupNotAdmin": "Só um Administrador da instituição pode registar um tablet.",
+  "@deviceSetupNotAdmin": {},
+  "deviceSetupPickCart": "Escolha pelo menos um carro.",
+  "@deviceSetupPickCart": {},
+  "deviceSetupInstitution": "Instituição: {institution}",
+  "@deviceSetupInstitution": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceSetupNoCarts": "Esta instituição ainda não tem carros. Crie-os no Dashboard primeiro.",
+  "@deviceSetupNoCarts": {},
+  "deviceNameLabel": "Nome do tablet",
+  "@deviceNameLabel": {},
+  "deviceNameHint": "Ex.: Tablet Carro 3 · UCI",
+  "@deviceNameHint": {},
+  "deviceCartsLabel": "Carros deste tablet",
+  "@deviceCartsLabel": {},
+  "deviceRegister": "Registar tablet",
+  "@deviceRegister": {},
+  "deviceRegisteredTo": "Tablet registado em {institution}",
+  "@deviceRegisteredTo": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevokedTitle": "Este dispositivo foi desativado",
+  "@deviceRevokedTitle": {},
+  "deviceRevokedMessage": "Um Administrador revogou este tablet no Dashboard. Para o voltar a usar, configure-o de novo.",
+  "@deviceRevokedMessage": {},
+  "deviceNoPasswordNote": "Neste tablet não é preciso palavra-passe: identifique-se com o nº mecanográfico ou o e-mail e o seu PIN.",
+  "@deviceNoPasswordNote": {},
+  "deviceRemoveRegistration": "Remover registo deste tablet",
+  "@deviceRemoveRegistration": {},
+  "deviceRemoveNote": "Só um Administrador. O registo continua no Dashboard até ser revogado.",
+  "@deviceRemoveNote": {},
+  "deviceIdentifyTitle": "Identificação",
+  "@deviceIdentifyTitle": {},
+  "deviceIdentifierLabel": "Nº mecanográfico ou e-mail",
+  "@deviceIdentifierLabel": {},
+  "deviceSignInHint": "Escreva o nº mecanográfico ou o e-mail e marque o PIN.",
+  "@deviceSignInHint": {},
+  "deviceEnterIdentifierFirst": "Escreva primeiro o nº mecanográfico ou o e-mail.",
+  "@deviceEnterIdentifierFirst": {},
+  "deviceWrongCredentials": "{count, plural, =1{Nº/e-mail ou PIN errado. Resta 1 tentativa.} other{Nº/e-mail ou PIN errado. Restam {count} tentativas.}}",
+  "@deviceWrongCredentials": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceNoPin": "A administração ainda não definiu o seu PIN.",
+  "@deviceNoPin": {},
+  "deviceRemoveNotAdmin": "Só um Administrador pode remover o registo.",
+  "@deviceRemoveNotAdmin": {},
+  "deviceNoCartsForPerson": "Não está registado em nenhum carro deste tablet.",
+  "@deviceNoCartsForPerson": {},
+  "deviceNotOnCart": "Não está registado neste carro.",
+  "@deviceNotOnCart": {},
+  "deviceNoticeIdle": "Sessão terminada por inatividade.",
+  "@deviceNoticeIdle": {},
+  "deviceNoticeTooManyAttempts": "Demasiadas tentativas erradas. Tente de novo.",
+  "@deviceNoticeTooManyAttempts": {},
+  "deviceNoticeSignInFailed": "O tablet não conseguiu ligar-se. Verifique a rede e tente de novo.",
+  "@deviceNoticeSignInFailed": {},
+  "usersFilterDevices": "Dispositivos ({count})",
+  "@usersFilterDevices": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "devicesEmpty": "Nenhum tablet registado. Um tablet regista-se nele próprio, em \"Configurar dispositivo\".",
+  "@devicesEmpty": {},
+  "deviceCartsColumn": "Carros",
+  "@deviceCartsColumn": {},
+  "deviceRegisteredByColumn": "Registado por",
+  "@deviceRegisteredByColumn": {},
+  "deviceStateActive": "Ativo",
+  "@deviceStateActive": {},
+  "deviceStateRevoked": "Revogado",
+  "@deviceStateRevoked": {},
+  "deviceEdit": "Alterar nome e carros",
+  "@deviceEdit": {},
+  "deviceRevoke": "Revogar",
+  "@deviceRevoke": {},
+  "deviceRevokeConfirm": "\"{name}\" deixa de funcionar no próximo acesso. Para o voltar a usar é preciso configurá-lo de novo.",
+  "@deviceRevokeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevoked": "\"{name}\" revogado.",
+  "@deviceRevoked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceUpdated": "Tablet atualizado.",
+  "@deviceUpdated": {},
+  "userNumberLabel": "Nº mecanográfico",
+  "@userNumberLabel": {},
+  "userNumberTaken": "Já existe um utilizador com este nº mecanográfico.",
+  "@userNumberTaken": {}
 }

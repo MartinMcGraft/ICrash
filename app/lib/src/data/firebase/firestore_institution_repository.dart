@@ -113,6 +113,7 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
     required String pinHash,
     required Role role,
     String? displayName,
+    String? userNumber,
   }) async {
     try {
       final isolatedAuth = await createIsolatedAccountCreationAuth();
@@ -133,6 +134,8 @@ class FirestoreInstitutionRepository implements InstitutionRepository {
         // fall back to showing raw uids. Rules allow extra fields on create.
         'email': email,
         if (displayName != null && displayName.trim().isNotEmpty) 'displayName': displayName.trim(),
+        // D17: nº mecanográfico, to identify on a registered tablet.
+        if (userNumber != null && userNumber.trim().isNotEmpty) 'userNumber': userNumber.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });

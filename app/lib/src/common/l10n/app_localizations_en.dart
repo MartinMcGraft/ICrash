@@ -2603,4 +2603,164 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportClosed => 'Support access closed.';
+
+  @override
+  String get roleDevice => 'Device';
+
+  @override
+  String get actionContinue => 'Continue';
+
+  @override
+  String get deviceSetUp => 'Set up device';
+
+  @override
+  String get deviceSetupAdminNote =>
+      'An Admin signs in once to register this tablet. Then the people who work on the carts sign in with their PIN only.';
+
+  @override
+  String get deviceSetupNotAdmin =>
+      'Only an Admin of the institution can register a tablet.';
+
+  @override
+  String get deviceSetupPickCart => 'Pick at least one cart.';
+
+  @override
+  String deviceSetupInstitution(String institution) {
+    return 'Institution: $institution';
+  }
+
+  @override
+  String get deviceSetupNoCarts =>
+      'This institution has no carts yet. Create them on the Dashboard first.';
+
+  @override
+  String get deviceNameLabel => 'Tablet name';
+
+  @override
+  String get deviceNameHint => 'E.g. Tablet Cart 3 · ICU';
+
+  @override
+  String get deviceCartsLabel => 'Carts on this tablet';
+
+  @override
+  String get deviceRegister => 'Register tablet';
+
+  @override
+  String deviceRegisteredTo(String institution) {
+    return 'Tablet registered to $institution';
+  }
+
+  @override
+  String get deviceRevokedTitle => 'This device was deactivated';
+
+  @override
+  String get deviceRevokedMessage =>
+      'An Admin revoked this tablet on the Dashboard. To use it again, set it up again.';
+
+  @override
+  String get deviceNoPasswordNote =>
+      'No password on this tablet: identify yourself with your staff number or e-mail and your PIN.';
+
+  @override
+  String get deviceRemoveRegistration => 'Remove this tablet\'s registration';
+
+  @override
+  String get deviceRemoveNote =>
+      'Admins only. The registration stays on the Dashboard until it\'s revoked.';
+
+  @override
+  String get deviceIdentifyTitle => 'Identification';
+
+  @override
+  String get deviceIdentifierLabel => 'Staff number or e-mail';
+
+  @override
+  String get deviceSignInHint =>
+      'Type your staff number or e-mail, then your PIN.';
+
+  @override
+  String get deviceEnterIdentifierFirst =>
+      'Type your staff number or e-mail first.';
+
+  @override
+  String deviceWrongCredentials(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Wrong number/e-mail or PIN. $count attempts left.',
+      one: 'Wrong number/e-mail or PIN. 1 attempt left.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deviceNoPin => 'The administration hasn\'t set your PIN yet.';
+
+  @override
+  String get deviceRemoveNotAdmin =>
+      'Only an Admin can remove the registration.';
+
+  @override
+  String get deviceNoCartsForPerson =>
+      'You aren\'t registered to any cart on this tablet.';
+
+  @override
+  String get deviceNotOnCart => 'You aren\'t registered to this cart.';
+
+  @override
+  String get deviceNoticeIdle => 'Session ended after inactivity.';
+
+  @override
+  String get deviceNoticeTooManyAttempts =>
+      'Too many wrong attempts. Try again.';
+
+  @override
+  String get deviceNoticeSignInFailed =>
+      'The tablet couldn\'t connect. Check the network and try again.';
+
+  @override
+  String usersFilterDevices(int count) {
+    return 'Devices ($count)';
+  }
+
+  @override
+  String get devicesEmpty =>
+      'No registered tablets. A tablet is registered on the tablet itself, under \"Set up device\".';
+
+  @override
+  String get deviceCartsColumn => 'Carts';
+
+  @override
+  String get deviceRegisteredByColumn => 'Registered by';
+
+  @override
+  String get deviceStateActive => 'Active';
+
+  @override
+  String get deviceStateRevoked => 'Revoked';
+
+  @override
+  String get deviceEdit => 'Change name and carts';
+
+  @override
+  String get deviceRevoke => 'Revoke';
+
+  @override
+  String deviceRevokeConfirm(String name) {
+    return '\"$name\" stops working at its next request. To use it again it must be set up again.';
+  }
+
+  @override
+  String deviceRevoked(String name) {
+    return '\"$name\" revoked.';
+  }
+
+  @override
+  String get deviceUpdated => 'Tablet updated.';
+
+  @override
+  String get userNumberLabel => 'Staff number';
+
+  @override
+  String get userNumberTaken => 'A user with this staff number already exists.';
 }

@@ -8,6 +8,7 @@ import 'package:icrash_app/src/domain/entities/cart_report.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
+import 'package:icrash_app/src/domain/entities/registered_device.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/shift.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
@@ -225,6 +226,57 @@ void main() {
   });
 
   group('B7 UsersViewModel', () {
+    test('D17: the nº mecanográfico is stored and must be unique', () async {
+      final institutions = FakeInstitutionRepository();
+      final services = buildTestServices(institutions: institutions);
+      final vm = UsersViewModel(services, _session(services));
+      await _settle();
+      expect(
+        (await vm.createUser(name: 'Ana', email: 'ana@h.pt', role: Role.manager, password: 'segura-123', pin: '2468', userNumber: ' 2002 '))
+            .isOk,
+        isTrue,
+      );
+      expect(institutions.members.single.userNumber, '2002');
+      await _settle();
+      expect(
+        (await vm.createUser(name: 'Rui', email: 'rui@h.pt', role: Role.manager, password: 'segura-123', pin: '2468', userNumber: '2002'))
+            .code,
+        'numberTaken',
+      );
+      vm.dispose();
+    });
+
+    test("D17: tablets aren't people; the Dispositivos tab lists them, changes and revokes them", () async {
+      final devices = FakeDeviceRepository(devices: [
+        const RegisteredDevice(id: 'd1', institutionId: 'inst', name: 'Tablet UCI', cartIds: ['c1'], authUid: 'auth-d1'),
+      ]);
+      final services = buildTestServices(
+        institutions: FakeInstitutionRepository(members: [
+          const Membership(uid: 'ana', institutionId: 'inst', role: Role.manager, status: MembershipStatus.active, displayName: 'Ana'),
+          const Membership(uid: 'auth-d1', institutionId: 'inst', role: Role.device, status: MembershipStatus.active, displayName: 'Tablet UCI'),
+        ]),
+        carts: FakeCartRepository(carts: [
+          const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1'),
+          const Cart(id: 'c2', institutionId: 'inst', name: 'Carro 2'),
+        ]),
+        devices: devices,
+      );
+      final vm = UsersViewModel(services, _session(services));
+      await _settle();
+      expect(vm.total, 1);
+      expect(vm.deviceCount, 1);
+      expect(vm.cartNames(vm.devices.single), 'Carro 1');
+      expect((await vm.updateDevice(vm.devices.single, name: 'Tablet UCI', cartIds: const [])).code, 'noCarts');
+      expect((await vm.updateDevice(vm.devices.single, name: ' Tablet UCI 2 ', cartIds: const ['c1', 'c2'])).isOk, isTrue);
+      expect(devices.devices.single.name, 'Tablet UCI 2');
+      expect(devices.devices.single.cartIds, ['c1', 'c2']);
+      expect((await vm.revokeDevice(devices.devices.single)).isOk, isTrue);
+      await _settle();
+      expect(vm.devices.single.revoked, isTrue);
+      expect(vm.deviceCount, 0);
+      vm.dispose();
+    });
+
     test('the administrator creates a user with the password and PIN they chose (DB3)', () async {
       final institutions = FakeInstitutionRepository();
       final services = buildTestServices(institutions: institutions);

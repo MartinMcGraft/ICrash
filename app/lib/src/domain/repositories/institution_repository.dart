@@ -31,6 +31,7 @@ abstract class InstitutionRepository {
     required String pinHash,
     required Role role,
     String? displayName,
+    String? userNumber,
   });
 
   /// Changes an existing member's role. Institution admin only; a member can

@@ -24,6 +24,8 @@ class SessionController extends ViewModel {
     required this.institutionCount,
     this.scopedCartId,
     this.supportWindow,
+    this.allowedCartIds,
+    this.deviceName,
   }) {
     listen(services.institutions.watchMembers(institution.id), (members) {
       _members = {for (final m in members) m.uid: m};
@@ -53,6 +55,21 @@ class SessionController extends ViewModel {
   /// window; the shells show a banner until it ends.
   final SupportWindow? supportWindow;
 
+  /// D17: on a registered tablet, the carts this person may open there (the
+  /// tablet's carts they're registered to; all of them for an Admin).
+  final Set<String>? allowedCartIds;
+
+  /// D17: set when the person signed in on a registered tablet. Firebase is
+  /// signed in as the tablet, so the session can do only what a Manager on
+  /// the tablet's carts may do: no structure, users or credentials.
+  final String? deviceName;
+
+  bool get onDevice => deviceName != null;
+
+  /// Whether this session may open [cartId] (A3 cart login, D17 tablet).
+  bool mayOpenCart(String cartId) =>
+      (scopedCartId == null || cartId == scopedCartId) && (allowedCartIds == null || allowedCartIds!.contains(cartId));
+
   Map<String, Membership> _members = {};
   Map<String, EmergencySession> _emergencies = {};
   Map<Role, Set<AppPermission>> _permissions = {};
@@ -63,11 +80,12 @@ class SessionController extends ViewModel {
   /// D16: an **Admin** (or Super) does everything in the institution: every
   /// cart, the structure (drawers, grid, catalogue, templates), users and
   /// shifts. Firestore Rules enforce the same split.
-  bool get isInstitutionAdmin => _active && (role == Role.institutionAdmin || role == Role.platformSuperAdmin);
+  bool get isInstitutionAdmin =>
+      _active && !onDevice && (role == Role.institutionAdmin || role == Role.platformSuperAdmin);
 
   /// The institution's own Admin, never Super: opens support access (D18)
   /// and sets credentials.
-  bool get isOwnAdmin => _active && role == Role.institutionAdmin;
+  bool get isOwnAdmin => _active && !onDevice && role == Role.institutionAdmin;
 
   /// UI permission toggles (stub, B7) on top of the role.
   bool can(AppPermission permission) =>

@@ -20,8 +20,8 @@ weak points listed in §4.
 - The **device account** is an ordinary Firebase Auth user created the way B7 already
   creates people (isolated `FirebaseAuth` on a secondary app): e-mail
   `device-{deviceId}@{institutionId}.devices.icrash.invalid` and a long random password.
-- The tablet keeps the device credentials locally (SharedPreferences under
-  `icrash.local.device`; no secure storage package in the app yet — see §4).
+- The tablet keeps the device credentials locally (`flutter_secure_storage` under
+  `icrash.local.device` on Android/iOS — see §4).
 
 ### 1.2 Flow
 
@@ -122,8 +122,9 @@ Each step: emulator rules tests + Flutter tests, one commit.
   PIN itself and never send hashes.
 - **The Rules can't prove who typed the PIN:** a device could write with any member's
   `actorUid`. They only check that the member exists, is active and may use that cart.
-- **Device credentials are stored in SharedPreferences**, not in the OS keychain. Adding
-  `flutter_secure_storage` would fix it (new dependency, needs Martim's OK).
+- **Device credentials:** in the OS keychain / keystore with `flutter_secure_storage` on
+  Android and iOS (approved 30 Oct, done 31 Oct). Other platforms (not used as cart tablets)
+  fall back to SharedPreferences, so macOS debug builds need no keychain entitlement.
 - **Reads by Super aren't logged by the server**, only the app's `enter`/`leave` entries;
   a modified client could skip them. The rules still refuse everything outside a grant.
 - No Cloud Functions: grants end by time comparison in the rules, not by a job.

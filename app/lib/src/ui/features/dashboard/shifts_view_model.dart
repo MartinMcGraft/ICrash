@@ -26,7 +26,8 @@ class ShiftsViewModel extends ViewModel {
       notify();
     }, onError: (_) {});
     listen(services.institutions.watchMembers(id), (v) {
-      members = v.where((m) => m.status != MembershipStatus.disabled).toList()
+      // D17: a tablet's account isn't on shifts.
+      members = v.where((m) => m.status != MembershipStatus.disabled && m.role != Role.device).toList()
         ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
       notify();
     }, onError: (_) {});

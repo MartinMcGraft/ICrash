@@ -754,6 +754,87 @@ describe('support access: Super only inside a window the Admin opens (D18)', () 
   });
 });
 
+describe('registered tablets act for the person signed in on them (D17)', () => {
+  const DEVICE_UID = 'device-1';
+  const cartPath = `institutions/${INST_A}/carts/${CART_ID}`;
+  const events = `institutions/${INST_A}/usageEvents`;
+  const event = (actorUid) => ({
+    actorUid, cartId: CART_ID, assignmentId: ASSIGNMENT_ID, productId: 'product-1', type: 'consumption', amount: -1,
+  });
+
+  async function seedDevice({ status = 'active' } = {}) {
+    await seedBaseline();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, `institutions/${INST_A}/memberships/${DEVICE_UID}`), { uid: DEVICE_UID, role: 'device', status, deviceId: 'd1' });
+      await setDoc(doc(db, `institutions/${INST_A}/devices/d1`), { name: 'Tablet Carro 1', cartIds: [CART_ID], authUid: DEVICE_UID });
+      await setDoc(doc(db, `institutions/${INST_A}/devices/d2`), { name: 'Outro', cartIds: [], authUid: 'device-2' });
+      await setDoc(doc(db, `${cartPath}/responsibleUsers/${DEVICE_UID}`), { uid: DEVICE_UID });
+      await updateDoc(doc(db, cartPath), { responsibleUserIds: [USER_UID, REG_MANAGER_UID, DEVICE_UID] });
+      await setDoc(doc(db, `institutions/${INST_A}/carts/cart-2`), { name: 'Cart 2', status: 'operational', layoutVersion: 1, responsibleUserIds: [] });
+      await setDoc(doc(db, `institutions/${INST_A}/memberships/${REG_MANAGER_UID}/private/credentials`), {
+        pinHash: 'pbkdf2-sha256$60000$c2FsdA==$aGFzaA==',
+      });
+    });
+  }
+
+  test('a tablet reads its bound cart, its own device document and the PIN hashes; nothing else', async () => {
+    await seedDevice();
+    const db = testEnv.authenticatedContext(DEVICE_UID).firestore();
+    await assertSucceeds(getDoc(doc(db, cartPath)));
+    await assertFails(getDoc(doc(db, `institutions/${INST_A}/carts/cart-2`)));
+    await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/devices/d1`)));
+    await assertFails(getDoc(doc(db, `institutions/${INST_A}/devices/d2`)));
+    await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/memberships/${REG_MANAGER_UID}/private/credentials`)));
+    const q = query(collection(db, `institutions/${INST_A}/carts`), where('responsibleUserIds', 'array-contains', DEVICE_UID));
+    const snapshot = await assertSucceeds(getDocs(q));
+    assert.deepEqual(snapshot.docs.map((d) => d.id), [CART_ID]);
+  });
+
+  test('a tablet records History for a person allowed on the cart, never as itself or for anyone else', async () => {
+    await seedDevice();
+    const db = testEnv.authenticatedContext(DEVICE_UID).firestore();
+    await assertSucceeds(addDoc(collection(db, events), event(REG_MANAGER_UID)));
+    await assertSucceeds(addDoc(collection(db, events), event(ADMIN_UID)));
+    await assertFails(addDoc(collection(db, events), event(DEVICE_UID)));
+    await assertFails(addDoc(collection(db, events), event(USER2_UID)));
+    await assertFails(addDoc(collection(db, events), event(MANAGER_UID)));
+    await assertFails(addDoc(collection(db, events), event('nobody')));
+    // A person on a personal device still writes only as themselves.
+    await assertFails(addDoc(collection(testEnv.authenticatedContext(REG_MANAGER_UID).firestore(), events), event(USER_UID)));
+  });
+
+  test('a tablet changes stock on its cart, but no structure, members or devices', async () => {
+    await seedDevice();
+    const db = testEnv.authenticatedContext(DEVICE_UID).firestore();
+    await assertSucceeds(updateDoc(doc(db, `${cartPath}/assignments/${ASSIGNMENT_ID}`), { currentQuantity: 4, updatedBy: REG_MANAGER_UID }));
+    await assertFails(setDoc(doc(db, `${cartPath}/drawers/d-x`), { number: 5, rows: 1, columns: 1 }));
+    await assertFails(updateDoc(doc(db, `institutions/${INST_A}/memberships/${USER_UID}`), { role: 'institutionAdmin' }));
+    await assertFails(updateDoc(doc(db, `institutions/${INST_A}/devices/d1`), { cartIds: [CART_ID, 'cart-2'] }));
+  });
+
+  test('a revoked tablet is refused at its next request', async () => {
+    await seedDevice({ status: 'disabled' });
+    const db = testEnv.authenticatedContext(DEVICE_UID).firestore();
+    await assertFails(getDoc(doc(db, cartPath)));
+    await assertFails(getDoc(doc(db, `institutions/${INST_A}/memberships/${REG_MANAGER_UID}/private/credentials`)));
+    await assertFails(addDoc(collection(db, events), event(REG_MANAGER_UID)));
+    // It can still read its own device document, to show it was revoked.
+    await assertSucceeds(getDoc(doc(db, `institutions/${INST_A}/devices/d1`)));
+  });
+
+  test('the Admin registers and revokes tablets; a Manager can\'t', async () => {
+    await seedDevice();
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(setDoc(doc(admin, `institutions/${INST_A}/devices/d3`), { name: 'Novo', cartIds: [CART_ID], authUid: 'device-3' }));
+    await assertSucceeds(setDoc(doc(admin, `institutions/${INST_A}/memberships/device-3`), { uid: 'device-3', role: 'device', status: 'active' }));
+    await assertSucceeds(updateDoc(doc(admin, `institutions/${INST_A}/devices/d1`), { revokedAt: serverTimestamp() }));
+    const manager = testEnv.authenticatedContext(REG_MANAGER_UID).firestore();
+    await assertFails(setDoc(doc(manager, `institutions/${INST_A}/devices/d4`), { name: 'X', cartIds: [], authUid: 'device-4' }));
+    await assertFails(getDoc(doc(manager, `institutions/${INST_A}/devices/d1`)));
+  });
+});
+
 describe('credentials are set by the administration only (DB3)', () => {
   const credPath = (uid) => `institutions/${INST_A}/memberships/${uid}/private/credentials`;
   const HASH = 'pbkdf2-sha256$60000$c2FsdC1mb3ItdGVzdHMtMQ==$yGloleHkdAyoaW/Eb0SMpPM7gAhWmYdCkJvDYomXLK0=';

@@ -1614,5 +1614,90 @@
   "supportSince": "Since",
   "supportCloseAction": "Close access now",
   "supportCloseConfirm": "The I-Crash team loses access to this institution at once.",
-  "supportClosed": "Support access closed."
+  "supportClosed": "Support access closed.",
+  "roleDevice": "Device",
+  "actionContinue": "Continue",
+  "deviceSetUp": "Set up device",
+  "deviceSetupAdminNote": "An Admin signs in once to register this tablet. Then the people who work on the carts sign in with their PIN only.",
+  "deviceSetupNotAdmin": "Only an Admin of the institution can register a tablet.",
+  "deviceSetupPickCart": "Pick at least one cart.",
+  "deviceSetupInstitution": "Institution: {institution}",
+  "@deviceSetupInstitution": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceSetupNoCarts": "This institution has no carts yet. Create them on the Dashboard first.",
+  "deviceNameLabel": "Tablet name",
+  "deviceNameHint": "E.g. Tablet Cart 3 · ICU",
+  "deviceCartsLabel": "Carts on this tablet",
+  "deviceRegister": "Register tablet",
+  "deviceRegisteredTo": "Tablet registered to {institution}",
+  "@deviceRegisteredTo": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevokedTitle": "This device was deactivated",
+  "deviceRevokedMessage": "An Admin revoked this tablet on the Dashboard. To use it again, set it up again.",
+  "deviceNoPasswordNote": "No password on this tablet: identify yourself with your staff number or e-mail and your PIN.",
+  "deviceRemoveRegistration": "Remove this tablet's registration",
+  "deviceRemoveNote": "Admins only. The registration stays on the Dashboard until it's revoked.",
+  "deviceIdentifyTitle": "Identification",
+  "deviceIdentifierLabel": "Staff number or e-mail",
+  "deviceSignInHint": "Type your staff number or e-mail, then your PIN.",
+  "deviceEnterIdentifierFirst": "Type your staff number or e-mail first.",
+  "deviceWrongCredentials": "{count, plural, =1{Wrong number/e-mail or PIN. 1 attempt left.} other{Wrong number/e-mail or PIN. {count} attempts left.}}",
+  "@deviceWrongCredentials": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceNoPin": "The administration hasn't set your PIN yet.",
+  "deviceRemoveNotAdmin": "Only an Admin can remove the registration.",
+  "deviceNoCartsForPerson": "You aren't registered to any cart on this tablet.",
+  "deviceNotOnCart": "You aren't registered to this cart.",
+  "deviceNoticeIdle": "Session ended after inactivity.",
+  "deviceNoticeTooManyAttempts": "Too many wrong attempts. Try again.",
+  "deviceNoticeSignInFailed": "The tablet couldn't connect. Check the network and try again.",
+  "usersFilterDevices": "Devices ({count})",
+  "@usersFilterDevices": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "devicesEmpty": "No registered tablets. A tablet is registered on the tablet itself, under \"Set up device\".",
+  "deviceCartsColumn": "Carts",
+  "deviceRegisteredByColumn": "Registered by",
+  "deviceStateActive": "Active",
+  "deviceStateRevoked": "Revoked",
+  "deviceEdit": "Change name and carts",
+  "deviceRevoke": "Revoke",
+  "deviceRevokeConfirm": "\"{name}\" stops working at its next request. To use it again it must be set up again.",
+  "@deviceRevokeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevoked": "\"{name}\" revoked.",
+  "@deviceRevoked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceUpdated": "Tablet updated.",
+  "userNumberLabel": "Staff number",
+  "userNumberTaken": "A user with this staff number already exists."
 }

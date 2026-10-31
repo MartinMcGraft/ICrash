@@ -7,8 +7,12 @@
 /// - [manager] = **Manager**, a health professional with full access to the
 ///   carts they're registered to.
 ///
+/// - [device] = a **registered tablet** (D17): its own account, bound to some
+///   carts; people sign in on it with their number/e-mail and PIN, and the
+///   session runs as that person. Never a person's type.
+///
 /// The old `user` role is gone: stored `user` memberships read as [manager].
-enum Role { platformSuperAdmin, institutionAdmin, manager }
+enum Role { platformSuperAdmin, institutionAdmin, manager, device }
 
 extension RoleCodec on Role {
   String get id => name;

@@ -775,13 +775,69 @@ Frame ids read on 30 Oct 2026.
   - Banner (amber, full width, top): "Acesso do suporte · {instituição} · termina às {hora}".
 - **Copy:** the `support*` keys, `navSupport`, `actionRefresh`.
 
+### DC-57 · A1 on a tablet: "Configurar dispositivo"; A1 of a registered tablet (D17)
+- **Where:** A1 (all A1 frames); new variant "A1 · tablet registado" (no frame).
+- **What:**
+  - Unregistered A1 on a tablet: ghost button **"Configurar dispositivo"** (icon opções) under
+    "Desbloquear com PIN / Entrar no carro". Not on phones (personal devices; A1 must fit).
+  - Registered A1: brand panel with the institution; right side: title = tablet name
+    ("Tablet Carro 3 · UCI"), "Tablet registado em {instituição}", optional info notice
+    ("Sessão terminada por inatividade.", "Demasiadas tentativas erradas…"), **Entrar com PIN**
+    (primary, L), **Entrar no carro** (secondary, L), note "Neste tablet não é preciso
+    palavra-passe…", ghost **"Remover registo deste tablet"**. No e-mail/password fields.
+  - Revoked: critical notice "Este dispositivo foi desativado" + "Um Administrador revogou…",
+    primary **Configurar dispositivo**.
+- **Copy:** `deviceSetUp`, `deviceRegisteredTo`, `deviceNoPasswordNote`,
+  `deviceRemoveRegistration`, `deviceRevokedTitle`, `deviceRevokedMessage`, `deviceNotice*`.
+
+### DC-58 · A0 · Configurar dispositivo (new screen, D17)
+- **Where:** new frame after A1 (no frame yet).
+- **What:** A1's brand panel; right, title "Configurar dispositivo".
+  - Step 1: "Um Administrador inicia sessão uma vez…", E-mail, Palavra-passe, **Cancelar** /
+    **Continuar**. Error "Só um Administrador da instituição pode registar um tablet."
+  - Step 2: "Instituição: {nome}", **Nome do tablet** (hint "Ex.: Tablet Carro 3 · UCI", 60
+    chars), **Carros deste tablet** (checkbox per cart, "Carro · Serviço · Local"),
+    **Cancelar** / **Registar tablet** (disabled until a name and ≥ 1 cart).
+- **Copy:** `deviceSetupAdminNote`, `deviceSetupNotAdmin`, `deviceSetupInstitution`,
+  `deviceNameLabel`, `deviceNameHint`, `deviceCartsLabel`, `deviceRegister`,
+  `deviceSetupPickCart`, `deviceSetupNoCarts`, `actionContinue`.
+
+### DC-59 · A2b · Identificação (new screen, D17)
+- **Where:** new frame next to A2.
+- **What:** like A2 with the person replaced by a form: title "Identificação" (or "Remover
+  registo deste tablet"), subtitle tablet name, field **"Nº mecanográfico ou e-mail"**, label
+  PIN + 4 dots, hint "Escreva o nº mecanográfico ou o e-mail e marque o PIN.", ghost
+  **Cancelar**; A2's keypad on the right. Errors in the hint line (red): "Nº/e-mail ou PIN
+  errado. Restam N tentativas." (same text for an unknown number), "A administração ainda não
+  definiu o seu PIN.", "Não está registado em nenhum carro deste tablet.", "Não está registado
+  neste carro.", "Só um Administrador pode remover o registo."
+- **Copy:** `deviceIdentify*`, `deviceIdentifierLabel`, `deviceSignInHint`,
+  `deviceEnterIdentifierFirst`, `deviceWrongCredentials`, `deviceNoPin`,
+  `deviceNoCartsForPerson`, `deviceNotOnCart`, `deviceRemoveNotAdmin`, `deviceRemoveNote`.
+
+### DC-60 · B7: "Dispositivos" tab and nº mecanográfico (D17)
+- **Where:** B7 (p20/p21 users frames).
+- **What:**
+  - Tab **"Dispositivos (n)"** after the people tabs (n = active tablets). Table: Nome, Carros
+    ("Carro 1, Carro 3"), Registado por ("Rita Lopes · 30 out 2026"), Estado (Ativo /
+    Revogado pill), menu **Alterar nome e carros** (dialog: name + cart checkboxes) and
+    **Revogar** (danger confirm). Empty: "Nenhum tablet registado. Um tablet regista-se nele
+    próprio, em "Configurar dispositivo"."
+  - "Criar utilizador": **E-mail** and **Nº mecanográfico** (optional) side by side. The people
+    table's E-mail column shows "email · nº".
+  - Tablet accounts never appear in the people tabs.
+- **Copy:** `usersFilterDevices`, `devicesEmpty`, `deviceCartsColumn`,
+  `deviceRegisteredByColumn`, `deviceState*`, `deviceEdit`, `deviceRevoke*`, `deviceUpdated`,
+  `userNumberLabel`, `userNumberTaken`.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
 |---|---|---|
 | **Emergency mode hidden**, not removed: the A10 frames, the A5 button (DC-08), p04 section `459:338`, B1 "Emergências este mês" (p21 `I456:432;444:701`, p20 `458:328`) and "Modo de emergência · 6 consumos" (`I456:523;444:691`), B7 permission "Usar o modo de emergência" (`I456:2214;442:640`), B9 "Resumo de emergência" | A10 p10 `455:900`, p11 `454:1226`, p12 `451:1540`, p13 `449:1496`; B1, B7, B9 | P12 |
 | ~~A8 rewrite~~ done on 30 Oct (DC-53) | — | — |
-| **Login by `userNumber`** (or the hospital's directory) instead of e-mail; A2 checked by the server | A1, A2, A3; B7 create dialog (number field) | DB3 login method, defined last |
+| **Login by `userNumber`** (or the hospital's directory) instead of e-mail on personal devices; A2 checked by the server (on tablets the number works since DC-59) | A1, A2, A3 | DB3 login method, defined last |
+| Setting the nº mecanográfico of an existing member (only "Criar utilizador" has the field) | B7 member menu | — |
 | One institution per user: the institution picker and "Mudar de instituição" go | Picker, Profile menu | Out of scope |
 | **Departments** (with floor) instead of free-text "Serviço" | B2, B3 "Serviço", A4/A5 subtitles | DATABASE.md DEPARTMENT |
 | Discard and Count history types; same-date batch merge; first stock when a cart is configured | A6 panels, A7, B9 filters | P7, P10, P6/P19 |
@@ -815,3 +871,4 @@ Frame ids read on 30 Oct 2026.
 | B7 | 4 (DC-36 … DC-38, DC-40) |
 | B9 | 1 (DC-39) |
 | 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles, support access) | DC-41 … DC-56 |
+| D17 registered tablets (A1, A0, A2b, B7) | DC-57 … DC-60 |

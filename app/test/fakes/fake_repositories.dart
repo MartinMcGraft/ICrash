@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/common/repository_failure.dart';
+import 'package:icrash_app/src/data/local/device_credential_store.dart';
 import 'package:icrash_app/src/data/local/local_store.dart';
 import 'package:icrash_app/src/domain/entities/batch.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
@@ -12,6 +13,7 @@ import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
+import 'package:icrash_app/src/domain/entities/registered_device.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/slot.dart';
 import 'package:icrash_app/src/domain/entities/support_access.dart';
@@ -22,6 +24,7 @@ import 'package:icrash_app/src/domain/repositories/audit_repository.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/domain/repositories/cart_repository.dart';
 import 'package:icrash_app/src/domain/repositories/credential_repository.dart';
+import 'package:icrash_app/src/domain/repositories/device_repository.dart';
 import 'package:icrash_app/src/domain/repositories/drawer_repository.dart';
 import 'package:icrash_app/src/domain/repositories/institution_repository.dart';
 import 'package:icrash_app/src/domain/repositories/inventory_repository.dart';
@@ -95,6 +98,10 @@ class FakeInstitutionRepository extends UnimplementedFake implements Institution
   Future<Membership?> getMyMembership(String institutionId) async => myMembership;
 
   @override
+  Future<Institution?> getInstitution(String institutionId) async =>
+      institutions.where((i) => i.id == institutionId).firstOrNull;
+
+  @override
   Stream<List<Membership>> watchMembers(String institutionId) {
     scheduleMicrotask(_emitMembers);
     return _membersController.stream;
@@ -108,6 +115,7 @@ class FakeInstitutionRepository extends UnimplementedFake implements Institution
     required String pinHash,
     required Role role,
     String? displayName,
+    String? userNumber,
   }) async {
     if (createMemberError != null) throw createMemberError!;
     final uid = 'member-${_nextUid++}';
@@ -120,6 +128,7 @@ class FakeInstitutionRepository extends UnimplementedFake implements Institution
       status: MembershipStatus.active,
       email: email,
       displayName: displayName,
+      userNumber: userNumber,
     ));
     _emitMembers();
   }
@@ -727,6 +736,78 @@ class FakeSupportRepository implements SupportRepository {
       ];
 }
 
+/// In-memory D17 tablets.
+class FakeDeviceRepository implements DeviceRepository {
+  FakeDeviceRepository({List<RegisteredDevice>? devices}) : devices = devices ?? [];
+
+  final List<RegisteredDevice> devices;
+  int _next = 1;
+  final _controller = StreamController<List<RegisteredDevice>>.broadcast();
+
+  void _emit() => _controller.add(List.unmodifiable(devices));
+
+  @override
+  Stream<List<RegisteredDevice>> watchDevices(String institutionId) {
+    scheduleMicrotask(_emit);
+    return _controller.stream;
+  }
+
+  @override
+  Future<RegisteredDevice?> getDevice(String institutionId, String deviceId) async =>
+      devices.where((d) => d.id == deviceId).firstOrNull;
+
+  @override
+  Future<DeviceCredentials> registerDevice(String institutionId,
+      {required String institutionName, required String name, required List<String> cartIds, required String byUid, String? byName}) async {
+    final id = 'dev${_next++}';
+    devices.add(RegisteredDevice(
+      id: id,
+      institutionId: institutionId,
+      name: name,
+      cartIds: cartIds,
+      authUid: 'auth-$id',
+      registeredBy: byUid,
+      registeredByName: byName,
+      registeredAt: DateTime.now(),
+    ));
+    _emit();
+    return DeviceCredentials(
+      institutionId: institutionId,
+      institutionName: institutionName,
+      deviceId: id,
+      deviceName: name,
+      email: 'device-$id@$institutionId.devices.icrash.invalid',
+      password: 'secret-$id',
+    );
+  }
+
+  RegisteredDevice _copy(RegisteredDevice d, {String? name, List<String>? cartIds, DateTime? revokedAt}) => RegisteredDevice(
+        id: d.id,
+        institutionId: d.institutionId,
+        name: name ?? d.name,
+        cartIds: cartIds ?? d.cartIds,
+        authUid: d.authUid,
+        registeredBy: d.registeredBy,
+        registeredByName: d.registeredByName,
+        registeredAt: d.registeredAt,
+        revokedAt: revokedAt ?? d.revokedAt,
+      );
+
+  @override
+  Future<void> updateDevice(String institutionId, RegisteredDevice device, {required String name, required List<String> cartIds}) async {
+    final i = devices.indexWhere((d) => d.id == device.id);
+    if (i != -1) devices[i] = _copy(devices[i], name: name, cartIds: cartIds);
+    _emit();
+  }
+
+  @override
+  Future<void> revokeDevice(String institutionId, RegisteredDevice device) async {
+    final i = devices.indexWhere((d) => d.id == device.id);
+    if (i != -1) devices[i] = _copy(devices[i], revokedAt: DateTime.now());
+    _emit();
+  }
+}
+
 AppServices buildTestServices({
   AuthRepository? auth,
   InstitutionRepository? institutions,
@@ -739,6 +820,8 @@ AppServices buildTestServices({
   CredentialRepository? credentials,
   PinHasher? pinHasher,
   SupportRepository? support,
+  DeviceRepository? devices,
+  DeviceCredentialStore? deviceCredentials,
   Gs1DataMatrixScannerService Function()? createGs1Scanner,
   InternalQrScannerService Function()? createInternalQrScanner,
   LocalStore? localStore,
@@ -756,6 +839,8 @@ AppServices buildTestServices({
     // Few PBKDF2 iterations keep tests fast; the count travels with each hash.
     pinHasher: pinHasher ?? PinHasher(iterations: 1000),
     support: support ?? FakeSupportRepository(),
+    devices: devices ?? FakeDeviceRepository(),
+    deviceCredentials: deviceCredentials ?? InMemoryDeviceCredentialStore(),
     createGs1Scanner: createGs1Scanner ?? FakeGs1DataMatrixScannerService.new,
     createInternalQrScanner: createInternalQrScanner ?? FakeInternalQrScannerService.new,
     // A fresh store per test, so local stubs (templates, shifts, PIN…) never

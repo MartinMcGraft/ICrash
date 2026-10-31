@@ -20,6 +20,7 @@ class LoginScreen extends StatefulWidget {
     required this.onCartLogin,
     required this.savedSessionAvailable,
     this.institutionName,
+    this.onSetUpDevice,
   });
 
   final Future<void> Function() onSignedIn;
@@ -29,6 +30,9 @@ class LoginScreen extends StatefulWidget {
   /// PIN unlock and cart login need a session saved on this device.
   final bool savedSessionAvailable;
   final String? institutionName;
+
+  /// D17: "Configurar dispositivo" (App shell only; a tablet, not a phone).
+  final VoidCallback? onSetUpDevice;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -85,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return Scaffold(
           body: Row(
             children: [
-              _BrandPanel(width: brandWidth, compact: compact, institutionName: widget.institutionName),
+              LoginBrandPanel(width: brandWidth, compact: compact, institutionName: widget.institutionName),
               Expanded(
                 child: SafeArea(
                   left: false,
@@ -175,6 +179,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ],
                                 ),
+                                // D17: an Admin registers this tablet once.
+                                if (widget.onSetUpDevice != null && !compact) ...[
+                                  const SizedBox(height: IcSpace.s12),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: IcButton(
+                                      label: l10n.deviceSetUp,
+                                      icon: IcIcon.opcoes,
+                                      style: IcButtonStyle.ghost,
+                                      onPressed: widget.onSetUpDevice,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -197,8 +214,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _BrandPanel extends StatelessWidget {
-  const _BrandPanel({required this.width, required this.compact, this.institutionName});
+/// A1's brand panel (also on the tablet's A1, A0 and A2b, D17).
+class LoginBrandPanel extends StatelessWidget {
+  const LoginBrandPanel({super.key, required this.width, required this.compact, this.institutionName});
   final double width;
   final bool compact;
   final String? institutionName;

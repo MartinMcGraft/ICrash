@@ -20,6 +20,12 @@ rules_version = '2';
 //   while that institution's Admin keeps `support/current` open (a reason,
 //   up to 7 days). Super never reads PIN hashes and never grants itself
 //   access; its entries in `supportLog` are append-only.
+// - Registered tablets (D17): a tablet has its own account (membership role
+//   'device'), registered to its carts like a person, so the cart rules give
+//   it those carts only. People sign in on it with their PIN, which the
+//   tablet checks against the hashes it may read; what it writes carries
+//   the person as `actorUid`, who must be an active member allowed on that
+//   cart. (Prototype limit: the rules can't prove who typed the PIN.)
 // - Immutable audit trail: usageEvents/auditEvents are create-only, never
 //   updated or deleted by clients (spec sections 18, 45, 60).
 service cloud.firestore {
@@ -77,6 +83,22 @@ service cloud.firestore {
     // D16 + D18: the Admin, or Super inside an open support window.
     function isInstitutionAdmin(institutionId) {
       return isOwnAdmin(institutionId) || isSupportInside(institutionId);
+    }
+
+    // D17: a registered tablet's own account.
+    function isDevice(institutionId) {
+      return hasRole(institutionId, ['device']);
+    }
+
+    // D17: the person a tablet acts for: an active member who is the Admin or
+    // registered to the cart.
+    function actorMayUseCart(institutionId, actorUid, cartId) {
+      let member = /databases/$(database)/documents/institutions/$(institutionId)/memberships/$(actorUid);
+      return exists(member) &&
+        get(member).data.status == 'active' &&
+        get(member).data.role != 'device' &&
+        (get(member).data.role == 'institutionAdmin' ||
+          exists(/databases/$(database)/documents/institutions/$(institutionId)/carts/$(cartId)/responsibleUsers/$(actorUid)));
     }
 
     // Members, or Super inside an open support window, may read the
@@ -236,8 +258,10 @@ service cloud.firestore {
         // can be brute-forced from it. The real check moves to the
         // institution's server). Nobody writes their own, not even an admin.
         match /private/{docId} {
+          // D17: a registered tablet reads the hashes to check PINs offline
+          // (prototype limit: a 4-digit PIN can be brute-forced from a hash).
           allow read: if docId == 'credentials' &&
-            ((isMember(institutionId) && request.auth.uid == uid) || isOwnAdmin(institutionId));
+            ((isMember(institutionId) && request.auth.uid == uid) || isOwnAdmin(institutionId) || isDevice(institutionId));
           allow create, update: if docId == 'credentials' &&
             isOwnAdmin(institutionId) &&
             request.auth.uid != uid &&
@@ -367,8 +391,11 @@ service cloud.firestore {
       // Immutable operational stock history (spec sections 24, 43-45, 60).
       match /usageEvents/{eventId} {
         allow read: if canReadInstitution(institutionId);
+        // As yourself; a tablet (D17) as the person signed in on it.
         allow create: if canReadInstitution(institutionId) &&
-          request.resource.data.actorUid == request.auth.uid &&
+          ((request.resource.data.actorUid == request.auth.uid && !isDevice(institutionId)) ||
+            (isDevice(institutionId) &&
+              actorMayUseCart(institutionId, request.resource.data.actorUid, request.resource.data.cartId))) &&
           canAccessCart(institutionId, request.resource.data.cartId) &&
           // DATABASE.md HISTORY `reason` VARCHAR(500), optional.
           (!('reason' in request.resource.data) || (request.resource.data.reason is string && request.resource.data.reason.size() <= 500));
@@ -380,6 +407,15 @@ service cloud.firestore {
         allow read: if isInstitutionAdmin(institutionId);
         allow create: if canReadInstitution(institutionId) && request.resource.data.actorUid == request.auth.uid;
         allow update, delete: if false;
+      }
+
+      // D17: registered tablets. The Admin manages them; a tablet reads its
+      // own document (name, carts, revoked).
+      match /devices/{deviceId} {
+        allow read: if isInstitutionAdmin(institutionId) ||
+          (isSignedIn() && resource.data.authUid == request.auth.uid);
+        allow create, update: if isInstitutionAdmin(institutionId);
+        allow delete: if false;
       }
 
       // D18: the support window. Only the institution's own Admin opens it

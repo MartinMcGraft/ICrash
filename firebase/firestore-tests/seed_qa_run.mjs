@@ -34,16 +34,17 @@ const USERS = {
 };
 
 // The v2 membership fields the app shows (name, e-mail, service).
+// userNumber: nº mecanográfico, to identify on a registered tablet (D17).
 const PROFILES = {
-  admin: { displayName: 'Rita Lopes', service: null },
-  manager: { displayName: 'Gonçalo Mendes', service: 'Urgência' },
-  user: { displayName: 'Ana Silva', service: 'Medicina Interna' },
-  adminB: { displayName: 'Paulo Reis', service: null },
+  admin: { displayName: 'Rita Lopes', service: null, userNumber: '1001' },
+  manager: { displayName: 'Gonçalo Mendes', service: 'Urgência', userNumber: '2001' },
+  user: { displayName: 'Ana Silva', service: 'Medicina Interna', userNumber: '2002' },
+  adminB: { displayName: 'Paulo Reis', service: null, userNumber: '1002' },
 };
 
 function member(key, uid, role) {
-  const { displayName, service } = PROFILES[key];
-  return { uid, role, status: 'active', displayName, email: USERS[key], ...(service ? { service } : {}) };
+  const { displayName, service, userNumber } = PROFILES[key];
+  return { uid, role, status: 'active', displayName, email: USERS[key], userNumber, ...(service ? { service } : {}) };
 }
 
 async function createOrGetAuthUser(email) {

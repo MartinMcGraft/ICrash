@@ -23,6 +23,7 @@ String roleText(AppLocalizations l10n, Role role) => switch (role) {
       Role.platformSuperAdmin => l10n.roleSuperAdmin,
       Role.institutionAdmin => l10n.roleInstitutionAdmin,
       Role.manager => l10n.roleManager,
+      Role.device => l10n.roleDevice,
     };
 
 String? roleTextFromId(AppLocalizations l10n, String? id) {

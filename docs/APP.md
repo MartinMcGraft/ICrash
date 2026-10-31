@@ -126,9 +126,10 @@ start ─▶ saved session on this device?
 The flow lives in `ui/app/app_root_view_model.dart` (stages:
 `starting → signedOut | locked | pin | cartLogin → pickingInstitution → ready`).
 
-**Target (30 Oct, D17 device setup):** today A2/A3 only work after the user signed in with
-e-mail + password on that device, because Firebase Auth needs a signed-in account and a PIN
-isn't one (no Cloud Functions on Spark). New flow:
+**Registered tablets (D17, done 31 Oct):** A2/A3 used to work only after the user signed in
+with e-mail + password on that device, because Firebase Auth needs a signed-in account and a
+PIN isn't one (no Cloud Functions on Spark). Now (stages `deviceSetup`, `deviceHome`,
+`deviceIdentify`, `deviceRevoked`; screens in `ui/features/device/`):
 
 1. I-Crash delivers the tablet with the app installed.
 2. **"Configurar dispositivo"** (once per device): an Admin, or Super with an open grant,
@@ -139,6 +140,29 @@ isn't one (no Cloud Functions on Spark). New flow:
    PIN) and **"Entrar no carro"** (scan the cart's QR, then PIN). Nobody types a password.
 4. Personal devices (laptop, a Manager's phone) keep e-mail + password.
 5. Admins list and revoke devices in the Dashboard.
+
+How it works in the code:
+- **A0 Configurar dispositivo** (link on A1, App shell on a tablet only): an Admin signs in;
+  `DeviceSetupViewModel` asks for the name and the carts (≥ 1), calls
+  `DeviceRepository.registerDevice`, saves `DeviceCredentials` in `DeviceCredentialStore`
+  (`flutter_secure_storage` on Android/iOS; `LocalStore` elsewhere) and the root signs the
+  Admin out and the tablet in.
+- **Every start:** `AppRootViewModel` loads the credentials, signs the tablet in and reads its
+  `devices/{id}` document (carts, name, `revokedAt`). A1 becomes `DeviceHomeScreen`.
+- **A2b Identificação** (`DeviceSignInViewModel`): nº mecanográfico or e-mail
+  (`Membership.matches`) + PIN, checked against the PIN hash with `PinHasher`. One message for
+  an unknown person and a wrong PIN; 5 failures go back to A1.
+- **Session:** `SessionController` runs as the person (`user`, `membership`, `actorUid`) while
+  Firebase is signed in as the tablet; `allowedCartIds` = the tablet's carts the person is
+  registered to (all of them for an Admin), `deviceName` set, so `isInstitutionAdmin` and
+  `canEditStructure` are false (the rules give the tablet a Manager's writes on its carts).
+  A3 accepts only the tablet's carts and the person must be on that cart.
+- **Terminar sessão** and **5 min without a touch** (`AppRootViewModel.deviceIdleTimeout`)
+  return to the tablet's A1; the tablet stays signed in. "Remover registo deste tablet" needs
+  an Admin's PIN and only clears the tablet's own sign-in (revoking is done in B7).
+- **B7 › Dispositivos:** name, carts, registered by/at, state; "Alterar nome e carros",
+  "Revogar". Tablet accounts are left out of the people lists and shifts.
+- B7 "Criar utilizador" takes an optional **nº mecanográfico** (unique; code `numberTaken`).
 
 The **institution picker** is shown **only to Super** (RV-1, RV-2, done 30 Oct): it lists the
 institutions whose Admin opened a **support window** (D18), with the reason and end time.

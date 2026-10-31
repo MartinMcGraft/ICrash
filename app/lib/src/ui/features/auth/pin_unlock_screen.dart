@@ -118,7 +118,7 @@ class PinUnlockScreen extends StatelessWidget {
                     children: [
                       person,
                       SizedBox(width: compact ? 48 : 120),
-                      _Keypad(vm: vm, compact: compact),
+                      PinKeypad(onDigit: vm.addDigit, onDelete: vm.deleteDigit, compact: compact),
                     ],
                   ),
                 ),
@@ -131,9 +131,11 @@ class PinUnlockScreen extends StatelessWidget {
   }
 }
 
-class _Keypad extends StatelessWidget {
-  const _Keypad({required this.vm, required this.compact});
-  final PinUnlockViewModel vm;
+/// The A2 keypad, shared with A2b (D17 identification on a tablet).
+class PinKeypad extends StatelessWidget {
+  const PinKeypad({super.key, required this.onDigit, required this.onDelete, required this.compact});
+  final void Function(int digit) onDigit;
+  final VoidCallback onDelete;
   final bool compact;
 
   @override
@@ -155,7 +157,7 @@ class _Keypad extends StatelessWidget {
             child: InkWell(onTap: onTap, child: SizedBox(width: keyW, height: keyH, child: Center(child: child))),
           ),
         );
-    Widget digit(int d) => key(label: '$d', onTap: () => vm.addDigit(d), child: Text('$d', style: IcText.numberL));
+    Widget digit(int d) => key(label: '$d', onTap: () => onDigit(d), child: Text('$d', style: IcText.numberL));
     Widget row(List<Widget> children) => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -177,7 +179,7 @@ class _Keypad extends StatelessWidget {
           key(
             label: l10n.pinDelete,
             muted: true,
-            onTap: vm.deleteDigit,
+            onTap: onDelete,
             child: const IcIconView(IcIcon.apagar, color: IcColors.textSecondary),
           ),
         ]),

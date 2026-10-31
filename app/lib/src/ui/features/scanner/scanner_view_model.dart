@@ -121,7 +121,7 @@ class ScannerViewModel extends ViewModel {
         if (product == null) throw const ActionError('notInAnyCart');
         final institutionId = session.institution.id;
         final assignments = (await services.inventory.watchAllAssignments(institutionId).first)
-            .where((a) => a.productId == product.id && (session.scopedCartId == null || a.cartId == session.scopedCartId))
+            .where((a) => a.productId == product.id && session.mayOpenCart(a.cartId))
             .toList();
         for (final a in assignments) {
           // Placements store their drawer since 29 Oct 2026.

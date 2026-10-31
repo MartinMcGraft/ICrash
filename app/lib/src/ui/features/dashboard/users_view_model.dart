@@ -1,20 +1,25 @@
 import '../../../common/app_services.dart';
 import '../../../domain/entities/app_permission.dart';
+import '../../../domain/entities/cart.dart';
 import '../../../domain/entities/membership.dart';
+import '../../../domain/entities/registered_device.dart';
 import '../../../domain/entities/role.dart';
 import '../../../services/pin_hasher.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 
-/// D16: Admins (the institution's IT) and Managers (health professionals).
-enum UsersFilter { all, admins, managers, invited }
+/// D16: Admins (the institution's IT) and Managers (health professionals);
+/// D17: the registered tablets.
+enum UsersFilter { all, admins, managers, invited, devices }
 
 /// B7 · Utilizadores e permissões.
 class UsersViewModel extends ViewModel {
   UsersViewModel(this.services, this.session) {
     final id = session.institution.id;
     listen(services.institutions.watchMembers(id), (v) {
-      _members = List.of(v)..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+      // D17: a tablet's own account isn't a person.
+      _members = [for (final m in v) if (m.role != Role.device) m]
+        ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
       state = LoadState.ready;
       notify();
     }, onError: (_) {
@@ -25,7 +30,50 @@ class UsersViewModel extends ViewModel {
       _permissions = v;
       notify();
     });
+    listen(services.devices.watchDevices(id), (v) {
+      devices = List.of(v)
+        ..sort((a, b) => a.revoked == b.revoked ? a.name.toLowerCase().compareTo(b.name.toLowerCase()) : (a.revoked ? 1 : -1));
+      notify();
+    }, onError: (_) {});
+    listen(services.carts.watchAccessibleCarts(id), (v) {
+      carts = [for (final c in v) if (!c.archived) c]..sort((a, b) => a.name.compareTo(b.name));
+      notify();
+    }, onError: (_) {});
   }
+
+  /// D17: the institution's registered tablets (revoked ones last).
+  List<RegisteredDevice> devices = const [];
+
+  /// The carts a tablet can serve.
+  List<Cart> carts = const [];
+
+  int get deviceCount => devices.where((d) => !d.revoked).length;
+
+  List<RegisteredDevice> get visibleDevices {
+    final q = query.trim().toLowerCase();
+    return q.isEmpty ? devices : devices.where((d) => d.name.toLowerCase().contains(q)).toList();
+  }
+
+  /// "Carro 1, Carro 3" for a tablet's carts (an id when the cart is gone).
+  String cartNames(RegisteredDevice device) {
+    final names = {for (final c in carts) c.id: c.name};
+    return device.cartIds.map((id) => names[id] ?? id).join(', ');
+  }
+
+  /// "Alterar": name and carts (at least one, Martim 30 Oct). Error codes
+  /// `nameRequired`, `noCarts`.
+  Future<ActionResult<void>> updateDevice(RegisteredDevice device, {required String name, required List<String> cartIds}) =>
+      run(() async {
+        final trimmed = name.trim();
+        if (trimmed.isEmpty) throw const ActionError('nameRequired');
+        if (cartIds.isEmpty) throw const ActionError('noCarts');
+        await services.devices.updateDevice(session.institution.id, device, name: trimmed, cartIds: cartIds);
+      });
+
+  /// "Revogar": the tablet loses access at its next request and shows
+  /// "Este dispositivo foi desativado".
+  Future<ActionResult<void>> revokeDevice(RegisteredDevice device) =>
+      run(() => services.devices.revokeDevice(session.institution.id, device));
 
   final AppServices services;
   final SessionController session;
@@ -66,10 +114,13 @@ class UsersViewModel extends ViewModel {
         UsersFilter.admins => _isAdminRole(m.role),
         UsersFilter.managers => m.role == Role.manager,
         UsersFilter.invited => m.status == MembershipStatus.invited,
+        UsersFilter.devices => false,
       };
       if (!inFilter) return false;
       if (q.isEmpty) return true;
-      return m.label.toLowerCase().contains(q) || (m.email ?? '').toLowerCase().contains(q);
+      return m.label.toLowerCase().contains(q) ||
+          (m.email ?? '').toLowerCase().contains(q) ||
+          (m.userNumber ?? '').toLowerCase().contains(q);
     }).toList();
   }
 
@@ -111,17 +162,21 @@ class UsersViewModel extends ViewModel {
   /// person's password and PIN and hands them over; nobody else can change
   /// them. The account is created with that password (no reset e-mail) and
   /// the PIN is stored as a salted slow hash. Error codes `emailTaken`,
-  /// `passwordTooShort`, `pinInvalid`.
+  /// `passwordTooShort`, `pinInvalid`, `numberTaken` (D17: the nº
+  /// mecanográfico identifies the person on a registered tablet).
   Future<ActionResult<void>> createUser({
     required String name,
     required String email,
     required Role role,
     required String password,
     required String pin,
+    String? userNumber,
   }) =>
       run(() async {
         final normalized = email.trim().toLowerCase();
+        final number = userNumber?.trim() ?? '';
         if (_members.any((m) => (m.email ?? '').toLowerCase() == normalized)) throw const ActionError('emailTaken');
+        if (number.isNotEmpty && _members.any((m) => m.userNumber == number)) throw const ActionError('numberTaken');
         if (password.length < minPasswordLength) throw const ActionError('passwordTooShort');
         if (!PinHasher.isValidPin(pin)) throw const ActionError('pinInvalid');
         await services.institutions.createMember(
@@ -131,6 +186,7 @@ class UsersViewModel extends ViewModel {
           pinHash: await services.pinHasher.hash(pin),
           role: role,
           displayName: name.trim(),
+          userNumber: number.isEmpty ? null : number,
         );
       });
 

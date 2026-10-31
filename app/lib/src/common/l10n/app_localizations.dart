@@ -4278,6 +4278,264 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Acesso do suporte fechado.'**
   String get supportClosed;
+
+  /// No description provided for @roleDevice.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dispositivo'**
+  String get roleDevice;
+
+  /// No description provided for @actionContinue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Continuar'**
+  String get actionContinue;
+
+  /// No description provided for @deviceSetUp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configurar dispositivo'**
+  String get deviceSetUp;
+
+  /// No description provided for @deviceSetupAdminNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Um Administrador inicia sessão uma vez para registar este tablet. Depois, quem trabalha nos carros entra só com o PIN.'**
+  String get deviceSetupAdminNote;
+
+  /// No description provided for @deviceSetupNotAdmin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Só um Administrador da instituição pode registar um tablet.'**
+  String get deviceSetupNotAdmin;
+
+  /// No description provided for @deviceSetupPickCart.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolha pelo menos um carro.'**
+  String get deviceSetupPickCart;
+
+  /// No description provided for @deviceSetupInstitution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Instituição: {institution}'**
+  String deviceSetupInstitution(String institution);
+
+  /// No description provided for @deviceSetupNoCarts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta instituição ainda não tem carros. Crie-os no Dashboard primeiro.'**
+  String get deviceSetupNoCarts;
+
+  /// No description provided for @deviceNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome do tablet'**
+  String get deviceNameLabel;
+
+  /// No description provided for @deviceNameHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ex.: Tablet Carro 3 · UCI'**
+  String get deviceNameHint;
+
+  /// No description provided for @deviceCartsLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carros deste tablet'**
+  String get deviceCartsLabel;
+
+  /// No description provided for @deviceRegister.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registar tablet'**
+  String get deviceRegister;
+
+  /// No description provided for @deviceRegisteredTo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tablet registado em {institution}'**
+  String deviceRegisteredTo(String institution);
+
+  /// No description provided for @deviceRevokedTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este dispositivo foi desativado'**
+  String get deviceRevokedTitle;
+
+  /// No description provided for @deviceRevokedMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Um Administrador revogou este tablet no Dashboard. Para o voltar a usar, configure-o de novo.'**
+  String get deviceRevokedMessage;
+
+  /// No description provided for @deviceNoPasswordNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Neste tablet não é preciso palavra-passe: identifique-se com o nº mecanográfico ou o e-mail e o seu PIN.'**
+  String get deviceNoPasswordNote;
+
+  /// No description provided for @deviceRemoveRegistration.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover registo deste tablet'**
+  String get deviceRemoveRegistration;
+
+  /// No description provided for @deviceRemoveNote.
+  ///
+  /// In pt, this message translates to:
+  /// **'Só um Administrador. O registo continua no Dashboard até ser revogado.'**
+  String get deviceRemoveNote;
+
+  /// No description provided for @deviceIdentifyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Identificação'**
+  String get deviceIdentifyTitle;
+
+  /// No description provided for @deviceIdentifierLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nº mecanográfico ou e-mail'**
+  String get deviceIdentifierLabel;
+
+  /// No description provided for @deviceSignInHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escreva o nº mecanográfico ou o e-mail e marque o PIN.'**
+  String get deviceSignInHint;
+
+  /// No description provided for @deviceEnterIdentifierFirst.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escreva primeiro o nº mecanográfico ou o e-mail.'**
+  String get deviceEnterIdentifierFirst;
+
+  /// No description provided for @deviceWrongCredentials.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{Nº/e-mail ou PIN errado. Resta 1 tentativa.} other{Nº/e-mail ou PIN errado. Restam {count} tentativas.}}'**
+  String deviceWrongCredentials(int count);
+
+  /// No description provided for @deviceNoPin.
+  ///
+  /// In pt, this message translates to:
+  /// **'A administração ainda não definiu o seu PIN.'**
+  String get deviceNoPin;
+
+  /// No description provided for @deviceRemoveNotAdmin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Só um Administrador pode remover o registo.'**
+  String get deviceRemoveNotAdmin;
+
+  /// No description provided for @deviceNoCartsForPerson.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não está registado em nenhum carro deste tablet.'**
+  String get deviceNoCartsForPerson;
+
+  /// No description provided for @deviceNotOnCart.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não está registado neste carro.'**
+  String get deviceNotOnCart;
+
+  /// No description provided for @deviceNoticeIdle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sessão terminada por inatividade.'**
+  String get deviceNoticeIdle;
+
+  /// No description provided for @deviceNoticeTooManyAttempts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Demasiadas tentativas erradas. Tente de novo.'**
+  String get deviceNoticeTooManyAttempts;
+
+  /// No description provided for @deviceNoticeSignInFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'O tablet não conseguiu ligar-se. Verifique a rede e tente de novo.'**
+  String get deviceNoticeSignInFailed;
+
+  /// No description provided for @usersFilterDevices.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dispositivos ({count})'**
+  String usersFilterDevices(int count);
+
+  /// No description provided for @devicesEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum tablet registado. Um tablet regista-se nele próprio, em \"Configurar dispositivo\".'**
+  String get devicesEmpty;
+
+  /// No description provided for @deviceCartsColumn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carros'**
+  String get deviceCartsColumn;
+
+  /// No description provided for @deviceRegisteredByColumn.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registado por'**
+  String get deviceRegisteredByColumn;
+
+  /// No description provided for @deviceStateActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativo'**
+  String get deviceStateActive;
+
+  /// No description provided for @deviceStateRevoked.
+  ///
+  /// In pt, this message translates to:
+  /// **'Revogado'**
+  String get deviceStateRevoked;
+
+  /// No description provided for @deviceEdit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar nome e carros'**
+  String get deviceEdit;
+
+  /// No description provided for @deviceRevoke.
+  ///
+  /// In pt, this message translates to:
+  /// **'Revogar'**
+  String get deviceRevoke;
+
+  /// No description provided for @deviceRevokeConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'\"{name}\" deixa de funcionar no próximo acesso. Para o voltar a usar é preciso configurá-lo de novo.'**
+  String deviceRevokeConfirm(String name);
+
+  /// No description provided for @deviceRevoked.
+  ///
+  /// In pt, this message translates to:
+  /// **'\"{name}\" revogado.'**
+  String deviceRevoked(String name);
+
+  /// No description provided for @deviceUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tablet atualizado.'**
+  String get deviceUpdated;
+
+  /// No description provided for @userNumberLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nº mecanográfico'**
+  String get userNumberLabel;
+
+  /// No description provided for @userNumberTaken.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já existe um utilizador com este nº mecanográfico.'**
+  String get userNumberTaken;
 }
 
 class _AppLocalizationsDelegate

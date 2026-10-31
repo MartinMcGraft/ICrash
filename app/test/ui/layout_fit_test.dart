@@ -26,6 +26,7 @@ import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
+import 'package:icrash_app/src/domain/entities/registered_device.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/shift.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
@@ -45,6 +46,9 @@ import 'package:icrash_app/src/ui/features/dashboard/shifts_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/support_access_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/templates_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/users_screen.dart';
+import 'package:icrash_app/src/ui/features/device/device_home_screen.dart';
+import 'package:icrash_app/src/ui/features/device/device_setup_screen.dart';
+import 'package:icrash_app/src/ui/features/device/device_sign_in_screen.dart';
 import 'package:icrash_app/src/ui/features/drawer/drawer_screen.dart';
 import 'package:icrash_app/src/ui/features/monthly_check/monthly_check_screen.dart';
 import 'package:icrash_app/src/ui/features/reports/report_screen.dart';
@@ -500,5 +504,106 @@ void main() {
       );
       _expectNoScroll(tester, axes: {Axis.horizontal});
     });
+  });
+
+  // D17 (30 Oct 2026): the registered tablet's screens.
+  group('registered tablet (D17)', () {
+    for (final device in _devices) {
+      final name = device.name;
+
+      testWidgets('A1 unregistered ($name): "Configurar dispositivo" on a tablet, fits', (tester) async {
+        await _pump(
+          tester,
+          device.size,
+          _services(),
+          LoginScreen(
+            onSignedIn: () async {},
+            onUsePin: () {},
+            onCartLogin: () {},
+            savedSessionAvailable: false,
+            onSetUpDevice: () {},
+          ),
+          padding: device.padding,
+        );
+        _expectFits(tester, device, strict: true);
+        expect(find.text('Configurar dispositivo'), device.size.height < 500 ? findsNothing : findsOneWidget);
+      });
+
+      for (final revoked in [false, true]) {
+        testWidgets('A1 registered ($name, ${revoked ? 'revoked' : 'with a notice'}): no password, fits', (tester) async {
+          await _pump(
+            tester,
+            device.size,
+            _services(),
+            DeviceHomeScreen(
+              institutionName: 'Hospital da Ribeira',
+              deviceName: 'Tablet Carro 3 · Unidade de Cuidados Intensivos',
+              revoked: revoked,
+              notice: revoked ? null : 'Sessão terminada por inatividade.',
+              onUsePin: () {},
+              onCartLogin: () {},
+              onRemoveRegistration: () {},
+              onSetUpAgain: () {},
+            ),
+            padding: device.padding,
+          );
+          _expectFits(tester, device);
+          expect(find.byType(TextField), findsNothing);
+        });
+      }
+
+      testWidgets('A2b identification ($name): number/e-mail and keypad side by side', (tester) async {
+        await _pump(
+          tester,
+          device.size,
+          _services(),
+          DeviceSignInScreen(
+            institutionId: 'inst',
+            title: 'Identificação',
+            subtitle: 'Tablet Carro 3 · UCI',
+            onIdentified: (_) async => null,
+            onCancel: () {},
+            onTooManyAttempts: () async {},
+          ),
+          padding: device.padding,
+        );
+        _expectFits(tester, device);
+      });
+
+      testWidgets('A0 set up the tablet ($name): Admin sign-in step', (tester) async {
+        await _pump(
+          tester,
+          device.size,
+          _services(),
+          DeviceSetupScreen(onRegistered: (_) async {}, onCancel: () async {}),
+          padding: device.padding,
+        );
+        _expectFits(tester, device);
+      });
+    }
+
+    for (final (name, size) in [('tablet', tablet), ('desktop', desktop)]) {
+      testWidgets('B7 › Dispositivos ($name): tablets with their carts', (tester) async {
+        final services = _services(carts: 6);
+        final devices = services.devices as FakeDeviceRepository;
+        for (var i = 0; i < 4; i++) {
+          devices.devices.add(RegisteredDevice(
+            id: 'dev$i',
+            institutionId: 'inst',
+            name: 'Tablet Carro $i · Unidade de Cuidados Intensivos',
+            cartIds: ['c$i', 'c${i + 1}'],
+            authUid: 'auth-dev$i',
+            registeredByName: 'Rui Costa',
+            registeredAt: DateTime(2026, 10, 30),
+            revokedAt: i == 3 ? DateTime(2026, 10, 30) : null,
+          ));
+        }
+        await _pump(tester, size, services, const UsersScreen());
+        await tester.tap(find.textContaining('Dispositivos'));
+        await _settle(tester);
+        _expectNoScroll(tester);
+        expect(find.text('Revogado'), findsOneWidget);
+      });
+    }
   });
 }

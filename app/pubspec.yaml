@@ -50,6 +50,8 @@ dependencies:
   # PBKDF2 for the administrator-set PIN (DB3; interim, under Firebase).
   # Pure Dart on mobile/desktop, Web Crypto in the browser.
   cryptography: ^2.7.0
+  # D17: a registered tablet keeps its own sign-in in the OS keychain/keystore.
+  flutter_secure_storage: ^9.2.4
 
 dev_dependencies:
   flutter_test:
