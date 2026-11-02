@@ -503,8 +503,6 @@
   "@navUsers": {},
   "navShifts": "Turnos",
   "@navShifts": {},
-  "navHistory": "Histórico",
-  "@navHistory": {},
   "dashboardBrandSubtitle": "Gestão · {institution}",
   "@dashboardBrandSubtitle": {
     "placeholders": {

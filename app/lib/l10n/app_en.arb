@@ -451,7 +451,6 @@
   "navTemplates": "Templates",
   "navUsers": "Users",
   "navShifts": "Shifts",
-  "navHistory": "History",
   "dashboardBrandSubtitle": "Management · {institution}",
   "@dashboardBrandSubtitle": {
     "placeholders": {

@@ -21,7 +21,9 @@ import '../features/reports/reports_list_screen.dart';
 import 'profile_menu.dart';
 import 'shell_navigation.dart';
 
-enum DashboardSection { overview, carts, catalog, templates, users, shifts, reports, history, support }
+/// "Histórico" is not a section: it is the "Eventos" tab of "Relatórios"
+/// (Martim, 2 Nov 2026), which already shows reports, events and statistics.
+enum DashboardSection { overview, carts, catalog, templates, users, shifts, reports, support }
 
 /// The management Dashboard (web, Windows, Linux, macOS): permanent 240 px
 /// sidebar (Figma "Barra lateral · Dashboard"), one stack per section.
@@ -46,7 +48,6 @@ class _DashboardShellState extends State<DashboardShell> implements ShellNavigat
         if (session.isInstitutionAdmin) DashboardSection.users,
         if (session.isInstitutionAdmin) DashboardSection.shifts,
         DashboardSection.reports,
-        DashboardSection.history,
         // D18: only the institution's own Admin opens support access.
         if (session.isOwnAdmin) DashboardSection.support,
       ];
@@ -113,7 +114,6 @@ class _DashboardShellState extends State<DashboardShell> implements ShellNavigat
         DashboardSection.users => const UsersScreen(),
         DashboardSection.shifts => const ShiftsScreen(),
         DashboardSection.reports => const ReportsHistoryScreen(initialTab: ReportsHistoryTab.reports),
-        DashboardSection.history => const ReportsHistoryScreen(initialTab: ReportsHistoryTab.events),
         DashboardSection.support => const SupportAccessScreen(),
       };
 
@@ -161,7 +161,6 @@ class _Sidebar extends StatelessWidget {
         DashboardSection.users => (IcIcon.utilizadores, l10n.navUsers),
         DashboardSection.shifts => (IcIcon.turnos, l10n.navShifts),
         DashboardSection.reports => (IcIcon.relatorio, l10n.navReports),
-        DashboardSection.history => (IcIcon.historico, l10n.navHistory),
         DashboardSection.support => (IcIcon.escudo, l10n.navSupport),
       };
 

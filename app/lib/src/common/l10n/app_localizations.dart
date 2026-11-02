@@ -1646,12 +1646,6 @@ abstract class AppLocalizations {
   /// **'Turnos'**
   String get navShifts;
 
-  /// No description provided for @navHistory.
-  ///
-  /// In pt, this message translates to:
-  /// **'Histórico'**
-  String get navHistory;
-
   /// No description provided for @dashboardBrandSubtitle.
   ///
   /// In pt, this message translates to:

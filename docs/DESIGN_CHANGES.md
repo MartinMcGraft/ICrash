@@ -844,6 +844,12 @@ Frame ids read on 30 Oct 2026.
   without scrolling; tablets keep one column. Every dialog may now scroll on a short screen
   instead of overflowing.
 
+### DC-63 · Dashboard sidebar: "Histórico" removed (D24, 2 Nov 2026)
+- **Where:** component **Barra lateral · Dashboard** `436:587` (every B-frame).
+- **What:** the "Histórico" item is gone. "Relatórios" opens "Relatórios e histórico", whose
+  "Eventos" tab is the history. Order: Painel, Carros, Catálogo, Modelos, Utilizadores, Turnos,
+  Relatórios, Acesso do suporte.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -854,7 +860,8 @@ Frame ids read on 30 Oct 2026.
 | Setting the nº mecanográfico of an existing member (only "Criar utilizador" has the field) | B7 member menu | — |
 | One institution per user: the institution picker and "Mudar de instituição" go | Picker, Profile menu | Out of scope |
 | **Departments** (with floor) instead of free-text "Serviço" | B2, B3 "Serviço", A4/A5 subtitles | DATABASE.md DEPARTMENT |
-| Discard and Count history types; same-date batch merge; first stock when a cart is configured | A6 panels, A7, B9 filters | P7, P10, P6/P19 |
+| Discard and Count history types; same-date batch merge; first stock when a cart is configured (a new placement shows "Em falta") | A6 panels, A7, B4, B9 filters | P7, P10, P6/P19, P25 |
+| Faster shift setup (M/T/N of a day at once, several cells) | B8 | D25 |
 | Slot-state priority values; whether "missing" or any shortage triggers D7 "Reposição necessária" | Estado da posição legend, B3 auto-state help `456:1026` | P4, P13 |
 | Per-product expiry warning (B4 "Aviso de validade", B5 column) | B4 `I456:1494;442:508`, B5 | DB12 |
 | `weight` / `volume` instead of "Apresentação" | B5 table and form | DB10 (decided; not in this task) |
@@ -887,3 +894,4 @@ Frame ids read on 30 Oct 2026.
 | 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles, support access) | DC-41 … DC-56 |
 | D17 registered tablets (A1, A0, A2b, B7) | DC-57 … DC-60 |
 | Phone fixes, 2 Nov (A7 panel, "Alterar estado") | DC-61, DC-62 |
+| Dashboard sidebar, 2 Nov | DC-63 |

@@ -885,9 +885,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navShifts => 'Shifts';
 
   @override
-  String get navHistory => 'History';
-
-  @override
   String dashboardBrandSubtitle(String institution) {
     return 'Management · $institution';
   }
