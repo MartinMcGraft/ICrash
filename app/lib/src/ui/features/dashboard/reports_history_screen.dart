@@ -103,6 +103,7 @@ class ReportsHistoryScreen extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(l10n.exportCsv),
         content: SizedBox(
           width: 640,

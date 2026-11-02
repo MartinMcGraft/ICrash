@@ -298,6 +298,7 @@ class _Summary extends StatelessWidget {
     final saved = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(l10n.addNote),
         content: SizedBox(
           width: 420,

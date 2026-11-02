@@ -239,6 +239,7 @@ Future<_ShiftInput?> _showShiftDialog(BuildContext context, ShiftsViewModel vm, 
       builder: (context, setState) {
         void refreshUid() => uid = vm.shiftAt(selectedCart, selectedDay, period)?.uid;
         return AlertDialog(
+          scrollable: true,
           title: Text(cartId == null ? l10n.addShift : '${vm.cartName(selectedCart)} · ${format.weekdayDay(selectedDay)}'),
           content: SizedBox(
             width: 440,

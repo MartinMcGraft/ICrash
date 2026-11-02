@@ -169,6 +169,7 @@ class _Grid extends StatelessWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          scrollable: true,
           title: Text(cell.productName ?? ''),
           content: Row(
             mainAxisSize: MainAxisSize.min,

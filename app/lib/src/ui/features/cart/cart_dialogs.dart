@@ -11,6 +11,7 @@ import '../../../services/internal_qr_payload.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/ic_button.dart';
+import '../../core/widgets/layout.dart';
 import '../../core/widgets/status.dart';
 
 /// "Alterar estado" (manager+). Proposal D7: the state can also follow an
@@ -18,40 +19,53 @@ import '../../core/widgets/status.dart';
 /// always wins until the rule next applies.
 Future<CartStatus?> showChangeStatusDialog(BuildContext context, CartStatus current) {
   final l10n = AppLocalizations.of(context);
+  final compact = isCompactHeight(context);
   return showDialog<CartStatus>(
     context: context,
     builder: (context) {
       var selected = current;
       return StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          // Phones in landscape are short: the dialog scrolls instead of overflowing.
+          scrollable: true,
           title: Text(l10n.changeStateAction),
           content: SizedBox(
-            width: 420,
+            // On a phone the four states sit in two columns, so the dialog
+            // fits a landscape phone without scrolling.
+            width: compact ? 600 : 420,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final status in CartStatus.values)
-                  Semantics(
-                    selected: selected == status,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(IcRadius.md),
-                      onTap: () => setState(() => selected = status),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          children: [
-                            Icon(
-                              selected == status ? Icons.radio_button_checked : Icons.radio_button_off,
-                              color: selected == status ? IcColors.actionPrimary : IcColors.borderStrong,
+                Wrap(
+                  spacing: IcSpace.s12,
+                  children: [
+                    for (final status in CartStatus.values)
+                      SizedBox(
+                        width: compact ? 290 : 420,
+                        child: Semantics(
+                          selected: selected == status,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(IcRadius.md),
+                            onTap: () => setState(() => selected = status),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    selected == status ? Icons.radio_button_checked : Icons.radio_button_off,
+                                    color: selected == status ? IcColors.actionPrimary : IcColors.borderStrong,
+                                  ),
+                                  const SizedBox(width: IcSpace.s12),
+                                  Flexible(child: CartStateChip(status: status)),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: IcSpace.s12),
-                            CartStateChip(status: status),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
+                ),
                 const SizedBox(height: IcSpace.s12),
                 Text(l10n.autoStateRule, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
               ],

@@ -252,6 +252,7 @@ Future<String?> _showImportDialog(BuildContext context) {
   return showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: Text(l10n.importCsv),
       content: SizedBox(
         width: 560,

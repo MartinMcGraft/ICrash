@@ -74,6 +74,7 @@ class ReportScreen extends StatelessWidget {
             final leaveNow = await showDialog<bool>(
               context: context,
               builder: (dialogContext) => AlertDialog(
+                scrollable: true,
                 title: Text(l10n.leaveUnsignedTitle),
                 content: SizedBox(width: 420, child: Text(l10n.leaveUnsignedMessage)),
                 actions: [

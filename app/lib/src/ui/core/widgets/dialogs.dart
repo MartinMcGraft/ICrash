@@ -18,6 +18,7 @@ Future<bool> confirmAction(
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: Text(title),
       content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),
       actions: [
@@ -115,6 +116,7 @@ class _CodeEntryDialogState extends State<_CodeEntryDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.title),
       content: SizedBox(
         width: 400,

@@ -458,6 +458,7 @@ Future<Product?> _pickProduct(BuildContext context, List<Product> catalog, Set<S
             ? catalog
             : catalog.where((p) => p.name.toLowerCase().contains(q) || (p.gtin ?? '').contains(q)).toList();
         return AlertDialog(
+          scrollable: true,
           title: Text(l10n.chooseProduct),
           content: SizedBox(
             width: 480,

@@ -321,6 +321,7 @@ Future<_TemplateInput?> _showTemplateDialog(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
+        scrollable: true,
         title: Text(title),
         content: SizedBox(
           width: 440,

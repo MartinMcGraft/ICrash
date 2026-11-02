@@ -20,6 +20,7 @@ import 'package:icrash_app/src/common/app_services.dart';
 import 'package:icrash_app/src/common/l10n/app_localizations.dart';
 import 'package:icrash_app/src/common/locale_scope.dart';
 import 'package:icrash_app/src/domain/entities/cart.dart';
+import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/cart_report.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
@@ -33,10 +34,12 @@ import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
 import 'package:icrash_app/src/ui/core/theme/app_theme.dart';
 import 'package:icrash_app/src/ui/core/theme/tokens.dart';
+import 'package:icrash_app/src/ui/core/widgets/dialogs.dart';
 import 'package:icrash_app/src/ui/core/widgets/fit.dart';
 import 'package:icrash_app/src/ui/core/widgets/ic_button.dart';
 import 'package:icrash_app/src/ui/core/widgets/slot_grid.dart';
 import 'package:icrash_app/src/ui/features/auth/login_screen.dart';
+import 'package:icrash_app/src/ui/features/cart/cart_dialogs.dart';
 import 'package:icrash_app/src/ui/features/cart/cart_screen.dart';
 import 'package:icrash_app/src/ui/features/carts/carts_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/cart_config_screen.dart';
@@ -70,7 +73,11 @@ const iphone16 = (name: 'iPhone 16', size: Size(852, 393), padding: EdgeInsets.o
 /// iPad mini (6th gen): status bar 24 px, home indicator 20 px.
 const ipadMini = (name: 'iPad mini', size: Size(1133, 744), padding: EdgeInsets.only(top: 24, bottom: 20));
 
-const _devices = <_Device>[iphone16, ipadMini];
+/// Android "Medium Phone" (API 36) emulator: status bar and gesture bar
+/// (2 Nov 2026: "Alterar estado" overflowed by 91 px there).
+const androidPhone = (name: 'Android phone', size: Size(915, 412), padding: EdgeInsets.only(top: 24, bottom: 16));
+
+const _devices = <_Device>[iphone16, ipadMini, androidPhone];
 
 const _institution = Institution(id: 'inst', name: 'Hospital da Ribeira');
 
@@ -603,6 +610,54 @@ void main() {
         await _settle(tester);
         _expectNoScroll(tester);
         expect(find.text('Revogado'), findsOneWidget);
+      });
+    }
+  });
+
+  // 2 Nov 2026: dialogs overflowed on a phone in landscape ("Alterar estado"
+  // by 91 px on the Android emulator).
+  group('dialogs on real devices', () {
+    Future<void> openDialog(WidgetTester tester, _Device device, void Function(BuildContext context) open) async {
+      await _pump(
+        tester,
+        device.size,
+        _services(),
+        Builder(builder: (context) => Center(child: TextButton(onPressed: () => open(context), child: const Text('abrir')))),
+        padding: device.padding,
+      );
+      await tester.tap(find.text('abrir'));
+      await _settle(tester);
+    }
+
+    for (final device in _devices) {
+      final name = device.name;
+
+      testWidgets('Alterar estado ($name): every state and both buttons visible, no scrolling', (tester) async {
+        await openDialog(tester, device, (context) => showChangeStatusDialog(context, CartStatus.operational));
+        _expectNoScroll(tester);
+        _expectButtonLabelsFit(tester);
+        expect(find.text('Guardar'), findsOneWidget);
+        expect(find.byIcon(Icons.radio_button_off), findsNWidgets(CartStatus.values.length - 1));
+      });
+
+      testWidgets('confirmation dialog ($name): no overflow', (tester) async {
+        await openDialog(
+          tester,
+          device,
+          (context) => confirmAction(
+            context,
+            title: 'Desativar utilizador',
+            message: 'A Ana Silva deixa de poder iniciar sessão. Pode reativá-la mais tarde. ' * 3,
+            confirmLabel: 'Desativar',
+            destructive: true,
+          ),
+        );
+        _expectFits(tester, device);
+      });
+
+      testWidgets('manual code ($name): no overflow', (tester) async {
+        await openDialog(tester, device, (context) => showCodeEntryDialog(context, title: 'Manual', label: 'Código do carro'));
+        _expectFits(tester, device);
       });
     }
   });

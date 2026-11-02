@@ -240,6 +240,7 @@ class _MemberMenu extends StatelessWidget {
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
+            scrollable: true,
             title: Text(l10n.resetPasswordAction),
             content: SizedBox(width: 420, child: Text(l10n.resetPasswordSupport, style: IcText.bodyM)),
             actions: [IcButton(label: l10n.actionClose, onPressed: () => Navigator.of(context).pop())],
@@ -494,6 +495,7 @@ Future<String?> _showPinDialog(BuildContext context, {required String title}) {
   return showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: Text(title),
       content: SizedBox(
         width: 380,

@@ -45,6 +45,7 @@ Future<DrawerFormResult?> showDrawerFormDialog(
       builder: (context, setState) {
         final taken = takenNumbers.contains(number);
         return AlertDialog(
+          scrollable: true,
           title: Text(l10n.addDrawer),
           content: SizedBox(
             width: 420,
@@ -116,6 +117,7 @@ Future<({int number, String name})?> showDrawerEditDialog(
       builder: (context, setState) {
         final taken = number != currentNumber && takenNumbers.contains(number);
         return AlertDialog(
+          scrollable: true,
           title: Text(l10n.editDrawer),
           content: SizedBox(
             width: 420,
