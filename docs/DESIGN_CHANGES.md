@@ -830,6 +830,20 @@ Frame ids read on 30 Oct 2026.
   `deviceRegisteredByColumn`, `deviceState*`, `deviceEdit`, `deviceRevoke*`, `deviceUpdated`,
   `userNumberLabel`, `userNumberTaken`.
 
+### DC-61 · A7 Repor stock on phones: wider panel, fields side by side (2 Nov 2026)
+- **Where:** A7 phone frames (the panel over the A6 grid).
+- **What:** on a phone in landscape the panel is **500 px** (at most 80 % of the width; other
+  panels stay ≤ 300 px). Rows: title + subtitle + ✕; **Quantidade** stepper; **Validade** and
+  **Lote (opcional)** (with the scan button) side by side, Validade first; at the bottom
+  **Cancelar** and **Confirmar reposição** side by side, the same width. The help text "Leia o
+  Data Matrix…" is hidden on phones. Nothing scrolls. Tablets and desktop unchanged.
+
+### DC-62 · "Alterar estado" on phones: two columns (2 Nov 2026)
+- **Where:** A5 "Alterar estado" dialog, phone frames.
+- **What:** the four states in two columns (dialog 600 px wide), so it fits a landscape phone
+  without scrolling; tablets keep one column. Every dialog may now scroll on a short screen
+  instead of overflowing.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -872,3 +886,4 @@ Frame ids read on 30 Oct 2026.
 | B9 | 1 (DC-39) |
 | 30 Oct review (A1, rail, A5, A6, A8, A9, A11, B3, B7, menu, terminology, drawer name, roles, support access) | DC-41 … DC-56 |
 | D17 registered tablets (A1, A0, A2b, B7) | DC-57 … DC-60 |
+| Phone fixes, 2 Nov (A7 panel, "Alterar estado") | DC-61, DC-62 |

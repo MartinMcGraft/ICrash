@@ -64,6 +64,8 @@ class DrawerScreen extends StatelessWidget {
               Expanded(
                 child: OverlayPanelLayout(
                   panelWidth: 360,
+                  // A7 on a phone: wider, so its fields fit without scrolling.
+                  phonePanelWidth: vm.panel == DrawerPanel.replenish ? 500 : null,
                   onClose: vm.clearSelection,
                   body: SlotGrid(
                     rows: drawer.rows,
@@ -267,17 +269,35 @@ class _FormPanel extends StatelessWidget {
         const SizedBox(height: IcSpace.s16),
         Expanded(child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children))),
         const SizedBox(height: IcSpace.s12),
-        IcButton(
-          label: confirmLabel,
-          icon: IcIcon.confirmar,
-          style: danger ? IcButtonStyle.danger : IcButtonStyle.primary,
-          size: compact ? IcButtonSize.m : IcButtonSize.l,
-          expand: true,
-          busy: vm.busy,
-          onPressed: onConfirm,
+        // A wide panel on a phone (A7): Cancelar and Confirmar side by side,
+        // the same size (2 Nov 2026).
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final confirm = IcButton(
+              label: confirmLabel,
+              icon: IcIcon.confirmar,
+              style: danger ? IcButtonStyle.danger : IcButtonStyle.primary,
+              size: compact ? IcButtonSize.m : IcButtonSize.l,
+              expand: true,
+              busy: vm.busy,
+              onPressed: onConfirm,
+            );
+            final cancel = IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, expand: true, onPressed: vm.cancelPanel);
+            if (compact && constraints.maxWidth >= 420) {
+              return Row(
+                children: [
+                  Expanded(child: cancel),
+                  const SizedBox(width: IcSpace.s12),
+                  Expanded(child: confirm),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [confirm, const SizedBox(height: IcSpace.s12), cancel],
+            );
+          },
         ),
-        const SizedBox(height: IcSpace.s12),
-        IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, expand: true, onPressed: vm.cancelPanel),
       ],
     );
   }
@@ -357,6 +377,40 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
     final l10n = AppLocalizations.of(context);
     final format = IcFormat.of(context);
     final vm = widget.vm;
+    final compact = isCompactHeight(context);
+    final lotField = LabeledField(
+      label: l10n.lotOptionalLabel,
+      controller: _lot,
+      onChanged: vm.setLot,
+      trailing: IcIconButton(
+        icon: IcIcon.ler,
+        tooltip: l10n.gs1ScanTitle,
+        background: IcColors.actionSecondary,
+        foreground: IcColors.textLink,
+        bordered: false,
+        onPressed: () async {
+          final parsed = await showProductScanSheet(context);
+          if (parsed != null) await vm.applyScan(parsed);
+        },
+      ),
+    );
+    final expiryField = LabeledField(
+      key: ValueKey(vm.expiry),
+      label: l10n.expiryLabel,
+      initialValue: vm.expiry == null ? '' : format.numeric(vm.expiry!),
+      hint: l10n.chooseExpiryLabel,
+      readOnly: true,
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: vm.expiry ?? now.add(const Duration(days: 365)),
+          firstDate: now,
+          lastDate: now.add(const Duration(days: 3650)),
+        );
+        if (picked != null) vm.setExpiry(picked);
+      },
+    );
     return _FormPanel(
       vm: vm,
       title: l10n.replenishStockTitle,
@@ -381,42 +435,24 @@ class _ReplenishPanelState extends State<_ReplenishPanel> {
           l10n.quantityLabel,
           QuantityStepper(label: l10n.quantityLabel, value: vm.amount, min: 1, max: vm.replenishMax.clamp(1, 9999), onChanged: vm.setAmount),
         ),
-        LabeledField(
-          label: l10n.lotOptionalLabel,
-          controller: _lot,
-          onChanged: vm.setLot,
-          trailing: IcIconButton(
-            icon: IcIcon.ler,
-            tooltip: l10n.gs1ScanTitle,
-            background: IcColors.actionSecondary,
-            foreground: IcColors.textLink,
-            bordered: false,
-            onPressed: () async {
-              final parsed = await showProductScanSheet(context);
-              if (parsed != null) await vm.applyScan(parsed);
-            },
-          ),
-        ),
-        const SizedBox(height: IcSpace.s12),
-        LabeledField(
-          key: ValueKey(vm.expiry),
-          label: l10n.expiryLabel,
-          initialValue: vm.expiry == null ? '' : format.numeric(vm.expiry!),
-          hint: l10n.chooseExpiryLabel,
-          readOnly: true,
-          onTap: () async {
-            final now = DateTime.now();
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: vm.expiry ?? now.add(const Duration(days: 365)),
-              firstDate: now,
-              lastDate: now.add(const Duration(days: 3650)),
-            );
-            if (picked != null) vm.setExpiry(picked);
-          },
-        ),
-        const SizedBox(height: IcSpace.s12),
-        Text(l10n.replenishScanHelp, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
+        // On a phone, Validade and Lote side by side (Validade first) and no
+        // help text, so everything fits without scrolling (2 Nov 2026).
+        if (compact)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: expiryField),
+              const SizedBox(width: IcSpace.s12),
+              Expanded(child: lotField),
+            ],
+          )
+        else ...[
+          lotField,
+          const SizedBox(height: IcSpace.s12),
+          expiryField,
+          const SizedBox(height: IcSpace.s12),
+          Text(l10n.replenishScanHelp, style: IcText.bodyS.copyWith(color: IcColors.textMuted)),
+        ],
       ],
     );
   }

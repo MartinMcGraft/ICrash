@@ -275,6 +275,7 @@ class OverlayPanelLayout extends StatelessWidget {
     required this.panel,
     required this.onClose,
     this.panelWidth = 360,
+    this.phonePanelWidth,
   });
 
   final Widget body;
@@ -284,13 +285,23 @@ class OverlayPanelLayout extends StatelessWidget {
   final VoidCallback onClose;
   final double panelWidth;
 
+  /// On a phone the panel is at most 300 px (and 60 % of the width) so the
+  /// grid stays visible. A form that needs room (A7 "Repor stock", 2 Nov 2026)
+  /// asks for more here: up to 80 % of the width.
+  final double? phonePanelWidth;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final phone = allowsScroll(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = min(phone ? min(panelWidth, 300.0) : panelWidth, constraints.maxWidth * (phone ? 0.6 : 0.5));
+        final wide = phonePanelWidth;
+        final width = !phone
+            ? min(panelWidth, constraints.maxWidth * 0.5)
+            : wide != null
+                ? min(wide, constraints.maxWidth * 0.8)
+                : min(min(panelWidth, 300.0), constraints.maxWidth * 0.6);
         return Stack(
           children: [
             Positioned.fill(child: body),

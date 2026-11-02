@@ -661,4 +661,43 @@ void main() {
       });
     }
   });
+
+  // 2 Nov 2026: on a phone the A7 panel scrolled and hid Validade and Lote.
+  group('A7 Repor stock panel', () {
+    for (final device in _devices) {
+      final name = device.name;
+      final phone = device.size.height < 500;
+
+      testWidgets('A7 ($name): every field and both buttons visible without scrolling', (tester) async {
+        await _pump(tester, device.size, _services(rows: 8, columns: 10, products: 80),
+            const DrawerScreen(cartId: 'c0', drawerId: 'd0'),
+            padding: device.padding, appShell: true);
+        await tester.tap(find.byType(SlotCell).first);
+        await _settle(tester);
+        await tester.ensureVisible(find.widgetWithText(IcButton, 'Repor stock'));
+        await _settle(tester);
+        await tester.tap(find.widgetWithText(IcButton, 'Repor stock'));
+        await _settle(tester);
+        // The 8-row grid itself may scroll on a phone; the panel must not.
+        _expectNoScroll(tester, axes: {Axis.horizontal});
+        for (final state in tester.stateList<ScrollableState>(find.ancestor(of: find.text('Validade'), matching: find.byType(Scrollable)))) {
+          expect(state.position.maxScrollExtent, lessThanOrEqualTo(0.5), reason: 'the A7 panel scrolls by ${state.position.maxScrollExtent} px');
+        }
+        _expectButtonLabelsFit(tester);
+        for (final text in ['Validade', 'Lote (opcional)', 'Confirmar reposição', 'Cancelar']) {
+          expect(find.text(text), findsOneWidget, reason: text);
+        }
+        final cancel = tester.getRect(find.widgetWithText(IcButton, 'Cancelar'));
+        final confirm = tester.getRect(find.widgetWithText(IcButton, 'Confirmar reposição'));
+        if (phone) {
+          // Side by side, the same size; Validade before Lote.
+          expect(cancel.top, closeTo(confirm.top, 1));
+          expect(cancel.width, closeTo(confirm.width, 1));
+          expect(tester.getRect(find.text('Validade')).left, lessThan(tester.getRect(find.text('Lote (opcional)')).left));
+        } else {
+          expect(confirm.bottom, lessThanOrEqualTo(cancel.top));
+        }
+      });
+    }
+  });
 }
