@@ -850,6 +850,16 @@ Frame ids read on 30 Oct 2026.
   "Eventos" tab is the history. Order: Painel, Carros, Catálogo, Modelos, Utilizadores, Turnos,
   Relatórios, Acesso do suporte.
 
+### DC-64 · B4 position panel beside the grid (D26, 2 Nov 2026)
+- **Where:** B4 Editar grelha (p21 `456:1130`, p20 wireframe).
+- **What:** back to Figma's B4 layout: the position panel is a docked column on the right
+  (1 px border, radius lg, no drop shadow) with a 20 px gap; the grid shrinks into the
+  remaining width and every position stays visible and selectable while the panel is open.
+  Panel ≤ 380 px and ≤ 40 % of the width; it opens/closes with a 180 ms width animation.
+  Cells narrower than 72 px drop the position label and show the name (wrapped, up to 3 lines)
+  and the quantity with the state icon. The Figma B4 frame already matches; nothing to change
+  except, optionally, a narrow-cell variant of "Célula de posição". A6/A7 unchanged.
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -895,3 +905,4 @@ Frame ids read on 30 Oct 2026.
 | D17 registered tablets (A1, A0, A2b, B7) | DC-57 … DC-60 |
 | Phone fixes, 2 Nov (A7 panel, "Alterar estado") | DC-61, DC-62 |
 | Dashboard sidebar, 2 Nov | DC-63 |
+| B4 position panel beside the grid (D26), 2 Nov | DC-64 |

@@ -171,7 +171,8 @@ Key conventions:
   Icons: `ui/core/icons/ic_icons.dart` (SVG paths, no icon package).
 - **Layout rule:** phones (height < 500) may scroll vertically, never sideways; tablets
   and desktops never scroll. Use `FitList`, `FitDataTable`, `SlotGrid` and
-  `OverlayPanelLayout`; `test/ui/layout_fit_test.dart` enforces it at 844×390,
+  `OverlayPanelLayout` (App A6/A7) or `SidePanelLayout` (Dashboard B4, panel beside the
+  grid, D26); `test/ui/layout_fit_test.dart` enforces it at 844×390,
   1280×800 and 1440×900.
 - Translations: edit both ARB files, then run `flutter gen-l10n`. CSV/PDF exports stay
   in Portuguese on purpose.

@@ -365,3 +365,105 @@ class OverlayPanelLayout extends StatelessWidget {
     );
   }
 }
+
+/// Body with a right-hand panel docked **beside** it (D26, 2 Nov 2026).
+///
+/// Used by the Dashboard's B4 "Editar grelha": there the panel stays open
+/// while positions are picked, merged and split, and [OverlayPanelLayout]
+/// covered the right-hand positions so they couldn't be reached. Here the
+/// panel takes its own column and the grid (which always fits the width it
+/// is given) shrinks into the rest, as in the Figma B4 frame and Material
+/// 3's "supporting pane" layout: nothing scrolls sideways and no position is
+/// covered. The App (A6/A7) keeps [OverlayPanelLayout].
+///
+/// Width: at most [panelWidth] and 40 % of the width (Material 3 gives a
+/// supporting pane about 30 % of an expanded window); on a phone-sized
+/// window at most 300 px and 50 %.
+class SidePanelLayout extends StatelessWidget {
+  const SidePanelLayout({
+    super.key,
+    required this.body,
+    required this.panel,
+    required this.onClose,
+    this.panelWidth = 360,
+  });
+
+  /// Key of the open panel, for tests.
+  static const panelKey = ValueKey('side-panel');
+
+  final Widget body;
+
+  /// Null hides the panel and gives the body the full width.
+  final Widget? panel;
+  final VoidCallback onClose;
+  final double panelWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final phone = allowsScroll(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = phone ? min(min(panelWidth, 300.0), constraints.maxWidth * 0.5) : min(panelWidth, constraints.maxWidth * 0.4);
+        final gap = phone ? IcSpace.s12 : IcSpace.s20;
+        final pad = phone ? IcSpace.s12 : IcSpace.s20;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: body),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              // Opening/closing only: the panel grows from 0 to its width and
+              // the grid reflows with it. Changing the selection keeps it open.
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                axis: Axis.horizontal,
+                alignment: Alignment.centerLeft,
+                child: child,
+              ),
+              // Passthrough: the Row gives this column the full height.
+              layoutBuilder: (current, previous) => Stack(
+                fit: StackFit.passthrough,
+                alignment: Alignment.centerLeft,
+                children: [...previous, ?current],
+              ),
+              child: panel == null
+                  ? const SizedBox.shrink(key: ValueKey('no-panel'))
+                  : Padding(
+                      key: const ValueKey('panel'),
+                      padding: EdgeInsets.only(left: gap),
+                      child: SizedBox(
+                        key: panelKey,
+                        width: width,
+                        height: double.infinity,
+                        child: Material(
+                          color: IcColors.bgSurface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(IcRadius.lg),
+                            side: const BorderSide(color: IcColors.borderDefault),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              Padding(padding: EdgeInsets.all(pad), child: panel),
+                              Positioned(
+                                top: IcSpace.s4,
+                                right: IcSpace.s4,
+                                child: IconButton(
+                                  tooltip: l10n.closePanel,
+                                  onPressed: onClose,
+                                  icon: const IcIconView(IcIcon.fechar, size: 20, color: IcColors.textSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}

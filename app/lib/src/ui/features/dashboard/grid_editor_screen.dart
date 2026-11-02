@@ -167,9 +167,9 @@ class _GridArea extends StatelessWidget {
           ),
           const SizedBox(height: IcSpace.s16),
           Expanded(
-            // The position panel slides in over the grid, so the grid keeps
-            // the full width and never scrolls.
-            child: OverlayPanelLayout(
+            // The position panel sits beside the grid (D26, 2 Nov 2026); the
+            // grid shrinks into the rest, so no position is ever covered.
+            child: SidePanelLayout(
               panelWidth: 380,
               onClose: vm.clearSelection,
               body: SlotGrid(

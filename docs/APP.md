@@ -480,7 +480,9 @@ the A6 lot line). The full list and the reason for each is in REVIEW_2026-10-30.
 | Desktop (wider) | **Nothing scrolls** |
 
 - **Use these widgets:** `SlotGrid` (fits the space, shrinks the cell content),
-  `OverlayPanelLayout` (the side panel slides over the grid), and `FitList` /
+  `OverlayPanelLayout` (App A6/A7: the side panel slides over the grid),
+  `SidePanelLayout` (Dashboard B4: the panel sits beside the grid, which shrinks
+  into the rest, so no position is covered while editing; D26), and `FitList` /
   `FitDataTable` (pages of exactly the height available, with a "1–10 de 212 ‹ ›"
   pager instead of scrolling).
 - **Enforced by:** `test/ui/layout_fit_test.dart`, which renders screens at 844×390,

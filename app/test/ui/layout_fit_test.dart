@@ -1,7 +1,8 @@
 // Validates the layout rule (design change, 14 Oct 2026):
 // - tablet (1280 × 800) and desktop (1440 × 900): no screen scrolls, in any
-//   direction; long lists/tables are paged; the slot panel sits over the
-//   drawer grid;
+//   direction; long lists/tables are paged; in the App (A6/A7) the slot
+//   panel sits over the drawer grid, in the Dashboard's B4 it sits beside
+//   the grid and never covers a position (D26, 2 Nov 2026);
 // - phone (844 × 390): vertical scrolling is allowed, horizontal is not.
 //
 // Each test renders a screen with deliberately large data (dense 12-row
@@ -410,7 +411,7 @@ void main() {
   });
 
   group('B4 grid editor', () {
-    testWidgets('desktop: 12 × 12 grid fits, position panel opens over it', (tester) async {
+    testWidgets('desktop: 12 × 12 grid fits, position panel opens beside it', (tester) async {
       final services = _services(rows: 12, columns: 12, products: 144);
       await _pump(tester, desktop, services, const GridEditorScreen(cartId: 'c0', drawerId: 'd0'));
       _expectNoScroll(tester);
@@ -419,6 +420,7 @@ void main() {
       expect(find.byTooltip('Fechar painel'), findsOneWidget);
       _expectNoScroll(tester);
     });
+      _expectPanelBesideGrid(tester);
 
     testWidgets('tablet size: grid editor fits', (tester) async {
       final services = _services(rows: 8, columns: 10, products: 80);
@@ -426,6 +428,32 @@ void main() {
       _expectNoScroll(tester);
     });
   });
+
+    // D26 (2 Nov 2026): with the panel open, every position can still be
+    // reached: the rightmost one (which the old overlay covered) is tapped
+    // and joins the selection.
+    for (final (name, size) in [('tablet', tablet), ('desktop', desktop)]) {
+      testWidgets('$name: panel open, no position under it, rightmost one selectable', (tester) async {
+        final services = _services(rows: 8, columns: 10, products: 80);
+        await _pump(tester, size, services, const GridEditorScreen(cartId: 'c0', drawerId: 'd0'));
+        await tester.tap(find.byType(SlotCell).first);
+        await _settle(tester);
+        expect(find.byTooltip('Fechar painel'), findsOneWidget);
+        _expectNoScroll(tester);
+        _expectPanelBesideGrid(tester);
+
+        final cells = find.byType(SlotCell);
+        final count = cells.evaluate().length;
+        var best = 0;
+        for (var i = 1; i < count; i++) {
+          if (tester.getRect(cells.at(i)).right > tester.getRect(cells.at(best)).right) best = i;
+        }
+        await tester.tap(cells.at(best));
+        await _settle(tester);
+        expect(tester.widget<SlotCell>(cells.at(best)).selected, isTrue, reason: 'the rightmost position could not be selected with the panel open');
+        _expectNoScroll(tester);
+      });
+    }
 
   group('lists and tables are paged instead of scrolling', () {
     testWidgets('A4 carts: 20 carts on a tablet', (tester) async {
@@ -700,4 +728,17 @@ void main() {
       });
     }
   });
+}
+
+/// D26 (2 Nov 2026), B4: the open position panel sits beside the grid; no
+/// position is under it.
+void _expectPanelBesideGrid(WidgetTester tester) {
+  final panel = tester.getRect(find.byKey(SidePanelLayout.panelKey));
+  final cells = find.byType(SlotCell);
+  final count = cells.evaluate().length;
+  expect(count, greaterThan(0));
+  for (var i = 0; i < count; i++) {
+    final cell = tester.getRect(cells.at(i));
+    expect(cell.right, lessThanOrEqualTo(panel.left + 0.5), reason: 'position $i (${cell.left.round()}–${cell.right.round()}) is under the panel (from ${panel.left.round()})');
+  }
 }

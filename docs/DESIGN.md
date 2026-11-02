@@ -240,6 +240,7 @@ emergency mode is open and isn't stored.
 | Long lists and tables | Scroll | Pages that fit + `Pager` | Pages that fit + `Pager` |
 | Drawer grid | Cells ≥ 48 px, scrolls vertically | Always fits; cell content compacts | Always fits |
 | Detail panel | Over the grid | **Over** the grid (`OverlayPanelLayout`), closed with ✕ or by tapping the slot again | Same |
+| B4 position panel (Dashboard) | — | **Beside** the grid (`SidePanelLayout`, ≤ 380 px and ≤ 40 %), as in Figma; the grid shrinks into the rest (D26) | Same |
 
 Breakpoints in code (`formFactorOf`, `widgets/fit.dart`): **phone** when the height is
 under 500, **tablet** up to 1360 wide, **desktop** above.

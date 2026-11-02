@@ -107,6 +107,38 @@ class SlotCell extends StatelessWidget {
             ),
           );
         }
+        if (!compact && box.maxWidth < 72) {
+          // Narrow (B4: a dense drawer beside the position panel, D26): the
+          // name wraps/ellipsizes and the quantity + state icon scale down,
+          // so the cell stays readable and tappable without overflowing.
+          return Padding(
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ClipRect(
+                    child: Text(name, maxLines: 3, overflow: TextOverflow.ellipsis, style: IcText.labelS.copyWith(color: nameStyle.color)),
+                  ),
+                ),
+                SizedBox(
+                  height: 16,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (icon != null) ...[icon, const SizedBox(width: 2)],
+                        qtyText,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
         if (compact || (h.isFinite && h < 76)) {
           // Medium: name + icon on top, position + quantity below.
           return Padding(
