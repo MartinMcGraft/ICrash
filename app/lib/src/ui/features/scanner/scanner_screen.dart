@@ -155,27 +155,16 @@ class ScannerScreen extends StatelessWidget {
 
   Future<void> _manual(BuildContext context, ScannerViewModel vm) async {
     final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController();
-    final text = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.scanManual),
-        content: SizedBox(
-          width: 400,
-          child: LabeledField(
-            label: vm.mode == ScanMode.product ? l10n.scanManualProductLabel : l10n.cartLoginCodeLabel,
-            controller: controller,
-            autofocus: true,
-            onSubmitted: (v) => Navigator.of(context).pop(v),
-          ),
-        ),
-        actions: [
-          IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
-          IcButton(label: l10n.actionConfirm, onPressed: () => Navigator.of(context).pop(controller.text)),
-        ],
-      ),
+    // The camera stops while the dialog covers it.
+    await vm.scanner.pause();
+    if (!context.mounted) return;
+    final text = await showCodeEntryDialog(
+      context,
+      title: l10n.scanManual,
+      label: vm.mode == ScanMode.product ? l10n.scanManualProductLabel : l10n.cartLoginCodeLabel,
     );
-    controller.dispose();
-    if (text != null && text.trim().isNotEmpty) await vm.submitManual(text);
+    if (vm.isDisposed) return;
+    await vm.scanner.resume();
+    if (text != null) await vm.submitManual(text);
   }
 }

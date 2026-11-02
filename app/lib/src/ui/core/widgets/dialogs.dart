@@ -4,6 +4,7 @@ import '../../../common/l10n/app_localizations.dart';
 import '../../../common/repository_failure.dart';
 import '../mvvm/view_model.dart';
 import 'ic_button.dart';
+import 'layout.dart';
 
 /// Confirmation dialog with the shared button styles.
 Future<bool> confirmAction(
@@ -72,4 +73,63 @@ void showResult(BuildContext context, ActionResult<Object?> result, {String? suc
 void showMessage(BuildContext context, String text) {
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+}
+
+/// Asks for a code typed by hand ("Manual" on A11, "Introduzir código" on
+/// A3). Returns the trimmed text, or null when cancelled or empty.
+///
+/// The text field's controller belongs to the dialog's own State, so it is
+/// disposed only after the closing animation: disposing it as soon as
+/// `showDialog` returned crashed the app, because the field still writes to
+/// its controller when it loses focus on the way out (2 Nov 2026).
+Future<String?> showCodeEntryDialog(BuildContext context, {required String title, required String label, String? hint}) async {
+  final text = await showDialog<String>(
+    context: context,
+    builder: (_) => _CodeEntryDialog(title: title, label: label, hint: hint),
+  );
+  final trimmed = text?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
+}
+
+class _CodeEntryDialog extends StatefulWidget {
+  const _CodeEntryDialog({required this.title, required this.label, this.hint});
+
+  final String title;
+  final String label;
+  final String? hint;
+
+  @override
+  State<_CodeEntryDialog> createState() => _CodeEntryDialogState();
+}
+
+class _CodeEntryDialogState extends State<_CodeEntryDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 400,
+        child: LabeledField(
+          label: widget.label,
+          hint: widget.hint,
+          controller: _controller,
+          autofocus: true,
+          onSubmitted: (value) => Navigator.of(context).pop(value),
+        ),
+      ),
+      actions: [
+        IcButton(label: l10n.actionCancel, style: IcButtonStyle.ghost, onPressed: () => Navigator.of(context).pop()),
+        IcButton(label: l10n.actionConfirm, onPressed: () => Navigator.of(context).pop(_controller.text)),
+      ],
+    );
+  }
 }

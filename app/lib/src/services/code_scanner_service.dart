@@ -18,6 +18,11 @@ abstract class CodeScannerService {
   Stream<ScannedCode> scans();
   bool get usesCamera;
   Future<void> toggleTorch();
+
+  /// Stops the camera while something covers it (the manual-entry dialog),
+  /// and starts it again.
+  Future<void> pause();
+  Future<void> resume();
   void dispose();
 }
 
@@ -51,6 +56,24 @@ class CameraCodeScannerService implements CodeScannerService {
   Future<void> toggleTorch() => controller.toggleTorch();
 
   @override
+  Future<void> pause() async {
+    try {
+      await controller.stop();
+    } on Object {
+      // Already stopped, or the camera is gone.
+    }
+  }
+
+  @override
+  Future<void> resume() async {
+    try {
+      await controller.start();
+    } on Object {
+      // Already running, or the camera is gone.
+    }
+  }
+
+  @override
   void dispose() => controller.dispose();
 }
 
@@ -79,6 +102,12 @@ class KeyboardCodeScannerService implements CodeScannerService {
 
   @override
   Future<void> toggleTorch() async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
 
   @override
   void dispose() => _controller.close();

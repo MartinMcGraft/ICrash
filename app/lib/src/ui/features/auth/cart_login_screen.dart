@@ -5,6 +5,7 @@ import '../../../services/internal_qr_payload.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/ic_button.dart';
 import '../../core/widgets/layout.dart';
 import '../../core/widgets/scanner_viewport.dart';
@@ -104,28 +105,17 @@ class CartLoginScreen extends StatelessWidget {
 
   Future<void> _askCode(BuildContext context, CartLoginViewModel vm) async {
     final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController();
-    final code = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.cartLoginEnterCode),
-        content: SizedBox(
-          width: 400,
-          child: LabeledField(
-            label: l10n.cartLoginCodeLabel,
-            controller: controller,
-            hint: l10n.cartLoginCodeHint,
-            autofocus: true,
-            onSubmitted: (value) => Navigator.of(context).pop(value),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.actionCancel)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text), child: Text(l10n.actionConfirm)),
-        ],
-      ),
+    // The camera stops while the dialog covers it.
+    await vm.scanner.pause();
+    if (!context.mounted) return;
+    final code = await showCodeEntryDialog(
+      context,
+      title: l10n.cartLoginEnterCode,
+      label: l10n.cartLoginCodeLabel,
+      hint: l10n.cartLoginCodeHint,
     );
-    controller.dispose();
-    if (code != null && code.trim().isNotEmpty) await vm.submitCode(code);
+    if (vm.isDisposed) return;
+    await vm.scanner.resume();
+    if (code != null) await vm.submitCode(code);
   }
 }
