@@ -328,7 +328,10 @@ class AppRootViewModel extends ViewModel {
   /// Offline or refused, the copy already on the device is kept.
   Future<void> _refreshPin(String institutionId, String uid) async {
     try {
-      final pinHash = await services.credentials.fetchPinHash(institutionId, uid);
+      // Super has no membership: its PIN is on its platformAdmins marker.
+      final pinHash = isSuper
+          ? await services.support.myPinHash()
+          : await services.credentials.fetchPinHash(institutionId, uid);
       await services.deviceSession.cachePinHash(uid, pinHash);
     } on RepositoryFailure {
       // Keep the cached hash.

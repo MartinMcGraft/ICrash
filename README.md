@@ -58,7 +58,7 @@ firebase emulators:start --only auth,firestore --project demo-icrash-v2
 # 2. In a second terminal, seed test data (emulator data is lost on every restart)
 cd firebase/firestore-tests
 npm install          # first time only
-node seed_qa_run.mjs # 4 test accounts across every role, 2 institutions, edge cases
+node seed_qa_run.mjs # wipes the emulator; 5 test accounts, 2 institutions, 3 carts
 
 # 3. Run the app (debug builds talk to the emulator automatically)
 cd app
@@ -67,14 +67,22 @@ flutter run                    # pick Android / Chrome / macOS
 flutter test                   # app tests
 ```
 
-Test accounts created by `seed_qa_run.mjs` (emulator only):
+Test accounts created by `seed_qa_run.mjs` (emulator only, 2 Nov 2026):
 
-| E-mail | Role | Password | PIN |
-|---|---|---|---|
-| `enfermeira.teste@icrash.pt` | institutionAdmin (also in "Hospital Teste B", so the institution picker appears) | `icrash-teste-123` | `1234` |
-| `gestor.teste@icrash.pt` | manager | `icrash-teste-123` | `1234` |
-| `utilizador.teste@icrash.pt` | user (health professional) | `icrash-teste-123` | `1234` |
-| `super.teste@icrash.pt` | platform super admin, no institution | `icrash-teste-123` | — |
+| Account | E-mail | Type | PIN | Nº mecanográfico |
+|---|---|---|---|---|
+| super | `super.teste@icrash.pt` | **Super** (I-Crash team): no membership, a `platformAdmins` marker; picks Hospital A or B (both have a 7-day support window open) | `0001` | — |
+| adminA | `admin.teste@icrash.ia.pt` | **Admin** of Hospital A (its IT): users, carts, catalogue… | `1000` | A100 |
+| adminB | `admin.teste@icrash.ib.pt` | **Admin** of Hospital B | `2000` | B200 |
+| userA | `user.teste@icrash.ia.pt` | **Manager** in Hospital A (health professional), registered to Carro de Urgência A1 only | `1001` | A101 |
+| userB | `user.teste@icrash.ib.pt` | **Manager** in Hospital B, registered to Carro de Urgência B1 only | `2001` | B201 |
+
+Password for every account: **`icrash-teste-123`**. Carts: Hospital A has **A1** (userA)
+and **A2** (nobody registered, so only adminA sees it); Hospital B has **B1** (userB). Each
+cart has 2 drawers of 2 × 2 (drawer 1 named "Via aérea e circulação", drawer 2 unnamed). A1
+and B1 hold an OK placement, one expiring in 12 days, one expired 10 days ago and one below
+target; A2 is all OK. Expiry dates are relative to the day the seed runs. **The seed wipes
+the emulator first** (every Auth account and Firestore document, tablets included).
 
 Credentials are set by the administration only (DB3): there's no "forgot password" and
 no "set PIN" in the app. Administrators create users with a password and PIN in B7; IT

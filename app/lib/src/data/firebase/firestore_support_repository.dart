@@ -34,6 +34,18 @@ class FirestoreSupportRepository implements SupportRepository {
   }
 
   @override
+  Future<String?> myPinHash() async {
+    if (_uid.isEmpty) return null;
+    try {
+      final data = (await _firestore.collection('platformAdmins').doc(_uid).get()).data();
+      final hash = data?['pinHash'];
+      return hash is String && hash.isNotEmpty ? hash : null;
+    } catch (error) {
+      throw mapFirebaseException(error);
+    }
+  }
+
+  @override
   Stream<SupportWindow?> watchWindow(String institutionId) => _current(institutionId)
       .snapshots()
       .map((snapshot) {

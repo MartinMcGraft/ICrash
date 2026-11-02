@@ -6,7 +6,7 @@
 // Default target: the LOCAL EMULATOR (project demo-icrash-v2). Start it first:
 //   cd firebase && firebase emulators:start --only auth,firestore --project demo-icrash-v2
 //   cd firebase/tools && npm install
-//   node set_password.mjs --email gestor.teste@icrash.pt --password 'nova-palavra-1' --pin 4321 --institution hospital-teste
+//   node set_password.mjs --email user.teste@icrash.ia.pt --password 'nova-palavra-1' --pin 4321 --institution hospital-a
 //
 // Cloud project (i-crash-pt-2026): only with an explicit OK from a project
 // owner (see README "Notes for AI assistants"), a service-account key kept

@@ -671,6 +671,12 @@ class FakeSupportRepository implements SupportRepository {
   @override
   Future<bool> isPlatformAdmin() async => isSuper;
 
+  /// Super's own PIN hash.
+  String? pinHash;
+
+  @override
+  Future<String?> myPinHash() async => pinHash;
+
   @override
   Stream<SupportWindow?> watchWindow(String institutionId) {
     scheduleMicrotask(() => _emit(institutionId));

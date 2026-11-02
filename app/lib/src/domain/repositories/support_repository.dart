@@ -6,6 +6,10 @@ abstract class SupportRepository {
   /// Whether the signed-in account is Super (a `platformAdmins/{uid}` marker).
   Future<bool> isPlatformAdmin();
 
+  /// Super's own PIN hash (on its `platformAdmins/{uid}` marker, set by
+  /// I-Crash), so A2 and signing work for Super too. Null when none is set.
+  Future<String?> myPinHash();
+
   /// The window in force for [institutionId] (open, closed or expired), or
   /// `null` when none was ever opened.
   Stream<SupportWindow?> watchWindow(String institutionId);
@@ -39,6 +43,9 @@ class NoSupportRepository implements SupportRepository {
 
   @override
   Future<bool> isPlatformAdmin() async => false;
+
+  @override
+  Future<String?> myPinHash() async => null;
 
   @override
   Stream<SupportWindow?> watchWindow(String institutionId) => Stream.value(null);

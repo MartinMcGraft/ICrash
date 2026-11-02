@@ -29,4 +29,4 @@ With both emulators already running (`firebase emulators:start --only auth,fires
 npm run seed
 ```
 
-This creates an Auth emulator user (`enfermeira.teste@icrash.pt` / `icrash-teste-123`), an institution `Hospital de Teste`, an active `institutionAdmin` membership for that user, and one cart with that user as its responsible user — enough to walk through the app's login -> institution selection -> dashboard flow. Emulator data is not persisted across restarts, so re-run this after every fresh `emulators:start`.
+This runs `seed_qa_run.mjs`: it **wipes the emulator** (Auth accounts and Firestore), then creates Super (`super.teste@icrash.pt`), the Admins of Hospital A and B (`admin.teste@icrash.ia.pt`, `admin.teste@icrash.ib.pt`), one Manager in each (`user.teste@icrash.ia.pt`, `user.teste@icrash.ib.pt`) and three carts (A1 and A2 in Hospital A, B1 in Hospital B). Password `icrash-teste-123`; PINs and details in the repository README. Emulator data is not persisted across restarts, so re-run this after every fresh `emulators:start`.

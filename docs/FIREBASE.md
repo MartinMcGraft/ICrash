@@ -43,8 +43,7 @@ firebase/
 ├── firestore.indexes.json   composite indexes (§7)
 ├── firestore-tests/         rules tests + emulator seed scripts (never touch the cloud)
 │   ├── rules.test.mjs
-│   ├── seed_emulator.mjs    small fixture: 1 admin, 1 cart
-│   └── seed_qa_run.mjs      full fixture: 4 users (every role), 2 institutions, edge cases
+│   └── seed_qa_run.mjs      wipes the emulator, then 5 users, 2 institutions, 3 carts
 └── tools/
     └── provision_cloud_admins.mjs   creates the first admins in the REAL project
 ```
@@ -76,28 +75,29 @@ firebase emulators:start --only auth,firestore --project demo-icrash-v2
 # Terminal 2: test data (emulator data is wiped on every restart, so re-seed each time)
 cd firebase/firestore-tests
 npm install            # first time only
-node seed_qa_run.mjs   # or: npm run seed  (the smaller seed_emulator.mjs)
+node seed_qa_run.mjs   # or: npm run seed
 
 # Terminal 3: the app (debug → emulator automatically)
 cd app
 flutter run
 ```
 
-`seed_qa_run.mjs` creates these accounts. Emulator-only credentials: password
-**`icrash-teste-123`**, PIN **`1234`** (set the way B7 sets it, DB3):
+`seed_qa_run.mjs` (also `npm run seed`) creates these accounts (2 Nov 2026):
 
-| E-mail | Role | PIN |
-|---|---|---|
-| `enfermeira.teste@icrash.pt` | institutionAdmin (also in "Hospital Teste B") | 1234 |
-| `gestor.teste@icrash.pt` | manager | 1234 |
-| `utilizador.teste@icrash.pt` | user | 1234 |
-| `super.teste@icrash.pt` | platform super admin, no institution | none (no membership) |
+| Account | E-mail | Type | PIN | Nº mecanográfico |
+|---|---|---|---|---|
+| super | `super.teste@icrash.pt` | **Super** (I-Crash team): no membership, a `platformAdmins` marker; picks Hospital A or B (both have a 7-day support window open) | `0001` | — |
+| adminA | `admin.teste@icrash.ia.pt` | **Admin** of Hospital A (its IT): users, carts, catalogue… | `1000` | A100 |
+| adminB | `admin.teste@icrash.ib.pt` | **Admin** of Hospital B | `2000` | B200 |
+| userA | `user.teste@icrash.ia.pt` | **Manager** in Hospital A (health professional), registered to Carro de Urgência A1 only | `1001` | A101 |
+| userB | `user.teste@icrash.ib.pt` | **Manager** in Hospital B, registered to Carro de Urgência B1 only | `2001` | B201 |
 
-It also creates two institutions: one with two carts and crafted expiry, lot (one batch
-without a lot number) and below-target cases, and one bare one for isolation tests. In
-`carro-1`, **drawer 1 has history** (a replenishment of Adrenalina), so it shows the
-structure lock; drawer 2 is unused and editable. `npm run seed` (`seed_emulator.mjs`)
-creates only `enfermeira.teste@icrash.pt` with the same password and PIN.
+Password for every account: **`icrash-teste-123`**. Carts: Hospital A has **A1** (userA)
+and **A2** (nobody registered, so only adminA sees it); Hospital B has **B1** (userB). Each
+cart has 2 drawers of 2 × 2 (drawer 1 named "Via aérea e circulação", drawer 2 unnamed). A1
+and B1 hold an OK placement, one expiring in 12 days, one expired 10 days ago and one below
+target; A2 is all OK. Expiry dates are relative to the day the seed runs. **The seed wipes
+the emulator first** (every Auth account and Firestore document, tablets included).
 
 ### How the app finds the emulator
 `app/lib/src/common/app_environment.dart` and
@@ -301,7 +301,9 @@ institutions/{institutionId}                 name, expiryWarningDays, createdBy
     (checked by the app).
   - **Support access (D18, done 30 Oct):** `institutions/{i}/support/current` (`grantId`,
     `reason`, `grantedBy`, `grantedByName`, `startsAt`, `endsAt`, `closedAt?`, `closedBy?`)
-    is the window in force; `supportGrants/{grantId}` keeps every window; `supportLog/{id}`
+    is the window in force; `supportGrants/{grantId}` keeps every window;
+    Super's own PIN hash is `platformAdmins/{uid}.pinHash` (readable by Super only; set by
+    I-Crash, e.g. the seed); `supportLog/{id}`
     (`superUid`, `superEmail`, `grantId`, `action` enter/leave, `at`) is what Super did.
   - Membership status: `active`, `invited`, `disabled`.
   - Cart status: `operational`, `replenishmentRequired`, `auditRequired`,
@@ -473,7 +475,7 @@ Implemented 29 Oct 2026 as an interim under Firebase:
   ```sh
   cd firebase/tools && npm install
   # emulator (default):
-  node set_password.mjs --email gestor.teste@icrash.pt --password 'nova-palavra-1' --pin 4321 --institution hospital-teste
+  node set_password.mjs --email user.teste@icrash.ia.pt --password 'nova-palavra-1' --pin 4321 --institution hospital-a
   # cloud, only with a project owner's explicit OK and a key kept outside the repo:
   node set_password.mjs --cloud ~/keys/i-crash-key.json --email … --password …
   ```

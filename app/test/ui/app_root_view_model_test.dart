@@ -96,6 +96,23 @@ void main() {
       vm.dispose();
     });
 
+    test("Super's own PIN (on its platformAdmins marker) is copied to the device", () async {
+      final hasher = PinHasher(iterations: 1000);
+      final support = FakeSupportRepository(isSuper: true, institutions: const [hospital], windows: {'inst': window('inst')})
+        ..pinHash = await hasher.hash('0001');
+      final services = buildTestServices(
+        auth: FakeAuthRepository(signedInUser: const AuthUser(uid: 'sup', email: 'sup@icrash.pt')),
+        support: support,
+        pinHasher: hasher,
+      );
+      final vm = AppRootViewModel(services);
+      await _settle();
+      await vm.selectInstitution(hospital);
+      expect(vm.hasPin, isTrue);
+      expect(await services.deviceSession.verifyPin('sup', '0001'), isTrue);
+      vm.dispose();
+    });
+
     test('when the Admin closes the window, Super is sent back to the list', () async {
       final support = FakeSupportRepository(isSuper: true, institutions: const [hospital], windows: {'inst': window('inst')});
       final services = buildTestServices(
