@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../common/l10n/app_localizations.dart';
+import '../../core/feature_flags.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/mvvm/view_model.dart';
@@ -78,7 +79,7 @@ class DashboardCartsScreen extends StatelessWidget {
                           TableColumnSpec(l10n.drawersTitle, flex: 2),
                           TableColumnSpec(l10n.columnAlerts, flex: 4),
                           TableColumnSpec(l10n.columnLastCheck, flex: 3),
-                          TableColumnSpec(l10n.columnOnShift, flex: 3),
+                          if (kShiftsEnabled) TableColumnSpec(l10n.columnOnShift, flex: 3),
                         ],
                         emptyText: vm.total == 0 ? l10n.dashboardCartsEmpty : l10n.dashboardNoCartMatches,
                         onRowTap: (i) => Navigator.of(context).push(sectionRoute((_) => CartConfigScreen(cartId: rows[i].cart.id))),
@@ -91,7 +92,7 @@ class DashboardCartsScreen extends StatelessWidget {
                               CellText('${vm.drawerCount(s.cart.id) ?? '—'}'),
                               CellText(s.counts.allOk && s.checkOverdueDays == null ? '—' : cartAlertLine(l10n, s).$3),
                               CellText(s.lastCheck == null ? '—' : format.date(s.lastCheck!.createdAt)),
-                              CellText(vm.responsibleNow(s.cart.id) ?? '—'),
+                              if (kShiftsEnabled) CellText(vm.responsibleNow(s.cart.id) ?? '—'),
                             ],
                         ],
                       ),

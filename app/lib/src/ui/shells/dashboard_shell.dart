@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/l10n/app_localizations.dart';
+import '../core/feature_flags.dart';
 import '../core/icons/ic_icons.dart';
 import '../core/labels.dart';
 import '../core/session/session.dart';
@@ -46,7 +47,7 @@ class _DashboardShellState extends State<DashboardShell> implements ShellNavigat
         if (session.isInstitutionAdmin) DashboardSection.catalog,
         if (session.isInstitutionAdmin) DashboardSection.templates,
         if (session.isInstitutionAdmin) DashboardSection.users,
-        if (session.isInstitutionAdmin) DashboardSection.shifts,
+        if (session.isInstitutionAdmin && kShiftsEnabled) DashboardSection.shifts,
         DashboardSection.reports,
         // D18: only the institution's own Admin opens support access.
         if (session.isOwnAdmin) DashboardSection.support,

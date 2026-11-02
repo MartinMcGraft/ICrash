@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../common/app_services.dart';
 import '../../../common/l10n/app_localizations.dart';
+import '../../core/feature_flags.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
@@ -60,7 +61,8 @@ class CartsScreen extends StatelessWidget {
                   items: [
                     TabItem(CartsFilter.all, l10n.cartsFilterAll(vm.total)),
                     TabItem(CartsFilter.attention, compact ? l10n.cartsFilterAttentionShort(vm.attentionCount) : l10n.cartsFilterAttention(vm.attentionCount)),
-                    TabItem(CartsFilter.mine, l10n.cartsFilterMine(vm.mineCount)),
+                    // "Os meus" = the carts someone is on shift for (D8).
+                    if (kShiftsEnabled) TabItem(CartsFilter.mine, l10n.cartsFilterMine(vm.mineCount)),
                   ],
                 ),
                 SizedBox(height: compact ? IcSpace.s12 : IcSpace.s20),

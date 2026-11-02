@@ -7,6 +7,7 @@ import '../../../domain/entities/emergency_session.dart';
 import '../../../domain/entities/shift.dart';
 import '../../../domain/inventory_health.dart';
 import '../../core/cart_live_data.dart';
+import '../../core/feature_flags.dart';
 import '../../core/mvvm/view_model.dart';
 import '../../core/session/session.dart';
 import '../carts/carts_view_model.dart' show monthlyCheckMaxAgeDays;
@@ -78,6 +79,7 @@ class CartViewModel extends ViewModel {
 
   /// "Responsável no turno: Ana Silva" (proposal D8), or null.
   String? get responsibleOnShift {
+    if (!kShiftsEnabled) return null;
     final now = DateTime.now();
     final period = ShiftPeriodHours.at(now);
     final shift = _shifts

@@ -44,7 +44,7 @@ The same Flutter app runs everywhere. The **platform** chooses the shell; the us
 | Ler código (scan) | Catálogo: Admin |
 | Perfil (profile menu, bottom) | Modelos (templates): Admin |
 | | Utilizadores (users): Admin |
-| | Turnos (shifts): Admin |
+| | ~~Turnos (shifts)~~: hidden, D8 set aside (2 Nov) |
 | | Relatórios (reports) |
 | | Histórico (history) |
 | | Acesso do suporte: the institution's own Admin (D18) |
@@ -187,9 +187,9 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 `features/carts/carts_screen.dart`
 
 - One **card per cart**: name, service and location, a **state chip**, one alert line
-  (e.g. "1 expirado · 2 em falta" or "Tudo conforme"), last monthly check, and who is
-  responsible on the current shift.
-- Filters: all, needs attention, mine. Search by name.
+  (e.g. "1 expirado · 2 em falta" or "Tudo conforme") and the last monthly check.
+- Filters: all, needs attention. Search by name. ("Os meus", the carts someone is on shift
+  for, is hidden while shifts are set aside: D8, `kShiftsEnabled`.)
 - **A12** is the same screen while offline: a notice plus the sync indicator; cached data
   stays readable.
 
@@ -204,8 +204,8 @@ the PIN; the login method itself (e-mail today) is chosen per institution, last.
 - **Cart menu** (same on phones and tablets, D21; scrolls on phones): monthly check ·
   search product (shows "Gaveta N · posição B3") · change state (manager+) · **Relatórios do
   carro**, which switches to the **Relatórios** section filtered by this cart (the rail
-  highlights it; back returns to the cart, RV-12). On phones the shift's responsible person
-  is shown here instead of the header.
+  highlights it; back returns to the cart, RV-12). (The shift's responsible person, in
+  the header or here on phones, is hidden while shifts are set aside: D8.)
 - The cart's QR isn't shown in the App any more (RV-21): it's printed from **B3**.
 - The **Modo de emergência** button is **hidden** for now (P12; `kEmergencyModeEnabled` in
   `cart_screen.dart`); A10's code is kept.
@@ -343,13 +343,13 @@ Rebuilt on 30 Oct 2026 (D4, D22, D23; REVIEW_2026-10-30.md §5.5).
 | Screen | File(s) in `features/dashboard/` | What it does |
 |---|---|---|
 | **B1 Overview** | `overview_*` | Metrics: operational carts, needing replenishment, expiring within 30 days (and in how many carts), overdue checks, emergencies this month. "Carrinhos que precisam de atenção" list and recent activity (stock events + reports). PDF of the overview |
-| **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers, responsible now. Filters and search. **New cart**, from scratch or **from a template** |
+| **B2 Carts** | `dashboard_carts_*`, `cart_form_dialog.dart` | Table of every cart: state, service, location, drawers (the "responsible now" column is hidden with shifts, D8). Filters and search. **New cart**, from scratch or **from a template** |
 | **B3 Cart configuration** | `cart_config_*`, `drawer_form_dialog.dart` | Name, service, location, state, the **automatic state** switch (D7), **archive** (D15: never delete). **"Código QR"** opens the cart code dialog to print it (RV-21). Drawer **name** (optional, D20, up to 50 characters) in "Adicionar gaveta", in a "Nome" column and in **Editar gaveta** (number only while Q8 allows it; the name always). Drawers table: **Nº** ("Gaveta N"), size, positions, with product. **Add drawer** asks for its **number** (default: lowest free; unique in the cart) and size, and creates one slot per cell. **Alterar número** only while the drawer has no History, or if it never had a number (Q8) |
 | **B4 Grid editor** | `grid_editor_*` | Drawer layout: resize rows/columns, select cells, **merge** (the selection must form a rectangle) and **split**, then save. Slot setup: product, target, expiry warning ("Aplicar à posição"), "Limpar posição". A target below the current stock is refused. **Once the drawer has History** (P1/P2) the layout is locked (steppers, merge, split disabled; a warning replaces the hint), used slots keep their product and can't be cleared; targets can still change. **Orphaned assignments** (old data): reassign, or remove only when unused (Q7) |
 | **B5 Catalogue** | `catalog_*` | Products: name, presentation, **GTIN (unique)**, category (drug / material / fluid), expiry warning days. Filters by category, "used in N carts". **CSV import** by pasting `nome;apresentação;GTIN;categoria;aviso` |
 | **B6 Templates** | `templates_*` | Capture a cart's structure and target quantities as a template; duplicate, rename, re-capture; create a cart from it. Templates never carry stock, lots or history. **Archived, never deleted** (P3): tabs "Ativos / Arquivados", "Arquivar modelo" and "Restaurar"; archived templates aren't offered for new carts but can still be edited (local stub) |
 | **B7 Users & permissions** | `users_*` | Members with name, e-mail, role, status. **Criar utilizador** (DB3): name, e-mail, role, **password** (min. 8) and **PIN** (4 digits), each typed twice; the administrator hands them over. Per member: change role, enable/disable, **Definir novo PIN**, **Redefinir palavra-passe** (shows "peça ao suporte técnico": the app can't change another user's Firebase password; IT uses `firebase/tools/set_password.mjs`). Never on yourself. Permission toggles per role (§2) |
-| **B8 Shifts** | `shifts_*` | Decision D8: **one responsible health professional per cart per shift**. Week view by cart or by person. Shifts: morning 08–16, afternoon 16–24, night 00–08. "Copiar semana anterior" fills empty slots |
+| **B8 Shifts** | `shifts_*` | **Hidden (2 Nov): shifts are set aside, idea kept** (D8, `kShiftsEnabled` in `ui/core/feature_flags.dart`); the code below is kept. Decision D8: **one responsible health professional per cart per shift**. Week view by cart or by person. Shifts: morning 08–16, afternoon 16–24, night 00–08. "Copiar semana anterior" fills empty slots |
 | **B9 Reports & history** | `reports_history_*` | Tabs for reports and events. Filter by cart and month. Totals (consumed, replenished, checks, emergencies, pending signatures), most consumed products, per-cart summary. Event rows show when, where (cart › drawer › position), what and who. CSV export (currently a copy dialog). Reads the latest N events and says when it hits the cap |
 | **Acesso do suporte** (D18) | `support_access_*` | The institution's **own Admin** only (not Super). Closed: reason (required, ≤ 500), duration **4 h / 24 h / 7 dias**, "Abrir acesso". Open: until when, reason, who opened it, "Fechar acesso agora". Right: the **access log** (when, who, Entrou/Saiu). Rules: DESIGN_D17_D18.md §2 |
 

@@ -45,6 +45,7 @@ import 'package:icrash_app/src/ui/features/cart/cart_screen.dart';
 import 'package:icrash_app/src/ui/features/carts/carts_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/cart_config_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/catalog_screen.dart';
+import 'package:icrash_app/src/ui/features/dashboard/dashboard_carts_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/grid_editor_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/shifts_screen.dart';
 import 'package:icrash_app/src/ui/features/dashboard/support_access_screen.dart';
@@ -419,15 +420,14 @@ void main() {
       await _settle(tester);
       expect(find.byTooltip('Fechar painel'), findsOneWidget);
       _expectNoScroll(tester);
-    });
       _expectPanelBesideGrid(tester);
+    });
 
     testWidgets('tablet size: grid editor fits', (tester) async {
       final services = _services(rows: 8, columns: 10, products: 80);
       await _pump(tester, tablet, services, const GridEditorScreen(cartId: 'c0', drawerId: 'd0'));
       _expectNoScroll(tester);
     });
-  });
 
     // D26 (2 Nov 2026): with the panel open, every position can still be
     // reached: the rightmost one (which the old overlay covered) is tapped
@@ -454,12 +454,21 @@ void main() {
         _expectNoScroll(tester);
       });
     }
+  });
 
   group('lists and tables are paged instead of scrolling', () {
     testWidgets('A4 carts: 20 carts on a tablet', (tester) async {
       await _pump(tester, tablet, _services(carts: 20), const CartsScreen());
       _expectNoScroll(tester);
       expect(find.textContaining(' de 20'), findsOneWidget);
+      // Shifts are set aside (kShiftsEnabled): no "Os meus" tab.
+      expect(find.textContaining('Os meus'), findsNothing);
+    });
+
+    testWidgets('B2 carts table: 20 carts on desktop, no shift column', (tester) async {
+      await _pump(tester, desktop, _services(carts: 20), const DashboardCartsScreen());
+      _expectNoScroll(tester);
+      expect(find.text('Responsável no turno'), findsNothing);
     });
 
     testWidgets('A5 cart: 10 drawers on a tablet', (tester) async {

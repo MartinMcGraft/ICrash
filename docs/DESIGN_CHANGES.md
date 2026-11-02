@@ -860,6 +860,18 @@ Frame ids read on 30 Oct 2026.
   and the quantity with the state icon. The Figma B4 frame already matches; nothing to change
   except, optionally, a narrow-cell variant of "Célula de posição". A6/A7 unchanged.
 
+### DC-65 · Shifts hidden (D8 set aside, 2 Nov 2026)
+- **Where:** Dashboard sidebar component `436:587` (every B-frame); B8 Turnos (p21 `456:2228`,
+  p20 `458:1848`); B2 carts table; A5 header (and the phone cart menu); A4 filter tabs.
+- **What:** no "Turnos" item in the sidebar (order: Painel, Carros, Catálogo, Modelos,
+  Utilizadores, Relatórios, Acesso do suporte); B2 has no "Responsável no turno" column; A5
+  no "Responsável no turno: …" line; A4 tabs are "Todos" and "Precisam de atenção" only (no
+  "Os meus").
+- **Components:** frames only. Keep the B8 frames and shift components; they may come back.
+- **Why:** D8, shifts kept as an idea, out of the prototype; hidden behind `kShiftsEnabled`
+  (`ui/core/feature_flags.dart`), like emergency mode (DC-08).
+- **Status:** to do
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -906,3 +918,4 @@ Frame ids read on 30 Oct 2026.
 | Phone fixes, 2 Nov (A7 panel, "Alterar estado") | DC-61, DC-62 |
 | Dashboard sidebar, 2 Nov | DC-63 |
 | B4 position panel beside the grid (D26), 2 Nov | DC-64 |
+| Shifts hidden (D8 set aside), 2 Nov | DC-65 |

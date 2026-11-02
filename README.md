@@ -146,8 +146,8 @@ is visible inside each:
   assistant. Monthly check by default, plus an **emergency mode** (red theme) entered
   from the cart menu. Must work offline and sync later.
 - **Dashboard shell** (web, Windows, macOS, Linux): configuration and oversight for
-  managers and admins (carts, drawer grids, catalogue, templates, users, shifts,
-  reports).
+  managers and admins (carts, drawer grids, catalogue, templates, users, reports).
+  Shifts (B8) are set aside like emergency mode: code kept, hidden by `kShiftsEnabled`.
 
 The code under `app/lib/src/` follows **MVVM**:
 
@@ -187,7 +187,7 @@ Key conventions:
 | A6 Drawer · A7 Replenish (`features/drawer`) | B5 Product catalogue |
 | A8 Monthly check (`features/monthly_check`) | B6 Cart templates |
 | A9 Report: sign, PDF (`features/reports`) | B7 Users & permissions |
-| A10 Emergency mode (`features/emergency`) | B8 Shifts |
+| A10 Emergency mode (`features/emergency`), hidden (P12) | B8 Shifts, hidden (D8) |
 | A11 Scanner (`features/scanner`) | B9 Reports & history |
 
 ### Real backend vs on-device stubs
