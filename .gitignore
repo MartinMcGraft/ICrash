@@ -15,3 +15,10 @@ emulator-data/
 # Default filename Firebase Console gives a generated Admin SDK private key
 *firebase-adminsdk*.json
 node_modules/
+
+# macOS Finder metadata
+.DS_Store
+
+# Local scratch output from AI sessions
+Claude outputs/
+_claude_checks/

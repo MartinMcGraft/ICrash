@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "168263074411",
+    "project_id": "i-crash-pt-2026",
+    "storage_bucket": "i-crash-pt-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:168263074411:android:89d93dc2a6161f4bf5a72e",
+        "android_client_info": {
+          "package_name": "pt.icrash.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUwqt6kOUNyxEQscTZzC7Xfk4n6279IsE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

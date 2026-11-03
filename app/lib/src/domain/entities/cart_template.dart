@@ -1,0 +1,142 @@
+import 'cart_drawer.dart';
+import 'slot.dart';
+
+/// A cart template (design v2 B6 "Modelos"): drawers, positions and target
+/// quantities. Carts created from a template copy those; stock and history
+/// are never copied. Backed by a local stub repository for now.
+class CartTemplate {
+  const CartTemplate({
+    required this.id,
+    required this.institutionId,
+    required this.name,
+    required this.drawers,
+    required this.updatedAt,
+    required this.updatedByName,
+    this.archived = false,
+  });
+
+  final String id;
+  final String institutionId;
+  final String name;
+  final List<TemplateDrawer> drawers;
+  final DateTime updatedAt;
+  final String updatedByName;
+
+  /// P3 (28 Oct): templates are edited or archived, never deleted. An
+  /// archived template isn't offered for new carts and can be restored.
+  final bool archived;
+
+  int get positionCount => drawers.fold(0, (sum, d) => sum + d.positionCount);
+
+  CartTemplate copyWith({
+    String? id,
+    String? name,
+    List<TemplateDrawer>? drawers,
+    DateTime? updatedAt,
+    String? updatedByName,
+    bool? archived,
+  }) =>
+      CartTemplate(
+        id: id ?? this.id,
+        institutionId: institutionId,
+        name: name ?? this.name,
+        drawers: drawers ?? this.drawers,
+        updatedAt: updatedAt ?? this.updatedAt,
+        updatedByName: updatedByName ?? this.updatedByName,
+        archived: archived ?? this.archived,
+      );
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'institutionId': institutionId,
+        'name': name,
+        'drawers': [for (final d in drawers) d.toJson()],
+        'updatedAt': updatedAt.toIso8601String(),
+        'updatedByName': updatedByName,
+        if (archived) 'archived': true,
+      };
+
+  factory CartTemplate.fromJson(Map<String, Object?> json) => CartTemplate(
+        id: json['id'] as String,
+        institutionId: json['institutionId'] as String,
+        name: json['name'] as String? ?? '',
+        drawers: [
+          for (final (i, d) in (json['drawers'] as List? ?? const []).indexed)
+            TemplateDrawer.fromJson((d as Map).cast<String, Object?>(), fallbackNumber: i + 1),
+        ],
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+        updatedByName: json['updatedByName'] as String? ?? '',
+        archived: json['archived'] as bool? ?? false,
+      );
+}
+
+class TemplateDrawer {
+  const TemplateDrawer({
+    required this.number,
+    this.name,
+    required this.rows,
+    required this.columns,
+    this.slots = const [],
+    this.products = const [],
+  });
+
+  /// The drawer's number in carts made from this template.
+  final int number;
+
+  /// Optional descriptive name (D20), copied to carts made from the template.
+  final String? name;
+  final int rows;
+  final int columns;
+
+  /// Layout (merged slots). Empty = one slot per grid cell.
+  final List<Slot> slots;
+
+  /// Target products per slot id.
+  final List<TemplateSlotProduct> products;
+
+  int get positionCount => slots.isEmpty ? rows * columns : slots.length;
+
+  Map<String, Object?> toJson() => {
+        'number': number,
+        if (name != null) 'name': name,
+        'rows': rows,
+        'columns': columns,
+        'slots': [
+          for (final s in slots) {'id': s.id, ...s.toMap()},
+        ],
+        'products': [for (final p in products) p.toJson()],
+      };
+
+  /// Templates saved before 29 Oct 2026 have a `name` and no `number`: the
+  /// drawer's position is used ([fallbackNumber]) and the name is kept (D20).
+  factory TemplateDrawer.fromJson(Map<String, Object?> json, {int fallbackNumber = 1}) => TemplateDrawer(
+        number: (json['number'] as num?)?.toInt() ?? fallbackNumber,
+        name: CartDrawer.cleanName(json['name'] as String?),
+        rows: (json['rows'] as num?)?.toInt() ?? 1,
+        columns: (json['columns'] as num?)?.toInt() ?? 1,
+        slots: (json['slots'] as List? ?? const []).map((s) {
+          final map = (s as Map).cast<String, Object?>();
+          return Slot.fromMap(map['id'] as String, '', map);
+        }).toList(),
+        products: [
+          for (final p in (json['products'] as List? ?? const []))
+            TemplateSlotProduct.fromJson((p as Map).cast<String, Object?>()),
+        ],
+      );
+}
+
+class TemplateSlotProduct {
+  const TemplateSlotProduct({required this.slotId, required this.productId, required this.targetQuantity});
+  final String slotId;
+  final String productId;
+  final int targetQuantity;
+
+  Map<String, Object?> toJson() => {'slotId': slotId, 'productId': productId, 'targetQuantity': targetQuantity};
+
+  /// Templates saved before D10 may carry `minimumQuantity`; it's ignored.
+  factory TemplateSlotProduct.fromJson(Map<String, Object?> json) => TemplateSlotProduct(
+        slotId: json['slotId'] as String,
+        productId: json['productId'] as String,
+        targetQuantity: (json['targetQuantity'] as num?)?.toInt() ?? 1,
+      );
+}

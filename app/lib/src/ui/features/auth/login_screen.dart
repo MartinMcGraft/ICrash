@@ -1,0 +1,251 @@
+import 'package:flutter/material.dart';
+
+import '../../../common/l10n/app_localizations.dart';
+import '../../../common/repository_failure.dart';
+import '../../core/icons/ic_icons.dart';
+import '../../core/mvvm/view_model.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/widgets/ic_button.dart';
+import '../../core/widgets/layout.dart';
+import '../../core/widgets/brand.dart';
+import '../../core/widgets/status.dart';
+import 'login_view_model.dart';
+
+/// A1 · Iniciar sessão — brand panel on the left, form on the right.
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({
+    super.key,
+    required this.onSignedIn,
+    required this.onUsePin,
+    required this.onCartLogin,
+    required this.savedSessionAvailable,
+    this.institutionName,
+    this.onSetUpDevice,
+  });
+
+  final Future<void> Function() onSignedIn;
+  final VoidCallback onUsePin;
+  final VoidCallback onCartLogin;
+
+  /// PIN unlock and cart login need a session saved on this device.
+  final bool savedSessionAvailable;
+  final String? institutionName;
+
+  /// D17: "Configurar dispositivo" (App shell only; a tablet, not a phone).
+  final VoidCallback? onSetUpDevice;
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  String _errorText(AppLocalizations l10n, RepositoryFailureReason reason) => switch (reason) {
+        RepositoryFailureReason.unauthenticated || RepositoryFailureReason.invalidInput => l10n.loginErrorInvalidCredentials,
+        RepositoryFailureReason.offline => l10n.loginErrorOffline,
+        _ => l10n.loginErrorGeneric,
+      };
+
+  void _needsSavedSession(AppLocalizations l10n) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.loginNeedsSavedSession)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ViewModelBuilder<LoginViewModel>(
+      create: (services) => LoginViewModel(auth: services.auth, onSignedIn: widget.onSignedIn),
+      builder: (context, vm) {
+        final width = MediaQuery.sizeOf(context).width;
+        final compact = isCompactHeight(context);
+        // Figma A1: brand panel 280 px on phones, 40 % (up to 520) on tablets.
+        final brandWidth = compact ? 280.0 : (width * 0.4).clamp(220.0, 520.0);
+        final email = LabeledField(
+          label: l10n.loginEmailLabel,
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          validator: (v) => (v == null || v.trim().isEmpty) ? l10n.loginEmailRequired : null,
+        );
+        final password = LabeledField(
+          label: l10n.loginPasswordLabel,
+          controller: _password,
+          obscure: true,
+          autofillHints: const [AutofillHints.password],
+          validator: (v) => (v == null || v.isEmpty) ? l10n.loginPasswordRequired : null,
+          onSubmitted: (_) => _submit(vm),
+        );
+        final gap = SizedBox(height: compact ? IcSpace.s8 : IcSpace.s16);
+        return Scaffold(
+          body: Row(
+            children: [
+              LoginBrandPanel(width: brandWidth, compact: compact, institutionName: widget.institutionName),
+              Expanded(
+                child: SafeArea(
+                  left: false,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(compact ? IcSpace.s16 : IcSpace.s24),
+                      // 460 px (Figma A1 mobile) so "Desbloquear com PIN" and
+                      // "Entrar no carro" fit side by side, on tablets too (RV-6).
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: AutofillGroup(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Semantics(
+                                        header: true,
+                                        child: Text(l10n.loginTitle, style: compact ? IcText.titleM : IcText.titleL),
+                                      ),
+                                    ),
+                                    // RV-15: the language is chosen here (not in the profile menu).
+                                    const LanguageTabs(),
+                                  ],
+                                ),
+                                gap,
+                                // Figma A1 mobile: e-mail and password side by
+                                // side, so the form fits a phone without
+                                // scrolling (RV-5).
+                                if (compact)
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(child: email),
+                                      const SizedBox(width: IcSpace.s8),
+                                      Expanded(child: password),
+                                    ],
+                                  )
+                                else ...[
+                                  email,
+                                  gap,
+                                  password,
+                                ],
+                                if (vm.error != null) ...[
+                                  const SizedBox(height: IcSpace.s12),
+                                  Notice(kind: NoticeKind.critical, title: _errorText(l10n, vm.error!)),
+                                ],
+                                gap,
+                                IcButton(
+                                  label: l10n.loginSubmit,
+                                  size: compact ? IcButtonSize.m : IcButtonSize.l,
+                                  expand: true,
+                                  busy: vm.busy,
+                                  onPressed: () => _submit(vm),
+                                ),
+                                const SizedBox(height: IcSpace.s8),
+                                // DB3: no "forgot password"; credentials are
+                                // set and reset by the administration.
+                                Text(
+                                  l10n.credentialsContactAdmin,
+                                  style: IcText.bodyS.copyWith(color: IcColors.textSecondary),
+                                ),
+                                SizedBox(height: compact ? IcSpace.s8 : IcSpace.s12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: IcButton(
+                                        label: l10n.loginUsePin,
+                                        icon: IcIcon.cadeado,
+                                        style: IcButtonStyle.secondary,
+                                        expand: true,
+                                        onPressed: widget.savedSessionAvailable ? widget.onUsePin : () => _needsSavedSession(l10n),
+                                      ),
+                                    ),
+                                    SizedBox(width: compact ? IcSpace.s8 : IcSpace.s12),
+                                    Expanded(
+                                      child: IcButton(
+                                        label: l10n.loginCartLogin,
+                                        icon: IcIcon.qr,
+                                        style: IcButtonStyle.secondary,
+                                        expand: true,
+                                        onPressed: widget.savedSessionAvailable ? widget.onCartLogin : () => _needsSavedSession(l10n),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // D17: an Admin registers this tablet once.
+                                if (widget.onSetUpDevice != null && !compact) ...[
+                                  const SizedBox(height: IcSpace.s12),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: IcButton(
+                                      label: l10n.deviceSetUp,
+                                      icon: IcIcon.opcoes,
+                                      style: IcButtonStyle.ghost,
+                                      onPressed: widget.onSetUpDevice,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _submit(LoginViewModel vm) {
+    if (vm.busy || !_formKey.currentState!.validate()) return;
+    vm.signIn(_email.text, _password.text);
+  }
+}
+
+/// A1's brand panel (also on the tablet's A1, A0 and A2b, D17).
+class LoginBrandPanel extends StatelessWidget {
+  const LoginBrandPanel({super.key, required this.width, required this.compact, this.institutionName});
+  final double width;
+  final bool compact;
+  final String? institutionName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      width: width,
+      color: IcColors.bgSidebar,
+      padding: EdgeInsets.all(compact ? IcSpace.s24 : 56),
+      child: SafeArea(
+        right: false,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Monogram(size: compact ? 48 : 72),
+            SizedBox(height: compact ? IcSpace.s12 : IcSpace.s16),
+            Text(l10n.appTitle, style: (compact ? IcText.titleL : IcText.display).copyWith(color: IcColors.textOnDark)),
+            const SizedBox(height: IcSpace.s16),
+            Text(l10n.loginTagline, style: IcText.bodyL.copyWith(color: IcColors.textOnDarkMuted)),
+            if (institutionName != null) ...[
+              const SizedBox(height: IcSpace.s16),
+              Text(institutionName!, style: IcText.bodyM.copyWith(color: IcColors.textOnDarkMuted)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

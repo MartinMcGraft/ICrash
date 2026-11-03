@@ -1,0 +1,1709 @@
+{
+  "@@locale": "en",
+  "appTitle": "I-Crash",
+  "actionCancel": "Cancel",
+  "actionClose": "Close",
+  "actionSave": "Save",
+  "actionConfirm": "Confirm",
+  "actionBack": "Back",
+  "assignmentStatusOk": "OK",
+  "assignmentStatusReplenishmentRequired": "Replenishment required",
+  "assignmentStatusExpiringSoon": "Expiring soon",
+  "assignmentStatusExpired": "Expired",
+  "usageEventConsumption": "Consumption",
+  "usageEventReplenishment": "Replenishment",
+  "usageEventCorrection": "Correction",
+  "usageEventAuditReconciliation": "Reconciliation",
+  "cartStatusOperational": "Operational",
+  "cartStatusReplenishmentRequired": "Replenishment required",
+  "cartStatusAuditRequired": "Check overdue",
+  "cartStatusOutOfService": "Out of service",
+  "roleSuperAdmin": "Super (I-Crash)",
+  "roleInstitutionAdmin": "Admin",
+  "roleManager": "Manager",
+  "roleUser": "Health professional",
+  "membershipStatusActive": "Active",
+  "membershipStatusInvited": "Invited",
+  "membershipStatusDisabled": "Disabled",
+  "loginTagline": "Emergency cart management",
+  "loginEmailLabel": "Institutional e-mail",
+  "loginEmailRequired": "Enter your email",
+  "loginPasswordLabel": "Password",
+  "loginPasswordRequired": "Enter your password",
+  "loginSubmit": "Sign in",
+  "loginErrorInvalidCredentials": "Invalid credentials. Check your email and password.",
+  "loginErrorOffline": "No connection. Check your network and try again.",
+  "loginErrorGeneric": "Couldn't sign in. Try again.",
+  "actionCreate": "Create",
+  "actionDuplicate": "Duplicate",
+  "validationEnterName": "Enter a name",
+  "createCartTitle": "New cart",
+  "createCartNameLabel": "Cart name",
+  "createDrawerTitle": "New drawer",
+  "createDrawerNameLabel": "Drawer name",
+  "createDrawerRowsLabel": "Rows",
+  "createDrawerColumnsLabel": "Columns",
+  "duplicateCartTitle": "Duplicate cart",
+  "duplicateCartDescription": "Creates a new cart with the same drawers and slots. Does not copy consumables, stock, or history.",
+  "duplicateCartNameLabel": "New cart's name",
+  "editCartTitle": "Edit cart",
+  "editCartStatusLabel": "Status",
+  "createProductTitle": "New clinical consumable",
+  "createProductNameLabel": "Name",
+  "createProductUnitLabel": "Unit (optional)",
+  "createProductUnitHint": "e.g.: 1 mg/mL, 1 mL ampoule",
+  "createProductGtinLabel": "GTIN (optional)",
+  "addMemberTitle": "New member",
+  "addMemberEmailRequired": "Enter an email",
+  "addMemberPasswordLabel": "Temporary password",
+  "addMemberPasswordMinLength": "Minimum 6 characters",
+  "addMemberRoleLabel": "Role",
+  "cartQrScreenTitle": "Cart code",
+  "cartQrSemanticLabel": "QR code for cart {cartName}",
+  "@cartQrSemanticLabel": {
+    "placeholders": {
+      "cartName": {
+        "type": "String"
+      }
+    }
+  },
+  "cartQrInstruction": "Scan this code to open this cart directly.",
+  "cartQrScanTitle": "Scan cart code",
+  "cartQrScanError": "Code read but it isn't a recognized cart code. Try again.",
+  "cartQrScanInstruction": "Point the camera at the cart's code.",
+  "scannerPreviewUnavailable": "Camera preview unavailable.",
+  "gs1ScanTitle": "Scan GS1 code",
+  "gs1ScanError": "Code read but no GTIN, lot, or expiry recognized. Try again.",
+  "gs1ScanInstructionHid": "Scan the code with the barcode reader connected to this computer.",
+  "gs1ScanInstructionCamera": "Point the camera at the package's GS1 Data Matrix code.",
+  "actionCancelManualEntry": "Cancel and enter manually",
+  "gs1HidWaitingLabel": "Waiting for scan...",
+  "actionSignOut": "Sign out",
+  "institutionSelectionTitle": "Choose institution",
+  "institutionSelectionLoadError": "Couldn't load institutions: {error}",
+  "@institutionSelectionLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "institutionSelectionEmpty": "You don't have access to any institution yet.\nContact your institution's administrator.",
+  "connectivityOfflineMessage": "No internet connection — showing locally saved data.",
+  "productsScreenTitle": "Clinical consumables",
+  "productsCreateError": "Couldn't create the consumable. Try again.",
+  "productsLoadError": "Couldn't load consumables: {error}",
+  "@productsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "productsEmpty": "There are no consumables in this institution yet.",
+  "membersScreenTitle": "Members",
+  "membersLoadError": "Couldn't load members: {error}",
+  "@membersLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "membersEmpty": "There are no members in this institution yet.",
+  "membersCreateErrorConflict": "An account with this email already exists.",
+  "membersCreateErrorInvalidInput": "Invalid email or password.",
+  "membersCreateErrorGeneric": "Couldn't create the member. Try again.",
+  "membersChangeRoleTitle": "Change role",
+  "membersChangeRoleError": "Couldn't change the role. Try again.",
+  "membersToggleStatusError": "Couldn't change the member's status. Try again.",
+  "membersDeactivate": "Deactivate",
+  "membersReactivate": "Reactivate",
+  "responsibleUsersTitle": "Cart's responsible users",
+  "productSearchHint": "Consumable name or GTIN",
+  "productSearchPrompt": "Type a consumable's name to find it in this cart.",
+  "productSearchEmpty": "No consumable found in this cart.",
+  "actionEdit": "Edit",
+  "actionShowQrCode": "Show QR code",
+  "actionSearchProduct": "Search consumable",
+  "actionResponsible": "Responsible users",
+  "cartDetailCreateDrawerError": "Couldn't create the drawer. Try again.",
+  "cartUpdatedMessage": "Cart updated.",
+  "cartDetailUpdateError": "Couldn't update the cart. Try again.",
+  "duplicateCartDefaultName": "{name} (copy)",
+  "@duplicateCartDefaultName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartDuplicatedMessage": "Cart duplicated as \"{name}\".",
+  "@cartDuplicatedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartDetailDuplicateError": "Couldn't duplicate the cart. Try again.",
+  "cartDetailLoadDrawersError": "Couldn't load drawers: {error}",
+  "@cartDetailLoadDrawersError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "cartDetailDrawersEmpty": "There are no drawers in this cart yet.",
+  "drawerGridSize": "{rows} rows × {columns} columns",
+  "@drawerGridSize": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      }
+    }
+  },
+  "historyScreenTitle": "History",
+  "historyFilterAll": "All",
+  "historyLoadError": "Couldn't load the history: {error}",
+  "@historyLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "historyEmpty": "No events to show.",
+  "exportCsvButton": "Export CSV",
+  "actionCopy": "Copy",
+  "csvCopiedMessage": "CSV copied.",
+  "exportPdfButton": "Export PDF",
+  "historyPdfDocumentTitle": "Activity history",
+  "summaryViewButton": "View summary",
+  "summaryDialogTitle": "Summary",
+  "summaryGroupProduct": "Consumable",
+  "summaryGroupCart": "Cart",
+  "summaryGroupPeriod": "Period",
+  "periodUnitDay": "Day",
+  "periodUnitWeek": "Week",
+  "periodUnitMonth": "Month",
+  "summaryEmpty": "No data to summarize.",
+  "summaryConsumedReplenished": "Consumed: {consumed}   Replenished: {replenished}",
+  "@summaryConsumedReplenished": {
+    "placeholders": {
+      "consumed": {
+        "type": "int"
+      },
+      "replenished": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryOtherAdjustments": "   Other adjustments: {value}",
+  "@summaryOtherAdjustments": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "productRemoved": "Removed consumable",
+  "cartRemoved": "Removed cart",
+  "dashboardOpenCartError": "Couldn't open this cart.",
+  "dashboardCreateCartError": "Couldn't create the cart. Try again.",
+  "dashboardLoadCartsError": "Couldn't load carts: {error}",
+  "@dashboardLoadCartsError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "dashboardCartsEmpty": "There are no emergency carts in this institution yet.",
+  "dashboardSearchCartLabel": "Search cart",
+  "dashboardNoCartMatches": "No cart matches the search.",
+  "dashboardAlertsTitle": "Alerts",
+  "alertBelowMinimum": "Stock below minimum",
+  "dashboardRecentActivityTitle": "Recent activity",
+  "assignConflictError": "This consumable is already assigned to another slot in this cart.",
+  "assignGenericError": "Couldn't assign the consumable. Try again.",
+  "consumeExceedsError": "You can't consume more than the current quantity.",
+  "consumeGenericError": "Couldn't record the consumption. Try again.",
+  "replenishMissingExpiry": "Enter the batch's expiry date.",
+  "replenishGenericError": "Couldn't replenish the stock. Try again.",
+  "gs1UnknownGtin": "GTIN not recognized in the catalogue — it wasn't linked to any consumable.",
+  "gs1WrongProductWarning": "Warning: this code matches \"{productName}\", not this slot's consumable.",
+  "@gs1WrongProductWarning": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
+  "reconcileGenericError": "Couldn't reconcile. Try again.",
+  "correctGenericError": "Couldn't correct. Try again.",
+  "emptySlotTitle": "Empty slot",
+  "emptySlotMessage": "This slot doesn't have a consumable assigned yet.",
+  "assignDialogTitle": "Assign consumable",
+  "noProductsMessage": "First create a consumable in the institution's catalogue.",
+  "productLabel": "Consumable",
+  "initialQuantityLabel": "Initial quantity",
+  "targetQuantityLabel": "Target quantity",
+  "chooseProductValidation": "Choose a consumable",
+  "actionAssign": "Assign",
+  "recordConsumptionTitle": "Record consumption",
+  "consumedQuantityLabel": "Consumed quantity",
+  "validatePositiveInt": "Enter a positive number",
+  "replenishStockTitle": "Replenish stock",
+  "receivedQuantityLabel": "Received quantity",
+  "lotNumberLabel": "Lot number",
+  "chooseExpiryLabel": "Choose expiry date",
+  "expiryDateLabel": "Expiry: {date}",
+  "@expiryDateLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reconcileDialogTitle": "Reconcile (audit)",
+  "confirmedQuantityLabel": "Physically confirmed quantity",
+  "validateNonNegativeInt": "Enter a valid number",
+  "noBatchesMessage": "No batches recorded; the reconciliation ends up with no confirmed batches.",
+  "confirmedBatchesLabel": "Batches confirmed as physically present:",
+  "batchLotLabel": "Lot {lotNumber}",
+  "@batchLotLabel": {
+    "placeholders": {
+      "lotNumber": {
+        "type": "String"
+      }
+    }
+  },
+  "correctEventDialogTitle": "Correct event",
+  "noEventsToCorrect": "There are no events to correct yet.",
+  "eventToCorrectLabel": "Event to correct",
+  "chooseEventValidation": "Choose an event",
+  "adjustmentLabel": "Adjustment (positive or negative)",
+  "validateNonZeroInt": "Enter an adjustment other than zero",
+  "currentTargetLabel": "Current: {current}   Target: {target}",
+  "@currentTargetLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCorrect": "Correct",
+  "actionReconcile": "Reconcile",
+  "slotSelectionNotRectangle": "The selection must form a rectangle with no gaps.",
+  "drawerSavedMessage": "Drawer saved.",
+  "drawerSaveError": "Couldn't save the drawer. Try again.",
+  "reassignSlotError": "Couldn't reassign the slot. Try again.",
+  "removeAssignmentTitle": "Remove assignment",
+  "removeAssignmentMessage": "This assignment points to a slot that no longer exists in this drawer. Removing the assignment also removes its recorded batches; the event history is kept. This action cannot be undone.",
+  "actionRemove": "Remove",
+  "deleteAssignmentError": "Couldn't remove the assignment. Try again.",
+  "loadSlotsError": "Couldn't load the slots: {error}",
+  "@loadSlotsError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "actionMerge": "Merge",
+  "actionSplit": "Split",
+  "orphanedAssignmentsHeader": "Assignments with no valid slot (from a past merge/split):",
+  "actionReassign": "Reassign",
+  "reassignTooltip": "Reassign to a free slot",
+  "slotPositionTooltip": "Row {row}, column {column}",
+  "@slotPositionTooltip": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      },
+      "column": {
+        "type": "int"
+      }
+    }
+  },
+  "languageSwitcherTooltip": "Language",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English",
+  "cartStateEmergencyActive": "Emergency active",
+  "slotHealthOk": "OK",
+  "slotHealthExpiring": "Expiring",
+  "slotHealthExpired": "Expired",
+  "slotHealthLowStock": "Low stock",
+  "slotHealthMissing": "Missing",
+  "slotHealthFree": "Free",
+  "syncSynced": "Synced",
+  "syncPending": "{count, plural, =1{1 change to send} other{{count} changes to send}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncOffline": "Offline · working offline",
+  "actionBackTooltip": "Back",
+  "stateLoading": "Loading…",
+  "stateLoadError": "Could not load the data.",
+  "stateRetry": "Try again",
+  "stateNoAccess": "You don't have access to this area.",
+  "actionGenericError": "Could not complete the action. Try again.",
+  "actionOfflineError": "Offline. The change will be sent when the connection returns.",
+  "actionPermissionError": "You don't have permission for this action.",
+  "stubNotice": "Demo feature: data is stored on this device only.",
+  "formatToday": "Today, {time}",
+  "@formatToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatYesterday": "Yesterday, {time}",
+  "@formatYesterday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "slotQuantitySemantics": "{current} of {target} units",
+  "@slotQuantitySemantics": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "loginTitle": "Sign in",
+  "loginUsePin": "Unlock with PIN",
+  "loginCartLogin": "Open a cart",
+  "loginNeedsSavedSession": "Sign in once on this device to use a PIN or open a cart.",
+  "pinWorksOffline": "Works offline",
+  "pinWrong": "{count, plural, =1{Wrong PIN. 1 attempt left.} other{Wrong PIN. {count} attempts left.}}",
+  "@pinWrong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pinNotMe": "Not {name}? Sign in",
+  "@pinNotMe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pinDelete": "Delete",
+  "pinDigitsSemantics": "{entered} of {total} digits",
+  "@pinDigitsSemantics": {
+    "placeholders": {
+      "entered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "scannerUsbHint": "USB reader: scan the code or type it and press Enter",
+  "cartLoginCaption": "Point at the cart's QR code",
+  "cartLoginHelp": "Scan the QR code on the cart or hold the NFC badge to the reader. The session is limited to this cart.",
+  "cartLoginUseNfc": "Use NFC",
+  "cartLoginNfcUnavailable": "NFC is not available in this version yet.",
+  "scannerTorch": "Torch",
+  "scannerTorchOff": "Turn torch off",
+  "cartLoginEnterCode": "Enter cart code",
+  "cartLoginCodeLabel": "Cart code",
+  "cartLoginCodeHint": "Code printed under the QR",
+  "cartLoginBackToLogin": "Back to sign in",
+  "cartLoginNotFound": "This cart does not exist or was archived.",
+  "cartLoginNoAccess": "You don't have access to this cart.",
+  "profileLockNow": "Lock now",
+  "profileSwitchInstitution": "Switch institution",
+  "pinNewLabel": "New PIN (4 digits)",
+  "pinRepeatLabel": "Repeat PIN",
+  "pinFourDigits": "The PIN has 4 digits",
+  "pinMismatch": "The PINs don't match",
+  "navCarts": "Carts",
+  "navReports": "Reports",
+  "navScan": "Scan",
+  "navProfile": "Profile",
+  "navOverview": "Overview",
+  "navCatalog": "Catalogue",
+  "navTemplates": "Templates",
+  "navUsers": "Users",
+  "navShifts": "Shifts",
+  "dashboardBrandSubtitle": "Management · {institution}",
+  "@dashboardBrandSubtitle": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "cartsSubtitle": "{institution} · {count, plural, =1{1 cart} other{{count} carts}}",
+  "@cartsSubtitle": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsSearchHint": "Search cart",
+  "cartsFilterAll": "All ({count})",
+  "@cartsFilterAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterAttention": "Need attention ({count})",
+  "@cartsFilterAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterAttentionShort": "Attention ({count})",
+  "@cartsFilterAttentionShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsFilterMine": "Mine ({count})",
+  "@cartsFilterMine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineTitle": "No network connection",
+  "offlineMessage": "{count, plural, =0{You can keep working. Changes will be sent when the connection returns.} =1{You can keep working. 1 change will be sent when the connection returns.} other{You can keep working. {count} changes will be sent when the connection returns.}}",
+  "@offlineMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countExpired": "{count} expired",
+  "@countExpired": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countMissing": "{count} missing",
+  "@countMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countExpiring": "{count} expiring",
+  "@countExpiring": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "countLowStock": "{count} low on stock",
+  "@countLowStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkOverdueDays": "{days, plural, =1{Monthly check overdue (1 day)} other{Monthly check overdue ({days} days)}}",
+  "@checkOverdueDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noStockAlerts": "No stock alerts",
+  "allCompliant": "All compliant",
+  "dashboardLoadAlertsError": "Couldn't load the alerts.",
+  "dashboardLoadActivityError": "Couldn't load the recent activity.",
+  "lastCheckLine": "Monthly check: {date} · {name}",
+  "@lastCheckLine": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lastCheckNever": "Monthly check: not done yet",
+  "compliant": "Compliant",
+  "responsibleOnShift": "On shift: {name}",
+  "@responsibleOnShift": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "drawersTitle": "Drawers",
+  "drawerGridLong": "{rows} × {columns} · {positions} positions · {withProduct} with consumable",
+  "@drawerGridLong": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      },
+      "withProduct": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerGridShort": "{rows} × {columns} · {positions} positions",
+  "@drawerGridShort": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "cartMenuTitle": "Cart menu",
+  "monthlyCheckTitle": "Monthly check",
+  "qrCodeShort": "QR code",
+  "changeStateAction": "Change state",
+  "cartReportsAction": "Cart reports",
+  "emergencyHint": "To record quick consumption during or right after an emergency.",
+  "emergencyModeTitle": "Emergency mode",
+  "emergencyShort": "Emergency",
+  "emergencyResume": "Back to emergency mode",
+  "autoStateRule": "Automatic rule (when on): expired or missing consumable → Replenishment required; monthly check older than 31 days → Check overdue.",
+  "printLabel": "Print label",
+  "productLocation": "Drawer {number} · position {position}",
+  "@productLocation": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "drawerSubtitle": "{cart} · {rows} × {columns} · {positions} positions",
+  "@drawerSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerSubtitleShort": "{cart} · {rows} × {columns}",
+  "@drawerSubtitleShort": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      }
+    }
+  },
+  "drawerSelectHint": "Tap a position to see its consumable, quantity and expiry.",
+  "slotPositionInDrawer": "Position {position} · Drawer {drawer}",
+  "@slotPositionInDrawer": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      },
+      "drawer": {
+        "type": "int"
+      }
+    }
+  },
+  "slotFreeTitle": "Free position",
+  "unitsOf": "{current} of {target} units",
+  "@unitsOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "ofTargetUnits": "of {target} units",
+  "@ofTargetUnits": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "expiryLabel": "Expiry",
+  "lotLabel": "Lot",
+  "lotWithUnits": "{lot} · {units} units",
+  "@lotWithUnits": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "units": {
+        "type": "int"
+      }
+    }
+  },
+  "daysCount": "{days, plural, =1{1 day} other{{days} days}}",
+  "@daysCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "changeProductAction": "Change consumable",
+  "changeProductConfirm": "The current consumable leaves this position together with its recorded lots. Consumption history is kept.",
+  "panelSubtitle": "{product} · {position} · now {current} of {target}",
+  "@panelSubtitle": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      },
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "quantityLabel": "Quantity",
+  "confirmConsumption": "Confirm consumption",
+  "consumptionRecorded": "Consumption recorded.",
+  "confirmReplenishment": "Confirm replenishment",
+  "replenishmentRecorded": "Replenishment recorded.",
+  "replenishScanHelp": "Scan the package Data Matrix to fill in lot and expiry.",
+  "correctionRecorded": "Correction recorded.",
+  "reconcileRecorded": "Reconciliation recorded.",
+  "catalogSearchHint": "Search the catalogue",
+  "monthlyCheckSubtitle": "{cart} · Drawer {number} ({index} of {total})",
+  "@monthlyCheckSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      },
+      "number": {
+        "type": "int"
+      },
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "saveAndExit": "Save and exit",
+  "progressSemantics": "Drawer {index} of {total}",
+  "@progressSemantics": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "monthlyCheckEmptyDrawer": "This drawer has no assigned consumables.",
+  "expiresOn": "expires on {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "expectedUnits": "expected {count}",
+  "@expectedUnits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiryShort": "exp. {date}",
+  "@expiryShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "checkVerified": "{count} verified",
+  "@checkVerified": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkProblems": "{count, plural, =1{1 with a problem} other{{count} with problems}}",
+  "@checkProblems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "checkPending": "{count} to check",
+  "@checkPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthlyCheckHelp": "Tap a row to confirm quantity and expiry. Tap again to flag a problem; long-press to clear. Problems are recorded in the report.",
+  "checkMarkAll": "Mark the rest as verified",
+  "addNote": "Add note",
+  "editNote": "Edit note",
+  "noteHint": "Notes for the report",
+  "nextDrawer": "Next drawer",
+  "previousDrawer": "Previous drawer",
+  "finishCheck": "Finish and create report",
+  "finishCheckShort": "Finish",
+  "reportKindMonthlyCheck": "Monthly check",
+  "reportKindEmergency": "Emergency summary",
+  "reportMonthlyTitle": "Monthly check report",
+  "reportEmergencyTitle": "Emergency summary",
+  "reportSigned": "Signed",
+  "reportPendingSignature": "To sign",
+  "reportDate": "Date",
+  "reportCheckedBy": "Checked by",
+  "reportStartedBy": "Started by",
+  "reportPositionsChecked": "Positions checked",
+  "reportPeriod": "Period",
+  "xOfY": "{x} of {y}",
+  "@xOfY": {
+    "placeholders": {
+      "x": {
+        "type": "int"
+      },
+      "y": {
+        "type": "int"
+      }
+    }
+  },
+  "reportFindings": "Problems found ({count})",
+  "@reportFindings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportNoFindings": "No problems found.",
+  "findingOther": "difference",
+  "emergencyConsumptions": "Recorded consumption ({count})",
+  "@emergencyConsumptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportNotes": "Notes",
+  "downloadPdf": "Download PDF",
+  "signedByOn": "Signed by {name} · {date}",
+  "@signedByOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportLockedHelp": "Once signed, the report can no longer be changed.",
+  "signReport": "Sign report",
+  "signReportHelp": "By signing you confirm you checked the cart and the data is correct. Once signed, the report can no longer be changed.",
+  "confirmCheck": "I confirm the check",
+  "pinLabel": "PIN",
+  "signNeedsConfirmation": "Tick “I confirm the check” to sign.",
+  "signWrongPin": "Wrong PIN.",
+  "reportSignedMessage": "Report signed.",
+  "reportsFilterPending": "To sign ({count})",
+  "@reportsFilterPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportsEmpty": "No reports yet. They are created at the end of a monthly check or an emergency.",
+  "emergencyNotActive": "Emergency mode on this cart has ended.",
+  "emergencyHeader": "Emergency mode · {cart}",
+  "@emergencyHeader": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyStarted": "Started at {time} ({minutes} min ago) · {name}",
+  "@emergencyStarted": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "emergencyEnd": "End emergency",
+  "emergencyEndConfirm": "The cart becomes “Replenishment required” and a consumption summary is created for signing.",
+  "drawerShort": "Drawer {number}",
+  "@drawerShort": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "emergencyHelp": "Tap a position to record 1 unit used. Long-press for another quantity.",
+  "emergencyNothingLeft": "This position has no units left.",
+  "emergencyNotSent": "{count, plural, =1{1 consumption was not sent to the server; it stays in the summary.} other{{count} consumptions were not sent to the server; they stay in the summary.}}",
+  "@emergencyNotSent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "undoLast": "Undo last",
+  "scanProductCaption": "Point at the consumable code",
+  "scanModeProduct": "Consumable",
+  "scanModeCart": "Cart",
+  "scanHelp": "QR, Data Matrix (GS1) or barcode. Also works with a USB reader.",
+  "scanLastRead": "Last code read",
+  "scanLot": "Lot {lot}",
+  "@scanLot": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      }
+    }
+  },
+  "scanExpiry": "Exp. {date}",
+  "@scanExpiry": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "scanReplenishThis": "Replenish this consumable",
+  "scanEnterManually": "Enter manually",
+  "scanOnlyConsumables": "Inside a cart you can only scan consumables.",
+  "scanManual": "Manual",
+  "scanManualProductLabel": "GTIN or GS1 code",
+  "scanOtherInstitution": "This cart belongs to another institution.",
+  "scanNotInAnyCart": "This consumable is not assigned to any cart you can access.",
+  "exportReport": "Export report",
+  "metricOperational": "Operational carts",
+  "metricNeedReplenishment": "{count, plural, =0{None need replenishment} =1{1 needs replenishment} other{{count} need replenishment}}",
+  "@metricNeedReplenishment": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "metricExpiring30": "Expiring within 30 days",
+  "metricInCarts": "{count, plural, =1{in 1 cart} other{in {count} carts}}",
+  "@metricInCarts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "metricChecksOverdue": "Overdue checks",
+  "metricEmergencies": "Emergencies this month",
+  "metricUnitsRecorded": "{count} units recorded",
+  "@metricUnitsRecorded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cartsNeedingAttention": "Carts that need attention",
+  "columnCart": "Cart",
+  "columnState": "State",
+  "columnAlerts": "Alerts",
+  "columnServiceLocation": "Service · location",
+  "activityEmergency": "Emergency mode · {count} units",
+  "@activityEmergency": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activityCheckSigned": "Monthly check signed",
+  "activityCheckDone": "Monthly check completed",
+  "cartsServicesSubtitle": "{carts, plural, =1{1 cart} other{{carts} carts}} · {services, plural, =1{1 service} other{{services} services}}",
+  "@cartsServicesSubtitle": {
+    "placeholders": {
+      "carts": {
+        "type": "int"
+      },
+      "services": {
+        "type": "int"
+      }
+    }
+  },
+  "createFromTemplate": "Create from template",
+  "newCart": "New cart",
+  "cartsSearchHintLong": "Search cart or service",
+  "cartsFilterOutOfService": "Out of service ({count})",
+  "@cartsFilterOutOfService": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "columnLastCheck": "Last check",
+  "columnOnShift": "On shift",
+  "cartCreated": "Cart “{name}” created.",
+  "@cartCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateLabel": "Template",
+  "templatesEmpty": "No templates yet. Create one in Templates.",
+  "fieldName": "Name",
+  "fieldService": "Service",
+  "fieldServiceHint": "e.g. Emergency",
+  "fieldLocation": "Location",
+  "fieldLocationHint": "e.g. Floor 0 · Resuscitation room",
+  "cartConfigSubtitle": "Cart configuration",
+  "archiveCart": "Archive cart",
+  "archiveCartConfirm": "The cart will no longer appear in lists. History and reports are kept.",
+  "cartArchived": "Cart archived.",
+  "saveChanges": "Save changes",
+  "cartInfoTitle": "Information",
+  "originTemplate": "Source template",
+  "autoStateLabel": "Update the state automatically",
+  "drawersCount": "Drawers ({count})",
+  "@drawersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "columnName": "Name",
+  "drawerNameLabel": "Name (optional)",
+  "drawerNameHint": "E.g. Airway",
+  "editDrawer": "Edit drawer",
+  "drawerSaved": "Drawer saved.",
+  "drawerNumberLocked": "This drawer already has history: its number can't change. Its name can.",
+  "addDrawer": "Add drawer",
+  "columnNumber": "No.",
+  "columnSize": "Size",
+  "columnPositions": "Positions",
+  "columnWithProduct": "With consumable",
+  "editGrid": "Edit grid",
+  "gridEditorSubtitle": "{cart} · edit grid and positions",
+  "@gridEditorSubtitle": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      }
+    }
+  },
+  "saveGrid": "Save grid",
+  "gridSaved": "Grid saved.",
+  "mergePositions": "Merge positions",
+  "clearPosition": "Clear position",
+  "clearPositionConfirm": "Removes {product} from position {position}. Recorded lots are removed; the history is kept.",
+  "@clearPositionConfirm": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "gridSelectionHint": "Tap a position to configure it. Tap several to merge them.",
+  "mergeLosesAssignments": "{count, plural, =1{1 position loses its consumable, which stays “without position” until reassigned.} other{{count} positions lose their consumable, which stays “without position” until reassigned.}}",
+  "@mergeLosesAssignments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unsavedGridTitle": "Unsaved changes",
+  "unsavedGridMessage": "Leave without saving the grid?",
+  "discardChanges": "Discard",
+  "orphansTitle": "Consumables without a position ({count})",
+  "@orphansTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "orphanReassignHint": "Select a free position in the grid and tap Reassign.",
+  "positionTitle": "Position {position}",
+  "@positionTitle": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "positionsSelected": "{count} positions selected",
+  "@positionsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "positionSelectHint": "Select a position to configure its consumable.",
+  "gridUnsavedHint": "Save the grid before configuring positions.",
+  "chooseProduct": "Choose consumable",
+  "catalogNoMatches": "No consumable matches the search.",
+  "expiryWarningDaysLabel": "Expiry warning (days)",
+  "askLotOnReplenish": "Ask for expiry (and lot, if any) on replenishment",
+  "applyToPosition": "Apply to position",
+  "positionApplied": "Position updated.",
+  "catalogTitle": "Consumables catalogue",
+  "catalogSubtitle": "{count, plural, =1{1 consumable} other{{count} consumables}} · used in {carts, plural, =1{1 cart} other{{carts} carts}}",
+  "@catalogSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "carts": {
+        "type": "int"
+      }
+    }
+  },
+  "importCsv": "Import CSV",
+  "importCsvHelp": "Paste one line per consumable: name; presentation; GTIN; category; expiry warning (days). Consumables whose name or GTIN already exists are skipped.",
+  "importCsvHint": "Paste the CSV file content here",
+  "importAction": "Import",
+  "importResult": "{created, plural, =1{1 consumable imported} other{{created} consumables imported}} · {skipped} skipped.",
+  "@importResult": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "newProduct": "New consumable",
+  "editProduct": "Edit consumable",
+  "catalogSearchByNameOrGtin": "Search by name or GTIN",
+  "filterAll": "All",
+  "categoryDrug": "Drug",
+  "categoryDrugs": "Drugs",
+  "categoryMaterial": "Supplies",
+  "categoryFluid": "Fluid",
+  "categoryFluids": "Fluids",
+  "columnPresentation": "Presentation",
+  "columnGtin": "GTIN",
+  "columnCategory": "Category",
+  "columnInUse": "In use",
+  "expiryWarningShort": "Expiry warning",
+  "inCartsCount": "{count, plural, =0{—} =1{1 cart} other{{count} carts}}",
+  "@inCartsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "productCreated": "Consumable “{name}” created.",
+  "@productCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "productUpdated": "Consumable updated.",
+  "gtinTaken": "A consumable with this GTIN already exists.",
+  "gtinInvalid": "A GTIN has 8, 12, 13 or 14 digits.",
+  "scanGtin": "Scan GTIN from the box",
+  "expiryWarningDefaultHint": "Empty = institution default",
+  "templatesTitle": "Cart templates",
+  "templatesSubtitle": "Create identical carts from a template",
+  "templatesEmptyDashboard": "No templates yet. Create one from a configured cart.",
+  "newTemplate": "New template",
+  "editTemplate": "Edit template",
+  "templateSaved": "Template saved.",
+  "templateSummary": "{drawers, plural, =1{1 drawer} other{{drawers} drawers}} · {positions} positions · used in {carts, plural, =1{1 cart} other{{carts} carts}}",
+  "@templateSummary": {
+    "placeholders": {
+      "drawers": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      },
+      "carts": {
+        "type": "int"
+      }
+    }
+  },
+  "templateUpdatedBy": "Updated on {date} by {name}",
+  "@templateUpdatedBy": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateDrawerSize": "{rows} × {columns} · {positions} positions",
+  "@templateDrawerSize": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "columns": {
+        "type": "int"
+      },
+      "positions": {
+        "type": "int"
+      }
+    }
+  },
+  "templateCopyNote": "Carts created from the template copy drawers, positions and target quantities. Stock and history are not copied.",
+  "createCartFromThisTemplate": "Create cart from this template",
+  "templateCopyName": "{name} (copy)",
+  "@templateCopyName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateSourceCart": "Source cart",
+  "templateRefreshFromCart": "Update from a cart",
+  "templateKeepStructure": "Keep the current structure",
+  "templateChooseCart": "Choose a cart",
+  "usersTitle": "Users and permissions",
+  "usersCount": "{count, plural, =1{1 user} other{{count} users}}",
+  "@usersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emailTaken": "A user with this e-mail already exists.",
+  "emailInvalid": "Enter a valid e-mail.",
+  "fieldEmail": "E-mail",
+  "usersSearchHint": "Search by name or e-mail",
+  "usersFilterManagers": "Managers ({count})",
+  "@usersFilterManagers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersFilterProfessionals": "Health professionals ({count})",
+  "@usersFilterProfessionals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersFilterInvited": "Pending invitations ({count})",
+  "@usersFilterInvited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "usersNoMatches": "No user matches the search.",
+  "columnUserType": "User type",
+  "allServices": "All",
+  "moreActions": "More actions",
+  "cannotEditSelf": "You cannot change your own account.",
+  "changeUserType": "Change user type",
+  "deactivateUser": "Deactivate",
+  "reactivateUser": "Reactivate",
+  "deactivateUserConfirm": "{name} will no longer be able to sign in. The history is kept.",
+  "@deactivateUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reactivateUserConfirm": "{name} will be able to sign in again.",
+  "@reactivateUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userUpdated": "User updated.",
+  "permissionsTitle": "Permissions",
+  "permissionsNote": "Proposal (D2). Permissions are stored on this device until the server supports them.",
+  "permViewCarts": "View carts and drawers",
+  "permRecordConsumption": "Record consumption",
+  "permReplenish": "Replenish stock (lot and expiry)",
+  "permMonthlyCheck": "Do the monthly check",
+  "permSignReports": "Sign reports",
+  "permEmergencyMode": "Use emergency mode",
+  "permChangeCartState": "Change the cart state",
+  "permEditDrawers": "Edit drawers and grids",
+  "permManageUsersAndShifts": "Manage users and shifts",
+  "shiftsTitle": "Shifts",
+  "shiftsWeekOf": "Week of {start} to {end}",
+  "@shiftsWeekOf": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "previousWeek": "Previous week",
+  "nextWeek": "Next week",
+  "addShift": "Add shift",
+  "copyPreviousWeek": "Copy previous week",
+  "shiftsCopied": "{count, plural, =0{No shift copied.} =1{1 shift copied.} other{{count} shifts copied.}}",
+  "@shiftsCopied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shiftsByCart": "By cart",
+  "shiftsByPerson": "By person",
+  "columnPerson": "Person",
+  "shiftsNoneThisWeek": "No shifts this week.",
+  "shiftsLegend": "M = morning (08–16) · A = afternoon (16–24) · N = night (00–08)",
+  "shiftMorningShort": "M",
+  "shiftAfternoonShort": "A",
+  "shiftNightShort": "N",
+  "shiftMorning": "Morning",
+  "shiftAfternoon": "Afternoon",
+  "shiftNight": "Night",
+  "shiftDay": "Day",
+  "shiftResponsible": "Responsible",
+  "shiftNobody": "Nobody",
+  "shiftSaved": "Shift saved.",
+  "reportsHistoryTitle": "Reports and history",
+  "exportCsv": "Export CSV",
+  "exportCsvHelp": "{count, plural, =1{1 event} other{{count} events}} for the chosen period and cart. Copy and paste into a spreadsheet.",
+  "@exportCsvHelp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyCsv": "Copy",
+  "csvCopied": "CSV copied.",
+  "tabReports": "Reports",
+  "tabEvents": "Event history",
+  "tabStatistics": "Statistics",
+  "filterCart": "Cart: {name}",
+  "@filterCart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAllCarts": "all",
+  "filterPeriod": "Period: {period}",
+  "@filterPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "columnReport": "Report",
+  "columnDate": "Date",
+  "columnSignedBy": "Signed by",
+  "reportPendingSignatureShort": "To sign",
+  "actionOpen": "Open",
+  "reportsEmptyPeriod": "No reports in this period.",
+  "eventsEmptyPeriod": "No events in this period.",
+  "eventsCapped": "Showing the institution's {count} most recent events.",
+  "@eventsCapped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statConsumed": "Consumed",
+  "statReplenished": "Replenished",
+  "statChecks": "Checks",
+  "statEmergencies": "Emergencies",
+  "statPendingSignatures": "To sign",
+  "statTopProducts": "Most used consumables",
+  "statByCart": "By cart",
+  "pagerRange": "{from}–{to} of {total}",
+  "@pagerRange": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pagerPrevious": "Previous page",
+  "pagerNext": "Next page",
+  "closePanel": "Close panel",
+  "viewAsApp": "View as App (testing)",
+  "viewAsDashboard": "View as Dashboard (testing)",
+  "errorExceedsTarget": "A position can't hold more units than its target quantity.",
+  "errorBelowZero": "The quantity can't go below 0.",
+  "errorTargetBelowCurrent": "The target can't be lower than the current stock. Record the consumption or a correction first.",
+  "errorInvalidTarget": "The target must be greater than 0.",
+  "drawerNumberLabel": "Drawer number",
+  "drawerNumberHelp": "The number printed on the cart (1 = top). It can't repeat within a cart.",
+  "drawerNumberTaken": "This cart already has a drawer with this number.",
+  "editDrawerNumber": "Change number",
+  "drawerNumberSaved": "Drawer number changed.",
+  "slotTaken": "This position already has a consumable.",
+  "signOnlyAuthorTitle": "Only the person who did the check can sign",
+  "signOnlyAuthorMessage": "This report is signed by {name}, who did the check.",
+  "@signOnlyAuthorMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lotOptionalLabel": "Lot (optional)",
+  "noLot": "no lot",
+  "errorQuantityRequired": "Enter a quantity greater than 0.",
+  "correctionReasonLabel": "Reason (optional)",
+  "correctionReasonHint": "e.g. recorded in the wrong position",
+  "slotInUse": "Position in use",
+  "slotInUseHint": "This position already has history: it keeps its consumable and can't be cleared. The structure of a cart in use can't be changed.",
+  "drawerInUseHint": "This drawer already has history: its grid can't be resized, merged or split. You can still change the positions' target quantities.",
+  "templatesTabActive": "Active ({count})",
+  "@templatesTabActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesTabArchived": "Archived ({count})",
+  "@templatesTabArchived": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templatesArchivedEmpty": "There are no archived templates.",
+  "archiveTemplate": "Archive template",
+  "archiveTemplateConfirm": "Archive the template “{name}”? It won't be offered when creating carts; carts already created don't change. You can restore it later.",
+  "@archiveTemplateConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateArchived": "Template archived.",
+  "restoreTemplate": "Restore",
+  "templateRestored": "Template restored.",
+  "templateArchivedTitle": "Template archived",
+  "templateArchivedMessage": "It can't be used to create carts. Restore it to use it again.",
+  "credentialsContactAdmin": "To change your credentials, contact the administration.",
+  "signNeedsAdminPin": "You don't have a PIN yet. Ask the administration to set one so you can sign.",
+  "createUser": "Create user",
+  "userCreated": "User created: {email}. Hand over their password and PIN.",
+  "@userCreated": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordTooShort": "The password must have at least {min} characters",
+  "@passwordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordRepeatLabel": "Repeat password",
+  "passwordMismatch": "The passwords don't match",
+  "createUserNote": "Hand the password and PIN to the person. Only the administration can change them; the person can't.",
+  "setNewPin": "Set new PIN",
+  "setNewPinFor": "New PIN for {name}",
+  "@setNewPinFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pinSetFor": "{name}'s PIN changed. Hand over the new PIN.",
+  "@pinSetFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setPinNote": "The new PIN takes effect on a tablet the next time the person signs in on it while online.",
+  "resetPasswordAction": "Reset password",
+  "resetPasswordSupport": "In this version, another person's password can't be changed from the app. Ask technical support (the IT department) to reset it.",
+  "checkOutcomeReplaced": "Replaced",
+  "checkOutcomeRemoved": "Removed, not replaced",
+  "checkOutcomeKept": "Kept",
+  "checkPendingLabel": "To handle",
+  "checkToHandle": "{count, plural, =1{1 to handle} other{{count} to handle}}",
+  "checkHandled": "{count, plural, =1{1 handled} other{{count} handled}}",
+  "checkOnlyFlaggedHelp": "Only expired and expiring lots are listed; everything else counts as valid. Each answer is saved at once.",
+  "checkNothingToHandle": "Nothing expired or expiring in this cart.",
+  "checkStepSubtitle": "{cart} · {drawer} ({index} of {total})",
+  "checkStockWarning": "Confirming updates the cart's stock. This answer can't be changed afterwards.",
+  "checkKeptHelp": "It stays in the cart and shows up again at the next check.",
+  "checkRemovedHelp": "The units leave the cart with nothing in their place; the position then needs replenishing.",
+  "checkNewExpiryLabel": "New expiry",
+  "checkNewExpiryShort": "new expiry {date}",
+  "checkUnits": "{count, plural, =1{1 unit} other{{count} units}}",
+  "checkClearAnswer": "Clear answer",
+  "checkNewExpiryRequired": "Enter the new expiry date.",
+  "checkNewExpiryNotLater": "The new expiry must be later than the old one and not already past.",
+  "checkIncomplete": "Handle every lot before finishing.",
+  "resumeCheck": "Resume check",
+  "checkLotsTitle": "Lots handled ({count})",
+  "leaveUnsignedTitle": "Report not signed",
+  "leaveUnsignedMessage": "This report isn't signed yet. You can sign it later in Reports → To sign.",
+  "leaveUnsignedExit": "Leave",
+  "leaveUnsignedSignNow": "Sign now",
+  "usersFilterAdmins": "Admins ({count})",
+  "actionRefresh": "Refresh",
+  "navSupport": "Support access",
+  "supportBanner": "Support access · {institution} · ends at {until}",
+  "supportPickerTitle": "Support access",
+  "supportPickerSubtitle": "Institutions that opened access to the I-Crash team",
+  "supportPickerEmpty": "No open access requests.",
+  "supportPickerUntil": "Until {until} · {reason}",
+  "supportEnded": "Support access ended or was closed by the institution.",
+  "supportTitle": "Support access",
+  "supportSubtitle": "The I-Crash team can enter this institution only while access is open.",
+  "supportLogTitle": "Access log",
+  "supportLogWhen": "When",
+  "supportLogWho": "Who",
+  "supportLogAction": "Action",
+  "supportLogEmpty": "The I-Crash team hasn't entered yet.",
+  "supportLogEnter": "Entered",
+  "supportLogLeave": "Left",
+  "supportClosedTitle": "Access closed",
+  "supportClosedHelp": "Open access only when you ask the I-Crash team for help. Every entry is logged, and access closes by itself at the end.",
+  "supportReasonLabel": "Reason",
+  "supportReasonHint": "E.g. cart 3 doesn't sync",
+  "supportDurationLabel": "Duration",
+  "supportDurationHours": "{hours} h",
+  "supportDurationDays": "{days, plural, =1{1 day} other{{days} days}}",
+  "supportOpenAction": "Open access",
+  "supportOpened": "Support access opened.",
+  "supportReasonRequired": "Enter the reason.",
+  "supportOpenTitle": "Access open until {until}",
+  "supportGrantedBy": "Opened by",
+  "supportSince": "Since",
+  "supportCloseAction": "Close access now",
+  "supportCloseConfirm": "The I-Crash team loses access to this institution at once.",
+  "supportClosed": "Support access closed.",
+  "roleDevice": "Device",
+  "actionContinue": "Continue",
+  "deviceSetUp": "Set up device",
+  "deviceSetupAdminNote": "An Admin signs in once to register this tablet. Then the people who work on the carts sign in with their PIN only.",
+  "deviceSetupNotAdmin": "Only an Admin of the institution can register a tablet.",
+  "deviceSetupPickCart": "Pick at least one cart.",
+  "deviceSetupInstitution": "Institution: {institution}",
+  "@deviceSetupInstitution": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceSetupNoCarts": "This institution has no carts yet. Create them on the Dashboard first.",
+  "deviceNameLabel": "Tablet name",
+  "deviceNameHint": "E.g. Tablet Cart 3 · ICU",
+  "deviceCartsLabel": "Carts on this tablet",
+  "deviceRegister": "Register tablet",
+  "deviceRegisteredTo": "Tablet registered to {institution}",
+  "@deviceRegisteredTo": {
+    "placeholders": {
+      "institution": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevokedTitle": "This device was deactivated",
+  "deviceRevokedMessage": "An Admin revoked this tablet on the Dashboard. To use it again, set it up again.",
+  "deviceNoPasswordNote": "No password on this tablet: identify yourself with your staff number or e-mail and your PIN.",
+  "deviceRemoveRegistration": "Remove this tablet's registration",
+  "deviceRemoveNote": "Admins only. The registration stays on the Dashboard until it's revoked.",
+  "deviceIdentifyTitle": "Identification",
+  "deviceIdentifierLabel": "Staff number or e-mail",
+  "deviceSignInHint": "Type your staff number or e-mail, then your PIN.",
+  "deviceEnterIdentifierFirst": "Type your staff number or e-mail first.",
+  "deviceWrongCredentials": "{count, plural, =1{Wrong number/e-mail or PIN. 1 attempt left.} other{Wrong number/e-mail or PIN. {count} attempts left.}}",
+  "@deviceWrongCredentials": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceNoPin": "The administration hasn't set your PIN yet.",
+  "deviceRemoveNotAdmin": "Only an Admin can remove the registration.",
+  "deviceNoCartsForPerson": "You aren't registered to any cart on this tablet.",
+  "deviceNotOnCart": "You aren't registered to this cart.",
+  "deviceNoticeIdle": "Session ended after inactivity.",
+  "deviceNoticeTooManyAttempts": "Too many wrong attempts. Try again.",
+  "deviceNoticeSignInFailed": "The tablet couldn't connect. Check the network and try again.",
+  "usersFilterDevices": "Devices ({count})",
+  "@usersFilterDevices": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "devicesEmpty": "No registered tablets. A tablet is registered on the tablet itself, under \"Set up device\".",
+  "deviceCartsColumn": "Carts",
+  "deviceRegisteredByColumn": "Registered by",
+  "deviceStateActive": "Active",
+  "deviceStateRevoked": "Revoked",
+  "deviceEdit": "Change name and carts",
+  "deviceRevoke": "Revoke",
+  "deviceRevokeConfirm": "\"{name}\" stops working at its next request. To use it again it must be set up again.",
+  "@deviceRevokeConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRevoked": "\"{name}\" revoked.",
+  "@deviceRevoked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceUpdated": "Tablet updated.",
+  "userNumberLabel": "Staff number",
+  "userNumberTaken": "A user with this staff number already exists.",
+  "cartStatusCheckInProgress": "Monthly check in progress",
+  "actionPrevious": "Previous",
+  "actionNext": "Next",
+  "checkDrawerNothingToHandle": "Nothing to handle in this drawer: no expired or expiring lots.",
+  "checkAnswerToContinue": "Handle every lot in this drawer to continue."
+}

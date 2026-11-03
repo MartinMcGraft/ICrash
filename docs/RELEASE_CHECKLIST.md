@@ -7,8 +7,9 @@ assistant in this environment; every item below that needs one is marked
 **human action required** and is something Pedro (or whoever owns the
 relevant developer account) must do directly, outside any assistant session.
 
-Written for workstream J / spec section 68, as step 9 of the post-spec batch
-started 2026-09-10 (see `docs/AI_HANDOFF.md`).
+Written 10 Sep 2026; updated 15 Oct 2026 for the new
+repository layout (the app is now in `app/`, Firebase files in `firebase/`).
+All paths below are relative to `app/` unless they start with `firebase/`.
 
 ## What's already correct (Phase 1, unchanged since)
 
@@ -18,43 +19,36 @@ started 2026-09-10 (see `docs/AI_HANDOFF.md`).
   - iOS: `PRODUCT_BUNDLE_IDENTIFIER` = `pt.icrash.app` (`ios/Runner.xcodeproj/project.pbxproj`).
   - macOS: `PRODUCT_BUNDLE_IDENTIFIER` = `pt.icrash.app.macos` (`macos/Runner/Configs/AppInfo.xcconfig`).
 - **Environment separation already works correctly** and needs no changes —
-  see `docs/ARCHITECTURE.md`'s "Environment selection" section: debug builds
+  see `docs/FIREBASE.md` §2–3: debug builds
   default to the local Firebase emulator, release builds default to the real
   cloud project (`i-crash-pt-2026`), and either can be forced with
   `--dart-define=ICRASH_BACKEND=emulator|cloud`. **A release build must never
   accidentally point at the emulator** — always build release with the
   default (no override) or an explicit `--dart-define=ICRASH_BACKEND=cloud`,
   never test a release build against `10.0.2.2`/`127.0.0.1`.
-- `firestore.rules`/`firestore.indexes.json` are already deployed to
-  `i-crash-pt-2026` and match the repo's copy exactly (see `docs/AI_HANDOFF.md`,
-  "Firebase configuration status"). Any future change to either file needs
+- `firebase/firestore.rules`/`firestore.indexes.json` are already deployed to
+  `i-crash-pt-2026` (see `docs/FIREBASE.md` §3). Any future change to either file needs
   explicit user confirmation before redeploying — this was already true and
   doesn't change for a release.
 
-## Android release signing — code wiring done, keystore still needed
+## Android release signing — not yet done
 
-**Update (2026-09-16)**: `android/app/build.gradle` now reads
-`android/key.properties` (`storePassword`, `keyPassword`, `keyAlias`,
-`storeFile`) if it exists and signs release builds with it automatically —
-this is step 3 below, already done ahead of time so nothing else needs
-touching once a real keystore exists. **Until `key.properties` exists,
-nothing changes**: release builds keep silently falling back to the debug
-key, exactly as before, so this is safe to have merged early.
+**Branch note (3 Nov 2026):** the `build.gradle` part of `DEV-Pedro` commit
+`b7dc5e1` was ported by hand when `DEV-Martim` was merged into `DEV-Pedro`, so
+step 3 below is done: the release build reads `android/key.properties` when it
+exists and falls back to the debug key otherwise. Its `proguard-rules.pro` part
+existed only for the ML Kit packages of the legacy code, which were removed on
+15 Oct 2026, so it was not ported (re-check with a real `flutter build apk --release`).
 
-Also fixed in the same pass: this project's *very first* successful
-`flutter build apk --release` (never attempted before this session) failed
-at the R8 minification step with "Missing class
-com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions" (and the
-same for Devanagari/Japanese/Korean) — `google_mlkit_text_recognition` (used
-only by the legacy `lib/teste/` prototype screens) references optional
-per-script recognizer classes this app never depends on. Fixed with the
-`-dontwarn` rules Android Gradle Plugin's own error message recommended, in
-the new `android/app/proguard-rules.pro` (wired via `proguardFiles` in the
-`release` build type). **A release APK now builds successfully** — verified
-with `flutter build apk --release --dart-define=ICRASH_BACKEND=cloud`.
+**Currently**: until `android/key.properties` exists, a `release` build is
+still signed with `signingConfigs.debug`, so it is not suitable for
+distribution: it's signed with the same throwaway debug key every Flutter
+project ships with, and Google Play will reject an upload signed that way (and
+even if it didn't, anyone could re-sign a malicious update with the same
+public debug key).
 
-**Still required before shipping to Google Play or handing out a real
-release APK**, in order:
+**Required before shipping to Google Play or handing out a real release
+APK**, in order:
 
 1. **Human action required**: generate an upload keystore
    (`keytool -genkey -v -keystore <path>.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`)
@@ -62,12 +56,13 @@ release APK**, in order:
    losing it means losing the ability to publish updates to an existing Play
    Store listing under the same app identity.
 2. **Human action required**: create `android/key.properties` (already
-   `.gitignore`d — confirmed in `android/.gitignore`) with `storePassword`,
-   `keyPassword`, `keyAlias`, `storeFile`. Never commit this file or the
-   `.jks` itself. Nothing else to do afterward — `build.gradle` already picks
-   it up automatically (see above).
-3. ~~`android/app/build.gradle` needs a `signingConfigs.release` block...~~
-   **Done** — see the 2026-09-16 update above.
+   `.gitignore`d by the standard Flutter template — verify this before
+   creating it) with `storePassword`, `keyPassword`, `keyAlias`, `storeFile`.
+   Never commit this file or the `.jks` itself.
+3. **Done (3 Nov 2026):** `android/app/build.gradle` has a
+   `signingConfigs.release` block reading from `key.properties`, and the
+   `release` build type uses it whenever that file exists. Nothing else to
+   wire up once steps 1-2 are done.
 4. Google Play uses **Play App Signing** by default for new apps (Google
    holds the final signing key; the upload keystore from step 1 only signs
    the upload artifact) — decide whether to opt in when creating the Play
@@ -80,10 +75,10 @@ release APK**, in order:
   an App ID matching `pt.icrash.app` (iOS) / `pt.icrash.app.macos` (macOS)
   registered in the Apple Developer portal, and provisioning
   profiles/signing certificates configured in Xcode.
-- This entire area is unverifiable from Windows — consistent with every
-  other iOS/macOS limitation already documented throughout this project
-  (`docs/AI_HANDOFF.md`'s "Known platform limitations"). Whoever has access
-  to a Mac must set this up and do a real device/TestFlight build.
+- Needs a Mac (Martim has one). As of 15 Oct 2026 **the iOS build doesn't run
+  yet**, so that comes first. Plugins use Swift Package Manager; CocoaPods
+  installs only the `Flutter` pod, which is expected. Then do a real
+  device/TestFlight build.
 
 ## Windows — no store signing required for direct distribution
 
