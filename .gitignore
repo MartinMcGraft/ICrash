@@ -22,3 +22,6 @@ node_modules/
 # Local scratch output from AI sessions
 Claude outputs/
 _claude_checks/
+
+# Old ISEL project
+isel
