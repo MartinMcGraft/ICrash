@@ -517,11 +517,22 @@ version. Table names are those of DATABASE.md part 2.
 
 ---
 
-## 11. Migrating existing data in `i-crash-pt-2026` (not done)
+## 11. Migrating existing data in `i-crash-pt-2026` (done 3 Nov 2026)
+
+**Done on 3 Nov 2026** by Pedro: backup, then `migrate_v2.mjs --apply` (149 writes: drawer
+numbers 1 and 2, the 144 slots of drawer 2, `drawerId`/`usedAt` on the one used
+placement), then the current `firestore.rules` and indexes deployed (the cloud still had
+the 11 Sep rules). Left for a person: the two `icrash-hq` admins have no PIN, and one
+batch has no `quantity`.
 
 The 29 Oct 2026 changes were made **without migrating** the cloud project; the app reads
 old documents tolerantly. A migration (Admin SDK script, run only with a project owner's
-OK) would need:
+OK) would need the list below. **`firebase/tools/migrate_v2.mjs`** (3 Nov 2026) does the
+automatic part: drawer numbers, slot documents, `drawerId`, `usedAt`, GTIN padding and
+removing `minimumQuantity`/`status`. It reports the rest (PINs, overfilled placements,
+batches without `quantity`, drawer names) for a person. It is a dry run unless given
+`--apply`, makes a JSON backup first on the cloud, and does nothing on a second run.
+`firebase/tools/migrate_v2_check.mjs` tests it on the emulator.
 
 | What | Why | Until then |
 |---|---|---|
@@ -535,6 +546,6 @@ OK) would need:
 | GTINs padded to 14 digits | P16 | Lookups match both forms |
 | Overfilled assignments (`currentQuantity > targetQuantity`), if any | P5 | They can still be lowered; a manager raises the target or records a correction |
 | Remove `minimumQuantity` and `status` from assignments | D10, stale field | Ignored |
-| Batches: `removedAt: null`, `quantity` where missing | DB1 | Missing `removedAt` counts as active |
+| Batches: `quantity` where missing | DB1 | Missing `removedAt` counts as active. **Don't write `removedAt: null`**: the rules allow removing a batch only while the field is absent |
 | Local data on each tablet (reports, templates) | Templates now store drawer numbers, no minimum | Old templates are read with their drawers numbered by position |
 

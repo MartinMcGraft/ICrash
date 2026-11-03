@@ -120,7 +120,7 @@ so both shells can be tried on one computer.
 | Alias (`firebase/.firebaserc`) | Project id | Used for |
 |---|---|---|
 | `default`, `local` | `demo-icrash-v2` | Local emulators only (a `demo-` project can never reach the cloud) |
-| `development` | `i-crash-pt-2026` | The real cloud project. Rules and indexes are deployed; Auth + Firestore only, no billing, no Storage, no Cloud Functions |
+| `development` | `i-crash-pt-2026` | The real cloud project. Current rules and indexes deployed on 3 Nov 2026; Auth + Firestore only, no billing, no Storage, no Cloud Functions |
 
 App ids: Android/iOS `pt.icrash.app`, macOS `pt.icrash.app.macos`. FlutterFire config
 is in `app/firebase.json` and `app/lib/firebase_options.dart`.
@@ -273,9 +273,11 @@ Full reasoning, with examples: `docs/DOMAIN.md` (§20–28, §44–48, §58–59
 2. **Offline stock writes:** consumption, replenishment and correction use Firestore
    transactions, which fail offline. They should become increments plus immutable
    events so they queue.
-3. **Old cloud data isn't migrated:** drawers without a number, placements without
-   `drawerId`, used placements without the `usedAt` marker, users without a PIN. The app
-   reads them tolerantly; the migration list is in `docs/FIREBASE.md` §11.
+3. **Cloud data migrated, PINs still missing (3 Nov 2026):** `firebase/tools/migrate_v2.mjs`
+   gave the drawers numbers, slot documents, `drawerId` and `usedAt`, and the current rules
+   and indexes were deployed the same day. Still for a person: the two institution admins of
+   `icrash-hq` have no PIN (set one in B7 or with `set_password.mjs`) and one batch has no
+   `quantity`. See `docs/FIREBASE.md` §11.
 4. **Rules:** health professionals may only change `currentQuantity`, so replenishment
    is limited to managers until D2 is decided.
 5. **Local stubs** (reports, templates, shifts, permissions, emergencies) need Firestore
