@@ -40,7 +40,8 @@ Future<CartStatus?> showChangeStatusDialog(BuildContext context, CartStatus curr
                 Wrap(
                   spacing: IcSpace.s12,
                   children: [
-                    for (final status in CartStatus.values)
+                    // "Gestão mensal em curso" is set by the check, not by hand.
+                    for (final status in manualCartStatuses)
                       SizedBox(
                         width: compact ? 290 : 420,
                         child: Semantics(

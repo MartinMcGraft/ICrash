@@ -695,7 +695,7 @@ void main() {
         _expectNoScroll(tester);
         _expectButtonLabelsFit(tester);
         expect(find.text('Guardar'), findsOneWidget);
-        expect(find.byIcon(Icons.radio_button_off), findsNWidgets(CartStatus.values.length - 1));
+        expect(find.byIcon(Icons.radio_button_off), findsNWidgets(manualCartStatuses.length - 1));
       });
 
       testWidgets('confirmation dialog ($name): no overflow', (tester) async {

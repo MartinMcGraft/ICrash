@@ -20,9 +20,10 @@ import '../../shells/shell_navigation.dart';
 import '../reports/report_screen.dart';
 import 'monthly_check_view_model.dart';
 
-/// A8 · Verificação mensal ("Gestão mensal", D4/D22/D23, 30 Oct 2026): only
-/// expired and expiring lots, one drawer per step, an outcome for each; every
-/// answer is saved at once; back goes to the previous step.
+/// A8 · Verificação mensal ("Gestão mensal", D4/D22/D23, 30 Oct 2026): every
+/// drawer, one per step (2 Nov 2026), with its expired and expiring lots and
+/// an outcome for each; every answer is saved at once; "Anterior" and back go
+/// to the previous drawer; the report only after the last one.
 class MonthlyCheckScreen extends StatelessWidget {
   const MonthlyCheckScreen({super.key, required this.cartId});
   final String cartId;
@@ -81,7 +82,9 @@ class MonthlyCheckScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: IcSpace.s8),
                           child: drawer == null
                               ? StateView.message(message: l10n.checkNothingToHandle, icon: IcIcon.okCirculo)
-                              : _Items(vm: vm),
+                              : vm.stepItems.isEmpty
+                                  ? StateView.message(message: l10n.checkDrawerNothingToHandle, icon: IcIcon.okCirculo)
+                                  : _Items(vm: vm),
                         ),
                       ),
                       SizedBox(width: compact ? IcSpace.s12 : IcSpace.s20),
@@ -116,9 +119,9 @@ class _Progress extends StatelessWidget {
               child: Container(
                 height: 6,
                 decoration: BoxDecoration(
-                  color: vm.items.where((it) => it.drawerId == steps[i].id).every((it) => it.answered)
-                      ? IcColors.okFg
-                      : (i == vm.step ? IcColors.actionPrimary : IcColors.bgSurfaceSunken),
+                  color: i == vm.step
+                      ? IcColors.actionPrimary
+                      : (vm.drawerDone(i) ? IcColors.okFg : IcColors.bgSurfaceSunken),
                   borderRadius: BorderRadius.circular(IcRadius.full),
                 ),
               ),
@@ -261,32 +264,56 @@ class _Summary extends StatelessWidget {
           onPressed: () => _editNote(context, vm),
         ),
         const SizedBox(height: IcSpace.s12),
-        IcButton(
-          // Phones: "Concluir", so the label fits the narrower panel (RV-8).
-          label: finishing ? (compact ? l10n.finishCheckShort : l10n.finishCheck) : l10n.nextDrawer,
-          icon: finishing ? IcIcon.confirmar : IcIcon.seguinte,
-          size: compact ? IcButtonSize.m : IcButtonSize.l,
-          expand: true,
-          busy: vm.busy,
-          onPressed: finishing
-              ? (vm.canFinish
-                  ? () async {
-                      final result = await vm.finish();
-                      if (!context.mounted) return;
-                      if (!result.isOk) return showResult(context, result);
-                      Navigator.of(context).pushReplacement(sectionRoute((_) => ReportScreen(reportId: result.value!)));
-                    }
-                  : null)
-              : (vm.stepDone ? vm.next : null),
-        ),
-        if (vm.step > 0) ...[
-          const SizedBox(height: IcSpace.s8),
-          IcButton(
-            label: l10n.previousDrawer,
-            style: IcButtonStyle.ghost,
+        // "Anterior" and "Seguinte" / "Concluir" side by side (2 Nov 2026);
+        // going back keeps every answer. Phones: the panel is too narrow for
+        // two labels side by side, so "Anterior" goes under the main button.
+        Builder(builder: (context) {
+          final previous = vm.step > 0
+              ? IcButton(
+                  label: l10n.actionPrevious,
+                  icon: IcIcon.voltar,
+                  style: IcButtonStyle.secondary,
+                  size: compact ? IcButtonSize.m : IcButtonSize.l,
+                  expand: true,
+                  onPressed: () => vm.back(),
+                )
+              : null;
+          final main = IcButton(
+            // Phones: "Concluir", so the label fits the narrower panel (RV-8).
+            label: finishing ? (compact || previous != null ? l10n.finishCheckShort : l10n.finishCheck) : l10n.actionNext,
+            icon: finishing ? IcIcon.confirmar : IcIcon.seguinte,
+            size: compact ? IcButtonSize.m : IcButtonSize.l,
             expand: true,
-            onPressed: () => vm.back(),
-          ),
+            busy: vm.busy,
+            onPressed: finishing
+                ? (vm.canFinish
+                    ? () async {
+                        final result = await vm.finish();
+                        if (!context.mounted) return;
+                        if (!result.isOk) return showResult(context, result);
+                        Navigator.of(context).pushReplacement(sectionRoute((_) => ReportScreen(reportId: result.value!)));
+                      }
+                    : null)
+                : (vm.stepDone ? vm.next : null),
+          );
+          if (previous == null) return main;
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [main, const SizedBox(height: IcSpace.s8), previous],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: previous),
+              const SizedBox(width: IcSpace.s8),
+              Expanded(child: main),
+            ],
+          );
+        }),
+        if (!vm.stepDone) ...[
+          const SizedBox(height: IcSpace.s8),
+          Text(l10n.checkAnswerToContinue, style: IcText.bodyS.copyWith(color: IcColors.textSecondary)),
         ],
       ],
     );

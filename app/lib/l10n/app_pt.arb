@@ -2224,5 +2224,15 @@
   "userNumberLabel": "Nº mecanográfico",
   "@userNumberLabel": {},
   "userNumberTaken": "Já existe um utilizador com este nº mecanográfico.",
-  "@userNumberTaken": {}
+  "@userNumberTaken": {},
+  "cartStatusCheckInProgress": "Gestão mensal em curso",
+  "@cartStatusCheckInProgress": {},
+  "actionPrevious": "Anterior",
+  "@actionPrevious": {},
+  "actionNext": "Seguinte",
+  "@actionNext": {},
+  "checkDrawerNothingToHandle": "Nada a tratar nesta gaveta: nenhum lote expirado nem a expirar.",
+  "@checkDrawerNothingToHandle": {},
+  "checkAnswerToContinue": "Trate todos os lotes desta gaveta para continuar.",
+  "@checkAnswerToContinue": {}
 }

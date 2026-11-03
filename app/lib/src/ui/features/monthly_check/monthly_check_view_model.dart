@@ -5,6 +5,7 @@ import '../../../domain/entities/batch.dart';
 import '../../../domain/entities/cart_drawer.dart';
 import '../../../domain/entities/cart_product_assignment.dart';
 import '../../../domain/entities/cart_report.dart';
+import '../../../domain/entities/cart_status.dart';
 import '../../../domain/inventory_health.dart';
 import '../../../domain/monthly_check.dart';
 import '../../core/cart_live_data.dart';
@@ -13,12 +14,17 @@ import '../../core/session/session.dart';
 
 /// A8 · Verificação mensal, "Gestão mensal" (D4, D22, D23; 30 Oct 2026).
 ///
-/// Lists only the cart's expired and expiring lots, one drawer at a time
-/// (a step). Each lot gets an outcome from [checkOutcomes]; "Substituído" and
-/// "Retirado sem reposição" change the stock as soon as they're confirmed.
-/// Every answer is saved at once (the draft), so leaving never loses work and
-/// the cart menu offers "Retomar verificação". [back] goes to the previous
-/// step. The report (A9) can be created once every lot has an outcome.
+/// Goes through **every drawer** of the cart, one per step (2 Nov 2026: it
+/// used to skip drawers with nothing flagged, so a cart with one flagged
+/// drawer was "done" after drawer 1). Each step lists that drawer's expired
+/// and expiring lots; each gets an outcome from [checkOutcomes];
+/// "Substituído" and "Retirado sem reposição" change the stock as soon as
+/// they're confirmed. Every answer, the step and the furthest drawer reached
+/// are saved at once (the draft), so leaving or a wrong tap never loses work
+/// and the cart menu offers "Retomar verificação". [back] goes to the
+/// previous drawer. The report (A9) is created only after the last drawer,
+/// with every lot answered. While the check runs the cart shows
+/// "Gestão mensal em curso" ([CartStatus.checkInProgress]).
 class MonthlyCheckViewModel extends ViewModel {
   MonthlyCheckViewModel(this.services, this.session, this.cartId) {
     data = CartLiveData(services: services, institutionId: session.institution.id, cartId: cartId, onChanged: _onData);
@@ -35,18 +41,22 @@ class MonthlyCheckViewModel extends ViewModel {
 
   /// Index into [steps].
   int step = 0;
+
+  /// The furthest drawer reached: the report needs the last one.
+  int furthest = 0;
   String notes = '';
+
+  /// The cart's state before the check started, restored (or recomputed)
+  /// when the report is created.
+  CartStatus? _statusBefore;
 
   bool _loading = false;
   bool _loaded = false;
 
   bool get ready => _loaded;
 
-  /// The drawers that have something to handle, in number order.
-  List<CartDrawer> get steps {
-    final ids = items.map((i) => i.drawerId).toSet();
-    return [for (final d in data.drawers) if (ids.contains(d.id)) d];
-  }
+  /// Every drawer of the cart, in number order.
+  List<CartDrawer> get steps => data.drawers;
 
   CartDrawer? get stepDrawer => step < steps.length ? steps[step] : null;
   bool get isLastStep => step >= steps.length - 1;
@@ -57,7 +67,13 @@ class MonthlyCheckViewModel extends ViewModel {
 
   bool get stepDone => stepItems.every((i) => i.answered);
   int get answeredCount => items.where((i) => i.answered).length;
-  bool get canFinish => items.every((i) => i.answered);
+  /// Every drawer reached and every lot answered.
+  bool get allDrawersSeen => steps.isEmpty || furthest >= steps.length - 1;
+  bool get canFinish => allDrawersSeen && items.every((i) => i.answered);
+
+  /// Whether a drawer's lots are all answered (and it was reached).
+  bool drawerDone(int index) =>
+      index <= furthest && items.where((i) => i.drawerId == steps[index].id).every((i) => i.answered);
 
   void _onData() {
     if (!_loaded && !_loading && data.ready && data.drawers.every((d) => data.slotsLoaded(d.id))) {
@@ -112,19 +128,47 @@ class MonthlyCheckViewModel extends ViewModel {
       }
       notes = draft['notes'] as String? ?? '';
       step = (draft['step'] as num?)?.toInt() ?? 0;
+      furthest = (draft['furthest'] as num?)?.toInt() ?? step;
+      final before = draft['statusBefore'];
+      if (before is String) _statusBefore = CartStatusCodec.fromId(before);
     }
     items = built;
-    if (step >= steps.length) step = steps.isEmpty ? 0 : steps.length - 1;
+    final last = steps.isEmpty ? 0 : steps.length - 1;
+    if (step > last) step = last;
+    if (furthest > last) furthest = last;
+    if (furthest < step) furthest = step;
     _loaded = true;
     _loading = false;
     notify();
+    await _markInProgress();
+  }
+
+  /// "Gestão mensal em curso" while the check runs. The draft is saved at
+  /// once, so the cart menu offers "Retomar verificação" from now on.
+  Future<void> _markInProgress() async {
+    final cart = data.cart;
+    if (cart == null) return;
+    if (cart.status != CartStatus.checkInProgress) {
+      _statusBefore ??= cart.status;
+      if (session.canChangeCartState) {
+        try {
+          await services.sync.track(services.carts.updateCartStatus(session.institution.id, cartId, CartStatus.checkInProgress));
+        } catch (_) {
+          // Offline or refused: the check goes on; the state is a hint.
+        }
+      }
+    }
+    if (isDisposed) return;
+    await _save();
   }
 
   /// Saves the draft (every answer, the step and the note) on this device.
   Future<void> _save() => services.reports.saveCheckDraft(session.institution.id, cartId, {
         'version': 2,
         'step': step,
+        'furthest': furthest,
         'notes': notes,
+        if (_statusBefore != null) 'statusBefore': _statusBefore!.id,
         'answers': {
           for (final item in items)
             if (item.answered) item.id: item.toJson(),
@@ -227,9 +271,11 @@ class MonthlyCheckViewModel extends ViewModel {
     await _save();
   }
 
+  /// The next drawer, once this one's lots are all answered.
   Future<void> next() async {
-    if (isLastStep) return;
+    if (isLastStep || !stepDone) return;
     step++;
+    if (step > furthest) furthest = step;
     notify();
     await _save();
   }
@@ -244,8 +290,11 @@ class MonthlyCheckViewModel extends ViewModel {
     return true;
   }
 
-  /// Creates the "Gestão mensal" report to sign (A9) and clears the draft.
-  /// Returns its id. Code `checkIncomplete` while a lot has no outcome.
+  /// Creates the "Gestão mensal" report to sign (A9), clears the draft and
+  /// takes the cart out of "Gestão mensal em curso": back to "Fora de
+  /// serviço" if it was, otherwise the state the stock calls for (D7; the
+  /// check is no longer overdue). Returns the report's id. Code
+  /// `checkIncomplete` before the last drawer or while a lot has no outcome.
   Future<ActionResult<String>> finish() => run(() async {
         if (!canFinish) throw const ActionError('checkIncomplete');
         final cart = data.cart!;
@@ -259,14 +308,28 @@ class MonthlyCheckViewModel extends ViewModel {
           createdAt: DateTime.now(),
           createdByUid: session.user.uid,
           createdByName: session.myName,
-          drawersChecked: data.drawers.length,
-          drawersTotal: data.drawers.length,
+          drawersChecked: steps.length,
+          drawersTotal: steps.length,
           positionsChecked: items.length,
           positionsTotal: items.length,
           findings: [for (final item in items) item.toFinding()],
           notes: notes.trim().isEmpty ? null : notes.trim(),
         ));
         await services.reports.clearCheckDraft(session.institution.id, cartId);
+        if (session.canChangeCartState) {
+          final after = _statusBefore == CartStatus.outOfService
+              ? CartStatus.outOfService
+              : suggestedCartStatus(
+                  current: CartStatus.operational,
+                  counts: data.cartCounts(expiryWarningDays: session.institution.expiryWarningDays),
+                  checkOverdue: false,
+                );
+          try {
+            await services.sync.track(services.carts.updateCartStatus(session.institution.id, cartId, after));
+          } catch (_) {
+            // The report exists; the cart's state can be set by hand.
+          }
+        }
         return report.id;
       });
 

@@ -2760,4 +2760,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userNumberTaken => 'A user with this staff number already exists.';
+
+  @override
+  String get cartStatusCheckInProgress => 'Monthly check in progress';
+
+  @override
+  String get actionPrevious => 'Previous';
+
+  @override
+  String get actionNext => 'Next';
+
+  @override
+  String get checkDrawerNothingToHandle =>
+      'Nothing to handle in this drawer: no expired or expiring lots.';
+
+  @override
+  String get checkAnswerToContinue =>
+      'Handle every lot in this drawer to continue.';
 }

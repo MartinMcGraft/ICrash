@@ -8,7 +8,7 @@ import '../theme/tokens.dart';
 
 /// What the "Estado do carro" chip shows. [emergencyActive] is not a stored
 /// cart status: it is shown while an emergency session is open on the cart.
-enum CartDisplayState { operational, replenishmentRequired, checkOverdue, outOfService, emergencyActive }
+enum CartDisplayState { operational, replenishmentRequired, checkOverdue, outOfService, checkInProgress, emergencyActive }
 
 CartDisplayState cartDisplayState(CartStatus status, {bool emergencyActive = false}) {
   if (emergencyActive) return CartDisplayState.emergencyActive;
@@ -17,6 +17,7 @@ CartDisplayState cartDisplayState(CartStatus status, {bool emergencyActive = fal
     CartStatus.replenishmentRequired => CartDisplayState.replenishmentRequired,
     CartStatus.auditRequired => CartDisplayState.checkOverdue,
     CartStatus.outOfService => CartDisplayState.outOfService,
+    CartStatus.checkInProgress => CartDisplayState.checkInProgress,
   };
 }
 
@@ -25,6 +26,7 @@ String cartStatusText(AppLocalizations l10n, CartStatus status) => switch (statu
       CartStatus.replenishmentRequired => l10n.cartStatusReplenishmentRequired,
       CartStatus.auditRequired => l10n.cartStatusAuditRequired,
       CartStatus.outOfService => l10n.cartStatusOutOfService,
+      CartStatus.checkInProgress => l10n.cartStatusCheckInProgress,
     };
 
 class IcTone {
@@ -39,6 +41,7 @@ IcTone _cartTone(CartDisplayState state) => switch (state) {
       CartDisplayState.replenishmentRequired => const IcTone(IcColors.warningFg, IcColors.warningBg, IcIcon.alerta),
       CartDisplayState.checkOverdue => const IcTone(IcColors.infoFg, IcColors.infoBg, IcIcon.relogio),
       CartDisplayState.outOfService => const IcTone(IcColors.neutralFg, IcColors.neutralBg, IcIcon.cadeado),
+      CartDisplayState.checkInProgress => const IcTone(IcColors.infoFg, IcColors.infoBg, IcIcon.calendario),
       CartDisplayState.emergencyActive => const IcTone(IcColors.dangerFg, IcColors.dangerBg, IcIcon.emergencia),
     };
 

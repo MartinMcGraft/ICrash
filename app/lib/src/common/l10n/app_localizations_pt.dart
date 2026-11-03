@@ -2784,4 +2784,21 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get userNumberTaken =>
       'Já existe um utilizador com este nº mecanográfico.';
+
+  @override
+  String get cartStatusCheckInProgress => 'Gestão mensal em curso';
+
+  @override
+  String get actionPrevious => 'Anterior';
+
+  @override
+  String get actionNext => 'Seguinte';
+
+  @override
+  String get checkDrawerNothingToHandle =>
+      'Nada a tratar nesta gaveta: nenhum lote expirado nem a expirar.';
+
+  @override
+  String get checkAnswerToContinue =>
+      'Trate todos os lotes desta gaveta para continuar.';
 }

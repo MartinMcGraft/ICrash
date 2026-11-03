@@ -4530,6 +4530,36 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Já existe um utilizador com este nº mecanográfico.'**
   String get userNumberTaken;
+
+  /// No description provided for @cartStatusCheckInProgress.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestão mensal em curso'**
+  String get cartStatusCheckInProgress;
+
+  /// No description provided for @actionPrevious.
+  ///
+  /// In pt, this message translates to:
+  /// **'Anterior'**
+  String get actionPrevious;
+
+  /// No description provided for @actionNext.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seguinte'**
+  String get actionNext;
+
+  /// No description provided for @checkDrawerNothingToHandle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nada a tratar nesta gaveta: nenhum lote expirado nem a expirar.'**
+  String get checkDrawerNothingToHandle;
+
+  /// No description provided for @checkAnswerToContinue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Trate todos os lotes desta gaveta para continuar.'**
+  String get checkAnswerToContinue;
 }
 
 class _AppLocalizationsDelegate

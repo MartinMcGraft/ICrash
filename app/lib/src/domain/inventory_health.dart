@@ -173,10 +173,11 @@ String positionLabel(int row, int column) {
 }
 
 /// Proposal D7 — automatic cart state. "Fora de serviço" is always a manual
-/// decision and is never overridden; otherwise an expired or missing product
+/// decision and is never overridden, nor is "Gestão mensal em curso" (the
+/// check sets it back when its report is created); otherwise an expired or missing product
 /// requires replenishment, and an overdue monthly check requires a check.
 CartStatus suggestedCartStatus({required CartStatus current, required HealthCounts counts, required bool checkOverdue}) {
-  if (current == CartStatus.outOfService) return current;
+  if (current == CartStatus.outOfService || current == CartStatus.checkInProgress) return current;
   if (counts.expired > 0 || counts.missing > 0) return CartStatus.replenishmentRequired;
   if (checkOverdue) return CartStatus.auditRequired;
   return CartStatus.operational;

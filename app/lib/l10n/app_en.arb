@@ -1698,5 +1698,10 @@
   },
   "deviceUpdated": "Tablet updated.",
   "userNumberLabel": "Staff number",
-  "userNumberTaken": "A user with this staff number already exists."
+  "userNumberTaken": "A user with this staff number already exists.",
+  "cartStatusCheckInProgress": "Monthly check in progress",
+  "actionPrevious": "Previous",
+  "actionNext": "Next",
+  "checkDrawerNothingToHandle": "Nothing to handle in this drawer: no expired or expiring lots.",
+  "checkAnswerToContinue": "Handle every lot in this drawer to continue."
 }

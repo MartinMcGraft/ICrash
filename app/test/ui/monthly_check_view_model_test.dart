@@ -5,10 +5,12 @@ import 'package:icrash_app/src/domain/entities/cart.dart';
 import 'package:icrash_app/src/domain/entities/cart_drawer.dart';
 import 'package:icrash_app/src/domain/entities/cart_product_assignment.dart';
 import 'package:icrash_app/src/domain/entities/cart_report.dart';
+import 'package:icrash_app/src/domain/entities/cart_status.dart';
 import 'package:icrash_app/src/domain/entities/institution.dart';
 import 'package:icrash_app/src/domain/entities/membership.dart';
 import 'package:icrash_app/src/domain/entities/product.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
+import 'package:icrash_app/src/domain/inventory_health.dart';
 import 'package:icrash_app/src/domain/monthly_check.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
@@ -124,6 +126,9 @@ void main() {
       await _settle();
       expect(await vm.back(), isFalse);
       await vm.next();
+      expect(vm.step, 0, reason: 'drawer 1 still has a lot without an outcome');
+      await vm.remove(vm.stepItems.single, units: 1);
+      await vm.next();
       expect(vm.step, 1);
       expect(await vm.back(), isTrue);
       expect(vm.step, 0);
@@ -136,6 +141,8 @@ void main() {
       expect((await vm.finish()).code, 'checkIncomplete');
       await vm.remove(vm.items.first, units: 2);
       await vm.setKept(vm.items.last, true);
+      expect((await vm.finish()).code, 'checkIncomplete', reason: 'the last drawer was never reached');
+      await vm.next();
       final result = await vm.finish();
       expect(result.isOk, isTrue);
       final report = (await services.reports.watchReports('inst').first).single;
@@ -144,6 +151,95 @@ void main() {
       expect(report.findings.first.drawerName, 'Via aérea');
       expect(await services.reports.loadCheckDraft('inst', 'c1'), isNull);
       vm.dispose();
+    });
+
+    test('2 Nov 2026: every drawer is a step, even one with nothing to handle; the report only after the last', () async {
+      // A third drawer with no expired or expiring lot.
+      final drawers = FakeDrawerRepository(drawers: [
+        const CartDrawer(id: 'd1', cartId: 'c1', number: 1, name: 'Via aérea', rows: 1, columns: 2),
+        const CartDrawer(id: 'd2', cartId: 'c1', number: 2, rows: 1, columns: 2),
+        const CartDrawer(id: 'd3', cartId: 'c1', number: 3, rows: 1, columns: 2),
+      ]);
+      final withEmpty = buildTestServices(
+        carts: FakeCartRepository(carts: [const Cart(id: 'c1', institutionId: 'inst', name: 'Carro 1')]),
+        drawers: drawers,
+        products: FakeProductRepository(products: [
+          const Product(id: 'p1', institutionId: 'inst', name: 'Adrenalina'),
+          const Product(id: 'p2', institutionId: 'inst', name: 'Atropina'),
+        ]),
+        inventory: inventory,
+      );
+      final vm = MonthlyCheckViewModel(withEmpty, _session(withEmpty), 'c1');
+      await _settle();
+      expect(vm.steps.map((d) => d.id), ['d1', 'd2', 'd3']);
+      await vm.remove(vm.stepItems.single, units: 1);
+      await vm.next();
+      await vm.setKept(vm.stepItems.single, true);
+      expect(vm.canFinish, isFalse, reason: 'drawer 3 not reached yet');
+      await vm.next();
+      expect(vm.stepItems, isEmpty);
+      expect(vm.stepDone, isTrue);
+      expect(vm.isLastStep, isTrue);
+      expect(vm.canFinish, isTrue);
+      final report = await vm.finish();
+      expect(report.isOk, isTrue);
+      expect((await withEmpty.reports.watchReports('inst').first).single.drawersChecked, 3);
+      vm.dispose();
+    });
+
+    test('going back keeps every answer and the furthest drawer reached', () async {
+      final vm = MonthlyCheckViewModel(services, _session(services), 'c1');
+      await _settle();
+      await vm.remove(vm.stepItems.single, units: 1);
+      await vm.next();
+      await vm.setKept(vm.stepItems.single, true);
+      await vm.back();
+      expect(vm.step, 0);
+      expect(vm.furthest, 1);
+      expect(vm.canFinish, isTrue, reason: 'the last drawer was reached before');
+      vm.dispose();
+      final again = MonthlyCheckViewModel(services, _session(services), 'c1');
+      await _settle();
+      expect(again.step, 0);
+      expect(again.furthest, 1);
+      expect(again.items.map((i) => i.outcome), [CheckOutcome.removed, CheckOutcome.kept]);
+      again.dispose();
+    });
+
+    test('the cart shows "Gestão mensal em curso" while the check runs, then the state the stock calls for', () async {
+      final carts = services.carts as FakeCartRepository;
+      final vm = MonthlyCheckViewModel(services, _session(services), 'c1');
+      await _settle();
+      expect(carts.carts.single.status, CartStatus.checkInProgress);
+      expect(await services.reports.loadCheckDraft('inst', 'c1'), isNotNull, reason: '"Retomar verificação" from the start');
+      // Every unit of Adrenalina taken out, nothing put back: it's missing.
+      await vm.remove(vm.stepItems.single, units: 4);
+      await vm.next();
+      await vm.setKept(vm.stepItems.single, true);
+      expect((await vm.finish()).isOk, isTrue);
+      expect(carts.carts.single.status, CartStatus.replenishmentRequired);
+      vm.dispose();
+    });
+
+    test('a cart out of service stays out of service after the check', () async {
+      final carts = services.carts as FakeCartRepository;
+      await carts.updateCartStatus('inst', 'c1', CartStatus.outOfService);
+      final vm = MonthlyCheckViewModel(services, _session(services), 'c1');
+      await _settle();
+      expect(carts.carts.single.status, CartStatus.checkInProgress);
+      await vm.setKept(vm.items.last, true);
+      await vm.remove(vm.stepItems.single, units: 1);
+      await vm.next();
+      expect((await vm.finish()).isOk, isTrue);
+      expect(carts.carts.single.status, CartStatus.outOfService);
+      vm.dispose();
+    });
+
+    test('the automatic state (D7) never overrides "Gestão mensal em curso"', () {
+      expect(
+        suggestedCartStatus(current: CartStatus.checkInProgress, counts: const HealthCounts(expired: 2), checkOverdue: true),
+        CartStatus.checkInProgress,
+      );
     });
   });
 }
