@@ -226,7 +226,7 @@ class _Drawers extends StatelessWidget {
               TableColumnSpec(l10n.columnSize, flex: 2),
               TableColumnSpec(l10n.columnPositions, flex: 2),
               TableColumnSpec(l10n.columnWithProduct, flex: 2),
-              TableColumnSpec('', width: 240, alignEnd: true),
+              TableColumnSpec('', width: 200, alignEnd: true),
             ],
             emptyText: l10n.cartDetailDrawersEmpty,
             rows: [
@@ -244,6 +244,8 @@ class _Drawers extends StatelessWidget {
                         IcIconButton(
                           icon: IcIcon.editar,
                           tooltip: l10n.editDrawer,
+                          size: IcSize.rowAction,
+                          iconSize: 18,
                           // The name can always change (D20); the number only
                           // while allowed (Q8), which the dialog shows.
                           onPressed: () async {
@@ -264,6 +266,7 @@ class _Drawers extends StatelessWidget {
                         label: l10n.editGrid,
                         icon: IcIcon.grelha,
                         style: IcButtonStyle.secondary,
+                        size: IcButtonSize.s,
                         onPressed: () => Navigator.of(context).push(
                           sectionRoute((_) => GridEditorScreen(cartId: vm.cartId, drawerId: drawer.id)),
                         ),

@@ -6,6 +6,7 @@ import '../../../domain/entities/app_permission.dart';
 import '../../../domain/entities/membership.dart';
 import '../../../domain/entities/registered_device.dart';
 import '../../../domain/entities/role.dart';
+import '../../core/feature_flags.dart';
 import '../../core/format.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/labels.dart';
@@ -184,9 +185,11 @@ class _MemberMenu extends StatelessWidget {
     if (vm.isMe(member)) {
       return Tooltip(
         message: l10n.cannotEditSelf,
-        child: const Padding(
-          padding: EdgeInsets.all(IcSpace.s8),
-          child: IcIconView(IcIcon.opcoes, size: 20, color: IcColors.textMuted),
+        // Same 48 px box as the PopupMenuButton on the other rows, so the dots
+        // line up in the right-aligned column.
+        child: const SizedBox.square(
+          dimension: IcSize.touchMin,
+          child: Center(child: IcIconView(IcIcon.opcoes, size: 20, color: IcColors.textMuted)),
         ),
       );
     }
@@ -283,7 +286,8 @@ class _PermissionsPanel extends StatelessWidget {
           // Admin (the Firestore Rules allow them only to Admin/Super).
           Text(roleText(l10n, Role.manager), style: IcText.labelM.copyWith(color: IcColors.textSecondary)),
           const SizedBox(height: IcSpace.s12),
-          for (final p in managerPermissions)
+          // Emergency mode is set aside (P12), so its permission isn't offered.
+          for (final p in managerPermissions.where((p) => kEmergencyModeEnabled || p != AppPermission.emergencyMode))
             CheckRow(
               label: permissionText(l10n, p),
               value: granted.contains(p),

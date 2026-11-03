@@ -32,6 +32,7 @@ import 'package:icrash_app/src/domain/entities/registered_device.dart';
 import 'package:icrash_app/src/domain/entities/role.dart';
 import 'package:icrash_app/src/domain/entities/shift.dart';
 import 'package:icrash_app/src/domain/repositories/auth_repository.dart';
+import 'package:icrash_app/src/ui/core/icons/ic_icons.dart';
 import 'package:icrash_app/src/ui/core/session/session.dart';
 import 'package:icrash_app/src/ui/core/theme/app_theme.dart';
 import 'package:icrash_app/src/ui/core/theme/tokens.dart';
@@ -173,6 +174,15 @@ AppServices _services({int carts = 1, int rows = 5, int columns = 6, int product
 /// Renders [screen]. With [padding] the view gets those safe-area insets; with
 /// [appShell] the screen sits inside the App shell frame (rail + safe area),
 /// as it does on a phone or tablet.
+/// DC-66: Dashboard table row actions use the 36 px size, not the 48 px one.
+void _expectRowActionsSmall(Finder finder) {
+  final elements = finder.evaluate().toList();
+  expect(elements, isNotEmpty);
+  for (final e in elements) {
+    expect(e.size!.height, IcSize.rowAction, reason: '${e.widget.runtimeType} row action height');
+  }
+}
+
 Future<void> _pump(
   WidgetTester tester,
   Size size,
@@ -480,6 +490,7 @@ void main() {
       await _pump(tester, desktop, _services(products: 60), const CatalogScreen());
       _expectNoScroll(tester);
       expect(find.textContaining(' de 60'), findsOneWidget);
+      _expectRowActionsSmall(find.widgetWithText(IcButton, 'Editar'));
     });
 
     testWidgets('B8 shifts: 15 carts with a full week on desktop', (tester) async {
@@ -521,6 +532,8 @@ void main() {
       testWidgets('B3 cart configuration ($name): 10 numbered drawers', (tester) async {
         await _pump(tester, size, _services(drawers: 10), const CartConfigScreen(cartId: 'c0'));
         _expectNoScroll(tester);
+        _expectRowActionsSmall(find.widgetWithText(IcButton, 'Editar grelha'));
+        _expectRowActionsSmall(find.byWidgetPredicate((w) => w is IcIconButton && w.icon == IcIcon.editar));
       });
 
       testWidgets('B6 templates ($name): active/archived tabs', (tester) async {
@@ -536,6 +549,14 @@ void main() {
       testWidgets('B7 users ($name): "Criar utilizador"', (tester) async {
         await _pump(tester, size, _services(), const UsersScreen());
         _expectNoScroll(tester);
+        // Emergency mode is set aside (P12), so its permission isn't listed (DC-66).
+        expect(find.text('Usar o modo de emergência'), findsNothing);
+        // Every row's "more" dots sit at the same x, including the signed-in
+        // user's own (disabled) row.
+        final dots = find.byWidgetPredicate((w) => w is IcIconView && w.icon == IcIcon.opcoes).evaluate().toList();
+        expect(dots.length, greaterThan(1));
+        final xs = {for (final e in dots) (e.renderObject! as RenderBox).localToGlobal(e.size!.center(Offset.zero)).dx.round()};
+        expect(xs, hasLength(1), reason: 'dots x positions: $xs');
       });
     }
 

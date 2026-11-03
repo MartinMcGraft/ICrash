@@ -105,6 +105,7 @@ class CatalogScreen extends StatelessWidget {
                                 label: l10n.actionEdit,
                                 icon: IcIcon.editar,
                                 style: IcButtonStyle.ghost,
+                                size: IcButtonSize.s,
                                 onPressed: () => _edit(context, vm, p),
                               ),
                           ],

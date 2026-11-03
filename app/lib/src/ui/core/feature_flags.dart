@@ -1,5 +1,10 @@
 // Features that are kept in the code but left out of the prototype.
 
+/// P12 (28 Oct): emergency mode is set aside. While false, the cart menu doesn't
+/// offer "Modo de emergência" (A10's code stays) and B7 doesn't list the
+/// "Usar o modo de emergência" permission (3 Nov, DC-66). Flip to bring it back.
+const kEmergencyModeEnabled = false;
+
 /// Shifts (D8, B8 "Turnos") are set aside (2 Nov 2026): kept as an idea,
 /// like emergency mode (P12, `kEmergencyModeEnabled`). While false, nothing
 /// shows them: no "Turnos" in the Dashboard sidebar, no "Responsável no

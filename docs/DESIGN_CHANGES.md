@@ -872,6 +872,23 @@ Frame ids read on 30 Oct 2026.
   (`ui/core/feature_flags.dart`), like emergency mode (DC-08).
 - **Status:** to do
 
+### DC-66 · Smaller row buttons in Dashboard tables; emergency permission hidden (3 Nov 2026)
+- **Where:** B3 Configuração do carrinho, drawers table (p21 `456:884`, p20 wireframe); B5
+  Catálogo de consumíveis, products table (p21 `456:1512`); B7 Utilizadores, "Permissões" panel
+  (p21 `456:1969`).
+- **What:** the row actions in B3 ("Editar grelha" and the pencil "Editar gaveta") and B5
+  ("Editar") use a new small button size: 36 px high, 12 px side padding, 18 px icon, label M.
+  Figma draws them at the 48 px "M" size, which nearly fills a 60 px table row. In B7 the
+  "Usar o modo de emergência" / "Use emergency mode" (`permEmergencyMode`) checkbox is no longer
+  listed for Managers.
+- **Components:** "Botão" gets a third Tamanho, **S** (36 px), for table row actions only; the
+  square icon button gets a 36 px variant. Dashboard only (mouse), so the 48 px touch minimum
+  (`IcSize.touchMin`) still applies everywhere in the App. Token: `IcSize.rowAction` = 36.
+- **Why:** Martim, 3 Nov: the row buttons were too big and looked odd. The permission belongs to
+  emergency mode, which is set aside (P12); it is hidden behind `kEmergencyModeEnabled`, now in
+  `ui/core/feature_flags.dart` next to `kShiftsEnabled`. The stored permission is kept.
+- **Status:** to do
+
 ## Not changed in code yet, but will affect the design later
 
 | Item | Frames affected | Waits on |
@@ -919,3 +936,4 @@ Frame ids read on 30 Oct 2026.
 | Dashboard sidebar, 2 Nov | DC-63 |
 | B4 position panel beside the grid (D26), 2 Nov | DC-64 |
 | Shifts hidden (D8 set aside), 2 Nov | DC-65 |
+| Smaller table row buttons (B3, B5); B7 emergency permission hidden, 3 Nov | DC-66 |

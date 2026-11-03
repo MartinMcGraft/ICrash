@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../common/l10n/app_localizations.dart';
+import '../../core/feature_flags.dart';
 import '../../core/icons/ic_icons.dart';
 import '../../core/labels.dart';
 import '../../core/mvvm/view_model.dart';
@@ -19,10 +20,6 @@ import '../monthly_check/monthly_check_screen.dart';
 import 'cart_dialogs.dart';
 import 'cart_view_model.dart';
 import 'product_search_dialog.dart';
-
-/// P12 (28 Oct): emergency mode is set aside. While false, the cart menu doesn't
-/// offer "Modo de emergência" (A10's code stays). Flip to bring it back.
-const kEmergencyModeEnabled = false;
 
 /// A5 · Carrinho — drawers on the left, "Menu do carro" on the right.
 class CartScreen extends StatelessWidget {

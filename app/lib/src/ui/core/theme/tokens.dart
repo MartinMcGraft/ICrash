@@ -97,6 +97,9 @@ abstract final class IcRadius {
 abstract final class IcSize {
   /// Minimum touch target (gloved use).
   static const double touchMin = 48;
+
+  /// Row actions in Dashboard tables (mouse use; DC-66).
+  static const double rowAction = 36;
   static const double railTablet = 96;
   static const double railPhone = 72;
   static const double sidebar = 240;
